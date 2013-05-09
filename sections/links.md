@@ -48,6 +48,8 @@ Collections of resources also include links. For example, following the `Environ
 
 The links at the bottom of the resource allow you to traverse the pages of results. Again, instead of hard-coding query string parameters, you can look for a `Page.Next` link and follow that instead. 
 
+> Note: the Page.Specific uses a token to specify how many to skip; the idea is users would substitute a value in. [Should this be a proper URI template?](https://github.com/OctopusDeploy/OctopusDeploy-Api/issues/2) 
+
 ### Non-stale results
 
 Octopus Deploy uses RavenDB, a document database, as its backing store. One of the many features of RavenDB is that it performs indexing asynchronously in the background in an **eventually consistent** model. This means that when the Octopus Deploy server queries RavenDB, it might be looking at stale results; an item may have been added or deleted, but it may not have appeared in the index yet. 
