@@ -10,11 +10,12 @@ For example, a `GET` request to `/api` returns a resource that looks like:
       "ApiVersion": "3.0.0",
       "Links": {
         "Self": "/api",
-        "Environments": "/api/environments",
-        "Machines": "/api/machines",
-        "Projects": "/api/projects",
-        "Feeds": "/api/feeds",
-        "Tasks": "/api/tasks"
+        "Environments": "/api/environments{?nonStale,skip}",
+        "Machines": "/api/machines{?nonStale,skip}",
+        "Projects": "/api/projects{?nonStale,skip}",
+        "Feeds": "/api/feeds{?nonStale,skip}",
+        "Tasks": "/api/tasks{?nonStale,skip}",
+        "Web": "/"
       }
     }
 
@@ -22,7 +23,11 @@ You can follow the links in the result to navigate around the API; for example, 
 
 Since the format and structure of links may change, it's important that clients avoid hardcoding URL's to resources, and instead rely on starting at `/api` and navigating from there. 
 
-### Pagination
+## URI Templates
+
+Some links may use URI templates as defined in [RFC 6570](http://tools.ietf.org/html/rfc6570). 
+
+### Collections
 
 Collections of resources also include links. For example, following the `Environments` link above will give you a list of environments. 
 
