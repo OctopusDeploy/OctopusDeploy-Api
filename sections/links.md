@@ -23,7 +23,7 @@ You can follow the links in the result to navigate around the API; for example, 
 
 Since the format and structure of links may change, it's important that clients avoid hardcoding URL's to resources, and instead rely on starting at `/api` and navigating from there. 
 
-## URI Templates
+### URI Templates
 
 Some links (mainly to collections) use URI templates as defined in [RFC 6570](http://tools.ietf.org/html/rfc6570). 
 
