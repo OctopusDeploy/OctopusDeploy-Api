@@ -25,7 +25,7 @@ Since the format and structure of links may change, it's important that clients 
 
 ### URI Templates
 
-Some links (mainly to collections) use URI templates as defined in [RFC 6570](http://tools.ietf.org/html/rfc6570). 
+Some links (mainly to collections) use URI templates as defined in [RFC 6570](http://tools.ietf.org/html/rfc6570). If in doubt, a client should assume that any link is a URI template.
 
 ### Collections
 
