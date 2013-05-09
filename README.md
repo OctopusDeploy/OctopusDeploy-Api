@@ -16,8 +16,8 @@ You'll need an API key to access the API. You can get your API key from your pro
 
 ### Concepts
 
-1. Authentication 
-2. Links
+1. [Authentication](https://github.com/OctopusDeploy/OctopusDeploy-Api/blob/master/sections/authentication.md) 
+2. [Links](https://github.com/OctopusDeploy/OctopusDeploy-Api/blob/master/sections/links.md)
 3. Resources
    1. Environments
    2. Projects
