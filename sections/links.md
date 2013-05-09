@@ -52,6 +52,6 @@ The links at the bottom of the resource allow you to traverse the pages of resul
 
 Octopus Deploy uses RavenDB, a document database, as its backing store. One of the many features of RavenDB is that it performs indexing asynchronously in the background in an **eventually consistent** model. This means that when the Octopus Deploy server queries RavenDB, it might be looking at stale results; an item may have been added or deleted, but it may not have appeared in the index yet. 
 
-API requests that return a collection based on a RavenDB query will return a flag indicating whether the results are stale (`IsStale` above), as well as a link to fetch the non-stale results of the same (`NonStale`). 
+API requests that return a collection based on a RavenDB query will return a flag indicating whether the results are stale (`IsStale` above), as well as a link to fetch the non-stale results of the same query (`NonStale`). 
 
-By default, all requests to the Octopus Deploy API will return stale results, which means we can serve requests quickly.  Requesting the non-stale results will cause the Octopus Server to wait until the RavenDB indexes have been updated before the results are returned. 
+Note that by default, all requests to the Octopus Deploy API will return stale results, which means we can serve requests quickly. Requesting non-stale results will cause the Octopus Server to wait until the RavenDB indexes have been updated before the results are returned. We recommend using non-stale results wherever possible, which is why this is the default.  
