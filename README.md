@@ -14,6 +14,15 @@ The Octopus Deploy API is available at:
 
 You'll need an API key to access the API. You can get your API key from your profile page on the Octopus web portal. This should be sent in the `X-Octopus-ApiKey` HTTP header, or in an `apikey` query string parameter. 
 
+### Design goals
+
+When building this new API, we will keep the following goals in mind:
+
+1. To be friendly and easy to figure out
+2. To be [hypermedia driven](http://en.wikipedia.org/wiki/HATEOAS), using links and the occasional [URI template](http://tools.ietf.org/html/rfc6570) ([read more](https://github.com/OctopusDeploy/OctopusDeploy-Api/blob/master/sections/links.md))
+3. To have the HTML user inteface for the Octopus web portal dogfood the API
+4. To have a nice client library for .NET available via NuGet
+
 ### Concepts
 
 1. [Authentication](https://github.com/OctopusDeploy/OctopusDeploy-Api/blob/master/sections/authentication.md) 
