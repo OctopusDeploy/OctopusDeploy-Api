@@ -48,7 +48,7 @@ Collections of resources also include links. For example, following the `Environ
 
 The links at the bottom of the resource allow you to traverse the pages of results. Again, instead of hard-coding query string parameters, you can look for a `Page.Next` link and follow that instead. 
 
-> Note: the Page.Specific uses a token to specify how many to skip; the idea is users would substitute a value in. [Should this be a proper URI template?](https://github.com/OctopusDeploy/OctopusDeploy-Api/issues/2) 
+> Question: the `Page.Specific` link uses a token to specify how many to skip; the idea is users would substitute a value in. Should we embrace proper URI templates? [Leave your comments here](https://github.com/OctopusDeploy/OctopusDeploy-Api/issues/2)
 
 ### Non-stale results
 
