@@ -53,4 +53,4 @@ Octopus Deploy uses RavenDB, a document database, as its backing store. One of t
 
 API requests that return a collection based on a RavenDB query will return a flag indicating whether the results are stale (`IsStale` above). The link template also specifies that the `nonStale` query string parameter can be passed. 
 
-Note that by default, all requests to the Octopus Deploy API will return stale results, which means we can serve requests quickly. Requesting non-stale results will cause the Octopus Server to wait until the RavenDB indexes have been updated before the results are returned. We recommend using non-stale results wherever possible, which is why this is the default.  
+**By default, all query API requests will be allowed to return stale results.** We do this so that most requests can be served quickly. Requesting non-stale results will cause the Octopus Server to wait until the RavenDB indexes have been updated before the results are returned. If a scenario requires non-stale results, you will need to specify `nonStale` explicitly.  
