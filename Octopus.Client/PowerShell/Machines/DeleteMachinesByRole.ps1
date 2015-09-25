@@ -5,10 +5,10 @@ Add-Type -Path 'Octopus.Client.dll'
 $apikey = 'API-MCPLE1AQM2VKTRFDLIBMORQHBXA' # Get this from your profile
 $octopusURI = 'http://localhost' # Your server address
 
+$role = "Demo-role" # The role that you want to delete
+
 $endpoint = new-object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
 $repository = new-object Octopus.Client.OctopusRepository $endpoint
-
-$role = "Demo-role" # The role that you want to delete
 
 $machines = $repository.Machines.FindMany({param($m) $role -in $m.Roles})
 
