@@ -1,10 +1,10 @@
 Add-Type -Path 'Octopus.Client.dll' 
 
 $apikey = 'API-xxx' 
-$OctopusURI = 'http://localhost'
+$octopusURI = 'http://localhost'
 
-$endpoint = new-object Octopus.Client.OctopusServerEndpoint $OctopusURI,$apikey 
-$repository = new-object Octopus.Client.OctopusRepository $endpoint
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
+$repository = New-Object Octopus.Client.OctopusRepository $endpoint
 
 $tentacleEndpoint = New-Object Octopus.Client.Model.EndPoints.ListeningTentacleEndpointResource
 $tentacleEndpoint.Thumbprint = "551290ED75D2A4AEBBB6F31778DB1C0D4865B091"
