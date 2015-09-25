@@ -5,13 +5,16 @@ Add-Type -Path 'Octopus.Client.dll'
 $apikey = 'API-xxx' # Get this from your profile
 $octopusURI = 'http://localhost' # Your Octopus Server address
 
+$releaseId = "Releases-1" # Get this from /api/releases
+$environmentId = "Environments-1" # Get this from /api/environments
+
 $endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
 
-$release = $repository.Releases.Get("Releases-1"); # Get this from /api/releases
+$release = $repository.Releases.Get($releaseId); 
 $deployment = new-object Octopus.Client.Model.DeploymentResource
 $deployment.ReleaseId = $release.Id
 $deployment.ProjectId = $release.ProjectId
-$deployment.EnvironmentId = "Environments-1" # Get this from /api/environments
+$deployment.EnvironmentId = $environmentId
 
 $repository.Deployments.Create($deployment)
