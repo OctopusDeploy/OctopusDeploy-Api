@@ -1,3 +1,7 @@
+# You can this dll from your Octopus Server/Tentacle installation directory or from
+# https://www.nuget.org/packages/Octopus.Client/
+Add-Type -Path 'Octopus.Client.dll' 
+
 $apikey = 'API-MCPLE1AQM2VKTRFDLIBMORQHBXA' # Get this from your profile
 $octopusURI = 'http://localhost' # Your server address
 
