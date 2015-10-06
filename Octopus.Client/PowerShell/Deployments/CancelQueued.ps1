@@ -5,15 +5,17 @@ Add-Type -Path 'Octopus.Client.dll'
 $apikey = 'API-xxx' # Get this from your profile
 $octopusURI = 'http://localhost' # Your Octopus Server address
 
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
+$projectId = "Projects-x" # Get this from /api/projects
+
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI, $apikey 
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
 
-$QueuedTasksEvaluator = {  
-  param ($t) 
-  return $t.State -eq "Queued" 
-}
- 
-foreach ($queued in $repository.Tasks.FindMany($QueuedTasksEvaluator))
+
+$deployments = $repository.Deployments.FindAll(@($projectId), @()) 
+$queued = $repository.Tasks.FindMany({ param ($t) return $t.State -eq "Queued" })
+foreach ($task in $queued)
 {
-    $repository.Tasks.Cancel($queued)
+    if($deployments.Items.Exists({param ($t) return $t.TaskId -eq $task.Id})) {
+        $repository.Tasks.Cancel($task)
+    }    
 }
