@@ -10,7 +10,7 @@ $repository = New-Object Octopus.Client.OctopusRepository $endpoint
 
 #Creating lifecycle
 $lifecycle = New-Object Octopus.Client.Model.LifecycleResource
-$lifecycle.Name = "MyLifecycle" #Name of the lifecycle
+$lifecycle.Name = '' #Name of the lifecycle
 
 #Default Retention Policy
 $lifecycle.ReleaseRetentionPolicy = [Octopus.Client.Model.RetentionPeriod]::new(0,[Octopus.Client.Model.RetentionUnit]::Items) #Unlimmited Releases
