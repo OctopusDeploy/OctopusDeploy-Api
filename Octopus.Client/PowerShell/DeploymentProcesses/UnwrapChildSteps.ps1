@@ -4,7 +4,7 @@ Add-Type -Path 'Octopus.Client.dll'
 
 $octopusURI = "http://localhost" # Your server address
 $apiKey = 'API-IQW9QGGWJE5T4KFVQLL15PUY' # Get this from your profile
-$projectId = "Projects-120" # The id of the project
+$projectId = "Projects-120" # The id of the project, get this from /api/projects
 
 $endpoint = new-object Octopus.Client.OctopusServerEndpoint $octopusURI, $apiKey 
 
