@@ -4,7 +4,7 @@ Add-Type -Path 'Octopus.Client.dll'
 
 $octopusURI = "http://localhost" # Your server address
 $apiKey = 'API-IQW9QGGWJE5T4KFVQLL15PUY' # Get this from your profile
-$projectId = "Projects-120" # The id of the project, get this from /api/projects
+$projectName = "Project Name" # The name of the project
 
 $endpoint = new-object Octopus.Client.OctopusServerEndpoint $octopusURI, $apiKey 
 
@@ -20,8 +20,7 @@ Function Copy-Dictionary {
         $destination.Add($item.Key, $item.Value)
     }
 }
-
-$project = $repository.Projects.Get($projectId)
+$project = $repository.Projects.FindByName($projectName)
 $process = $repository.DeploymentProcesses.Get($project.DeploymentProcessId)
 
 $step = $process.Steps | Select-Object -first 1
