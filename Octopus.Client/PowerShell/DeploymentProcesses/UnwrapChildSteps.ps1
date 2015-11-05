@@ -32,8 +32,6 @@ foreach ($action in $step.Actions) {
     $newStep.RequiresPackagesToBeAcquired = $step.RequiresPackagesToBeAcquired
     $newStep.Actions.Add($action)    
     
-    Copy-Dictionary $action.Properties $newStep.Properties
-    Copy-Dictionary $action.SensitiveProperties $newStep.SensitiveProperties
     Copy-Dictionary $step.Properties $newStep.Properties
     Copy-Dictionary $step.SensitiveProperties $newStep.SensitiveProperties
 
