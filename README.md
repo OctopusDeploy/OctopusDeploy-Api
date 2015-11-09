@@ -1,5 +1,7 @@
-## Octopus Deploy 2.0 API Documentation
+## Octopus Deploy API Documentation
 
-[Octopus Deploy](http://octopusdeploy.com/) is a user-friendly automated deployment tool for .NET developers. This GitHub repository exists to provide documentation for the upcoming **Octopus Deploy 2.0** HTTP API. 
+_Applies to Octopus Deploy 2.x and above_
+
+[Octopus Deploy](http://octopus.com/) is a user-friendly automated deployment tool for .NET developers. This GitHub repository exists to provide documentation for the **Octopus Deploy** HTTP API. 
 
 [Go to the Wiki to learn more.](https://github.com/OctopusDeploy/OctopusDeploy-Api/wiki) 
