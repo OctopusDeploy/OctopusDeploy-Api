@@ -1,11 +1,11 @@
 ##CONFIGURATION##
 
-$OctopusURI = "http://ny-octopus1" #Octopus URL
+$OctopusURI = "" #Octopus URL
 
-$OctopusUsername = "NY\dalmiro.granias" #API Key will belong to this user
-$OctopusPassword = "Michael2" #Password of the user above
+$OctopusUsername = "" #API Key will belong to this user
+$OctopusPassword = "" #Password of the user above
 
-$APIKeyPurpose = "Whatever" #Brief text to describe the purpose of your API Key.
+$APIKeyPurpose = "" #Brief text to describe the purpose of your API Key.
 
 
 ##PROCESS##
