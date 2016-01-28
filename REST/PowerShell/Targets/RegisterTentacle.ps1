@@ -1,16 +1,27 @@
-﻿$headers = @{"X-Octopus-ApiKey"="API-XXXXXXXXXXXXXXXXXXXXXXXXXX"} 
+﻿#Config
+$OctopusAPIkey = "" #API Key to authenticate in Octopus
+$OctopusURL = "" #Octopus server url
 
-$environments = Invoke-RestMethod "http://octopus.url/api/environments" -Headers $headers -Method Get
-$demoEnvironment = $environments.Items | ? { $_.Name -eq "Demo" }
+$TentacleURL = "" #Tentacle URL. Remember it must be https. i.e "https://localhost","http://192.168.1.12","Http://MyMachineFQDN"
+$TentaclePort = "" #Port the Listening Tentacle will use to comunicate with the Octopus server
+$TentacleThumbprint = "" #Tentacle Thumbprint
+$TentacleName = "" #Tentacle name
+$TentacleRoles = "" #Tentacle role. It can be a collection 
+$EnvironmentIDs = "" #IDs of the Environments where the Tentacle will be registered. It can be a collection
 
-$hostnameOrIpAddress = ""
-$port = 10933
-$discovered = Invoke-RestMethod "http://octopus.url/api/machines/discover?host=$hostnameOrIpAddress&port=$port" -Headers $headers -Method Get
+##Process
+$header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 
-#$discovered.Name = "MyTentacle" # If you wanted to change the name of the deployment target (default is host name)
-$discovered.Roles += "MyRole"
-$discovered.EnvironmentIds += $demoEnvironment.Id
+$body = @{ Endpoint = @{
+                        CommunicationStyle = "TentaclePassive" #This will only work for Listening Tentacles
+                        Thumbprint = $TentacleThumbprint
+                        Uri = "$tentacleURL`:$TentaclePort/"
+                        }
+            EnvironmentIDs = @($EnvironmentIDs)
+            Name = $TentacleName
+            Roles = @($TentacleRoles)
+            Status = "Unknown"
+            IsDisabled = $false
+        } | ConvertTo-Json -Depth 10
 
-$discovered | ConvertTo-Json -Depth 10
-
-Invoke-RestMethod "http://octopus.url/api/machines" -Headers $headers -Method Post -Body ($discovered | ConvertTo-Json -Depth 10)
+Invoke-RestMethod "$OctopusURL/api/machines" -Headers $header -Method Post -Body $body
