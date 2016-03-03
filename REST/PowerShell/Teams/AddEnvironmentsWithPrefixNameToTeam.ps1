@@ -1,5 +1,5 @@
 ﻿<#
-The goal of this script is to add all the environments which name starts with a certain prefix
+The goal of this script is to find all the environments which name starts with a certain prefix
 and add them to a team's scope
 
 The script wont add environments to the team in a smart way. It'll just clear the current list
