@@ -1,5 +1,5 @@
 ﻿##CONFIG##
-$APIKey = "" #Octopus API
+$APIKey = "" #Octopus API. You might wanna create a service account that can only read (all) environments, then create an API key for it and use that Key.
 $Role = "" #Role you are looking for
 
 ##PROCESS##
