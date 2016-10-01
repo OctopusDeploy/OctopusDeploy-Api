@@ -42,7 +42,7 @@ class Program
 
         foreach (var vm in variablesList)
         {
-            Console.WriteLine($"Name:{vm.Name} Value:{vm.Value} Scope: {vm.Scope}");
+            Console.WriteLine($"VariableSet:{vm.VariableSetName} Name:{vm.Name} Value:{vm.Value} Scope: {vm.Scope}");
         }
 
         var input = Console.ReadLine();
@@ -52,7 +52,7 @@ class Program
 
 public class VariableViewModel
 {
-    //public string VariableSet { get; set; }
+    public string VariableSetName { get; set; }
     public string Name { get; set; }
     public string Value { get; set; }
     public string Scope { get; set; }
@@ -61,6 +61,7 @@ public class VariableViewModel
     {
         Name = variable.Name;
         Value = variable.Value;
+        VariableSetName = variableSetName;
 
         var nonLookupRoles =
             variable.Scope.Where(s => s.Key != ScopeField.Environment & s.Key != ScopeField.Machine & s.Key != ScopeField.Channel & s.Key != ScopeField.Action)
