@@ -12,7 +12,8 @@ $repository = new-object Octopus.Client.OctopusRepository $endpoint
 
 $project = $repository.Projects.Get($projectId)
 $process = $repository.DeploymentProcesses.Get($project.DeploymentProcessId)
-$template = $repository.DeploymentProcesses.GetTemplate($process)
+$channel = $repository.Channels.FindByName($project,"Default") #Provide a valid channel
+$template = $repository.DeploymentProcesses.GetTemplate($process,$channel)
 
 $release = new-object Octopus.Client.Model.ReleaseResource
 $release.Version = $template.NextVersionIncrement
