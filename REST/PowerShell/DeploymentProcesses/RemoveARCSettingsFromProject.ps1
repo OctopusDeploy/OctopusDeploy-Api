@@ -13,10 +13,16 @@ $allprojects = (Invoke-WebRequest $OctopusURL/api/projects/all -Headers $header)
 
 $project = $allprojects | ?{$_.name -eq $ProjectName}
 
-$project.AutoCreateRelease = $false
-$project.ReleaseCreationStrategy.ReleaseCreationPackageStepId = ""
-$project.ReleaseCreationStrategy.ChannelId = "null"
+If($project -ne $null){
+    $project.AutoCreateRelease = $false
+    $project.ReleaseCreationStrategy.ReleaseCreationPackageStepId = ""
+    $project.ReleaseCreationStrategy.ChannelId = "null"
 
-$projectJson = $project | ConvertTo-Json
+    $projectJson = $project | ConvertTo-Json
 
-Invoke-WebRequest $OctopusURL/api/projects/$($project.id) -Method Put -Headers $header -Body $projectJson
+    Invoke-WebRequest $OctopusURL/api/projects/$($project.id) -Method Put -Headers $header -Body $projectJson
+}
+
+Else{
+    Write-Error "Project [$ProjectName] not found in $OctopusURL"
+}
