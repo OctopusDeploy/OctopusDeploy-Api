@@ -1,4 +1,4 @@
-﻿#Also fixes http://help.octopusdeploy.com/discussions/problems/48848
+﻿#Script written to fix http://help.octopusdeploy.com/discussions/problems/48848
 
 ##CONFIG##
 $OctopusAPIkey = "" #Octopus API Key
@@ -16,7 +16,9 @@ $project = $allprojects | ?{$_.name -eq $ProjectName}
 If($project -ne $null){
     $project.AutoCreateRelease = $false
     $project.ReleaseCreationStrategy.ReleaseCreationPackageStepId = ""
-    $project.ReleaseCreationStrategy.ChannelId = "null"
+    $project.ReleaseCreationStrategy.ChannelId = $null
+    $project.VersioningStrategy.DonorPackageStepId = $null
+    $Project.VersioningStrategy.Template = "#{Octopus.Version.LastMajor}.#{Octopus.Version.LastMinor}.#{Octopus.Version.NextPatch}"
 
     $projectJson = $project | ConvertTo-Json
 
