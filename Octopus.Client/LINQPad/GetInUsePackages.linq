@@ -9,7 +9,7 @@
 
 var endpoint = new OctopusServerEndpoint("http://localhost");
 var repository = new OctopusRepository(endpoint);
-repository.Users.SignIn("Admin", "Password01!");
+repository.Users.SignIn("Admin", "password");
 
 var feeds = repository.Feeds.FindAll().ToDictionary(f => f.Id, f => f.Name);
 
