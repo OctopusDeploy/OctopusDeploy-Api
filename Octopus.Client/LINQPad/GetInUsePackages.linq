@@ -4,10 +4,14 @@
   <Namespace>Octopus.Client.Model</Namespace>
 </Query>
 
+// This will print out all packages that are currently referenced by a release
+// Output: Feed Name, Package Id, Package Version
 
 var endpoint = new OctopusServerEndpoint("http://localhost");
 var repository = new OctopusRepository(endpoint);
-repository.Users.SignIn("user", "password");
+repository.Users.SignIn("Admin", "Password01!");
+
+var feeds = repository.Feeds.FindAll().ToDictionary(f => f.Id, f => f.Name);
 
 var releases = repository.Releases.FindAll(); // This call can slow the server down
 
@@ -16,15 +20,18 @@ foreach(var id in releases.Select(r => r.ProjectDeploymentProcessSnapshotId).Dis
  	processes[id] = repository.DeploymentProcesses.Get(id);
 
 var inUsePackagesQ = from release in releases
-					from selectedPackage in release.SelectedPackages
-					select new
+					 from selectedPackage in release.SelectedPackages
+					 let action = processes[release.ProjectDeploymentProcessSnapshotId]
+										 .Steps
+										 .SelectMany(s => s.Actions)
+										 .First(s => s.Name == selectedPackage.StepName)
+					 select new
 					{
-						PackageId = processes[release.ProjectDeploymentProcessSnapshotId]
-										.Steps
-										.SelectMany(s => s.Actions)
-										.First(s => s.Name == selectedPackage.StepName)
-										.Properties["Octopus.Action.Package.PackageId"].Value,
+						Feed = feeds[action.Properties["Octopus.Action.Package.FeedId"].Value],
+						PackageId = action.Properties["Octopus.Action.Package.PackageId"].Value,
 						Version = selectedPackage.Version
 					};
 var inUsePackages = inUsePackagesQ.Distinct().ToArray();
 inUsePackages.Dump();
+
+
