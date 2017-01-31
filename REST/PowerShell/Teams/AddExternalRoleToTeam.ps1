@@ -16,7 +16,7 @@ $team = $teams.Items | Where-Object { $_.Name -eq $TeamName }
 
 $team.ExternalSecurityGroups += @{
   DisplayIdAndName = $true
-  DisplayName = $ExternalRoleId
+  DisplayName = $ExternalRoleDescription
   Id = $ExternalRoleId
 }
 
