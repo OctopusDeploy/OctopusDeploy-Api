@@ -15,6 +15,8 @@ $packageUrl = $octopusUrl + "/api/packages/raw?replace=" + $replaceExisting;
 Write-Host Uploading $packageFilePath to $packageUrl;
 
 $webRequest = [System.Net.HttpWebRequest]::Create($packageUrl);
+$webRequest.AllowWriteStreamBuffering = $false
+$webRequest.SendChunked = $true
 $webRequest.Accept = "application/json";
 $webRequest.ContentType = "application/json";
 $webRequest.Method = "POST";
