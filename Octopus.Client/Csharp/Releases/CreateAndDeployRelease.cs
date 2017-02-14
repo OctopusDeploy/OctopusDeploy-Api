@@ -29,13 +29,13 @@ namespace OctopusClient_Test
             var template = new ReleaseTemplateResource();
             var process = new DeploymentProcessResource();
 
-            //if you dont pass a value to newReleaseVersion, It'll calculate it using the version template of your project. Just like when you hit the "Create Release" button
+            process = repository.DeploymentProcesses.Get(project.DeploymentProcessId);
+            var channel = repository.Channels.FindByName(project, channelName);
+            template = repository.DeploymentProcesses.GetTemplate(process,channel);
+
+            //if you dont pass a value to newReleaseVersion, It'll calculate it using the version template of your project. Just like when you hit the "Create Release" button from the web portal
             if (string.IsNullOrEmpty(releaseVersion))
             {
-                process = repository.DeploymentProcesses.Get(project.DeploymentProcessId);
-                var channel = repository.Channels.FindByName(project, channelName);
-                template = repository.DeploymentProcesses.GetTemplate(process,channel);
-
                 releaseVersion = template.NextVersionIncrement;
             }
 
