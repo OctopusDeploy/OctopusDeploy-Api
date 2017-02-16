@@ -1,7 +1,8 @@
 ##CONFIG##
 
-$OctopusAPIkey = "" #API Key. Needs to belong to a user with Admin permissions.
-$OctopusURL = "" #Octopus URL
+$OctopusURL = ""
+$Octopusapikey = ""
+
 $LicenseLevel = "" #Accepted values are  "Team","Professional","Enterprise"
 
 ##PROCESS##
@@ -11,38 +12,36 @@ $Projects = ((Invoke-WebRequest $OctopusURL/api/projects/all -Headers $header).c
 $Users = ((Invoke-WebRequest $OctopusURL/api/users/all -Headers $header).content | ConvertFrom-Json).count
 $Machines = ((Invoke-WebRequest $OctopusURL/api/Machines/all -Headers $header).content | ConvertFrom-Json).count
 
+$remaining = 0
+$limit = 0
+
 switch ($LicenseLevel)
 {
     'Professional' {
         $limit = 60
-        Write-output "--Current status--"
-        Write-Output "Projects: $Projects"
-        Write-Output "Users: $Users"
-        Write-Output "Machines: $Machines"
-
-        Write-Output "Limit by license: $limit"
         $remaining = $limit - $Projects - $Users - $Machines
-        Write-Output "Available 'things': $remaining"
-        Write-Output "What are these things? read: https://github.com/OctopusDeploy/Issues/issues/1937  "
     }
     'Team' {
         $limit = 180
-        Write-output "--Current status--"
-        Write-Output "Projects: $Projects"
-        Write-Output "Users: $Users"
-        Write-Output "Machines: $Machines"
-
-        Write-Output "Limit by license: $limit"
-        $remaining = $limit - $Projects - $Users - $Machines
-        Write-Output "Available 'things': $remaining"
-        Write-Output "What are these things? read: https://github.com/OctopusDeploy/Issues/issues/1937  "
+        $remaining = $limit - $Projects - $Users - $Machines        
     }
     'Enterprise' {
-        Write-output "--Current status--"
-        Write-Output "Projects: $Projects"
-        Write-Output "Users: $Users"
-        Write-Output "Machines: $Machines"
-        Write-Output "Limit by license: Unlimmited"
     }
     Default {Write-error "Unvalid value passed to `$LicenseLevel. Accepted values are 'Professional','Team','Enterprise'"}
 }
+
+Write-output "--Current status--"
+Write-Output "Projects: $Projects"
+Write-Output "Users: $Users"
+Write-Output "Machines: $Machines"
+
+If($LicenseLevel -eq "Enterprise"){
+    Write-Output "Limit by license: Unlimmited"
+    Write-Output "Available 'Resources': Unlimmited"
+}
+else{
+    Write-Output "Limit by license: $limit"
+    Write-Output "Available 'Resources': $remaining"
+}
+
+Write-Output "What are these Resource? Please read: https://github.com/OctopusDeploy/Issues/issues/1937"
