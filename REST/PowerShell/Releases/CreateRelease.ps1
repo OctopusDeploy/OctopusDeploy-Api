@@ -19,4 +19,15 @@ $body = @{
   )
 }
 
-Invoke-WebRequest $OctopusURL/api/releases?ignoreChannelRules=false -Method POST -Headers $header -Body ($body | ConvertTo-Json)
+try
+{
+  Invoke-WebRequest $OctopusURL/api/releases?ignoreChannelRules=false -Method POST -Headers $header -Body ($body | ConvertTo-Json)
+}
+catch
+{
+  $Result = $_.Exception.Response.GetResponseStream()
+  $Reader = New-Object System.IO.StreamReader($result)
+  $ResponseBody = $Reader.ReadToEnd();
+  $Response = $ResponseBody | ConvertFrom-Json
+  $Response.Errors
+}
