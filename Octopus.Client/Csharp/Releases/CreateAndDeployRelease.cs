@@ -51,29 +51,32 @@ namespace OctopusClient_Test
                 var selectedPackage = new SelectedPackage();
                 selectedPackage.StepName = packages.StepName;
 
-                //If you don't pass a value to FixedPackageVersion, Octopus will look for the latest one in the feed.
+                //If you don't pass a value to FixedPackageVersion, select the latest in the feed that matches version rules.
                 if (string.IsNullOrEmpty(fixedPackageVersion))
                 {
-                    //Gettin the latest version of the package available in the feed.
-                    //This is probably the most complicated line. The expression can get tricky, as a step(action) might be a parent and have many children(more nested actions)
-                    var packageStep =
-                        process.Steps.FirstOrDefault(s => s.Actions.Any(a => a.Name == selectedPackage.StepName))?
-                            .Actions.FirstOrDefault(a => a.Name == selectedPackage.StepName);
+                    var filters = new Dictionary<string, object>();
+                    var feed = repository.Feeds.Get(packages.FeedId);
+                    var rule = channel.Rules.FirstOrDefault(r => r.Actions.Contains(selectedPackage.StepName));
+                    if (rule != null)
+                    {
+                        if (!string.IsNullOrWhiteSpace(rule.VersionRange))
+                            filters["versionRange"] = rule.VersionRange;
 
-                    var packageId = packageStep.Properties["Octopus.Action.Package.PackageId"].Value;
-                    var feedId = packageStep.Properties["Octopus.Action.Package.FeedId"].Value;
+                        if (!string.IsNullOrWhiteSpace(rule.Tag))
+                            filters["preReleaseTag"] = rule.Tag;
+                    }
 
-                    var feed = repository.Feeds.Get(feedId);
-                    
-                    var latestPackageVersion = repository.Feeds.GetVersions(feed, new[] { packageId }).FirstOrDefault();
+                    filters["packageId"] = packages.PackageId;
+                    var packagelist = repository.Client.Get<List<PackageResource>>(feed.Link("SearchTemplate"), filters);
+                    var latestPackage = packagelist.FirstOrDefault();
 
-                    selectedPackage.Version = latestPackageVersion.Version;
+                    selectedPackage.Version = latestPackage.Version;
                 }
                 else
                 {
                     selectedPackage.Version = fixedPackageVersion;
                 }
-                
+
                 newrelease.SelectedPackages.Add(selectedPackage);
             }
 
