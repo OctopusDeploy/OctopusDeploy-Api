@@ -1,37 +1,57 @@
-﻿<# 
-Add-Type -Path "C:\Program Files\Octopus Deploy\Tentacle\Newtonsoft.Json.dll"
-Add-Type -Path "C:\Program Files\Octopus Deploy\Tentacle\Octopus.Client.dll"
- #>
-
+cls
+function UpdateVarInProject {
+    Param (
+        [Parameter(Mandatory=$true)][string] $UserApiKey,
+        [Parameter(Mandatory=$true)][string] $OctopusUrl,
+        [Parameter(Mandatory=$true)][string] $ProjectName,
+        [Parameter(Mandatory=$true)][string] $VariableToModify,
+        [Parameter(Mandatory=$true)][string] $VariableValue,
+        [Parameter()][string] $EnvironmentScope,
+        [Parameter()][string] $RoleScope,
+        [Parameter()][string] $MachineScope,
+        [Parameter()][string] $ActionScope
+    )
+    Process {
+        Set-Location "C:\Program Files\Octopus Deploy\Tentacle"
+        Add-Type -Path 'Newtonsoft.Json.dll'
+        Add-Type -Path 'Octopus.Client.dll'
+        $endpoint = New-Object Octopus.Client.OctopusServerEndpoint $OctopusUrl,$UserApiKey
+        $repository = New-Object Octopus.Client.OctopusRepository $endpoint
+        $project = $repository.Projects.FindByName($ProjectName)
+        $variableset = $repository.VariableSets.Get($project.links.variables)
+        $variable = $variableset.Variables | ?{$_.name -eq $VariableToModify}
+        if ($variable) {
+            $variable.Value = $VariableValue
+            $Variable.IsSensitive = $false
+        }
+        else {
+            $variable = new-object Octopus.Client.Model.VariableResource
+            $variable.Name = $VariableToModify
+            $variable.Value = $VariableValue
+            $variableset.Variables.Add($variable)
+        }
+        try {
+            if ($EnvironmentScope){
+                $variable.Scope.Add([Octopus.Client.Model.ScopeField]::Environment, (New-Object Octopus.Client.Model.ScopeValue($EnvironmentScope)))        
+            }
+            if ($RoleScope){
+                $variable.Scope.Add([Octopus.Client.Model.ScopeField]::Role, (New-Object Octopus.Client.Model.ScopeValue($RoleScope)))        
+            }
+            if ($MachineScope){
+                $variable.Scope.Add([Octopus.Client.Model.ScopeField]::Machine, (New-Object Octopus.Client.Model.ScopeValue($MachineScope)))        
+            }
+            if ($ActionScope){
+                $variable.Scope.Add([Octopus.Client.Model.ScopeField]::Action, (New-Object Octopus.Client.Model.ScopeValue($ActionScope)))        
+            }
+        }
+        catch {}
+        if ($repository.VariableSets.Modify($variableset)) {Write-Host "variabe $VariableToModify in $ProjectName successfully modified"}
+    }
+}
+$OctopusUrl = ""
 $VarName = "" #Name of the variable to modify
 $newvalue = "" # New value to set to the variable
-$projectName = "" #name of the project where you want to update the variable
-
-#Connection data
-$OctopusURL = ""
+$project = ""
 $APIKey = ""
- 
-$endpoint = new-object Octopus.Client.OctopusServerEndpoint ($OctopusURL, $APIKey)
-$repository = new-object Octopus.Client.OctopusRepository $endpoint
-
-#Get Project
-$project = $repository.Projects.FindByName($projectName)
-
-#Get Project's variable set
-$variableset = $repository.VariableSets.Get($project.links.variables)
-
-#Get variable to update    
-$variable = $variableset.Variables | ?{$_.name -eq $Varname}
-
-#Update variable
-$variable.Value = $newvalue
-$Variable.IsSensitive = $false #Set to $true if you want to treat this variable as sensitive 
-
-#Scope examples
-#$Variable.Scope.Add([Octopus.platform.Model.Scopefield]::Environment, (New-Object Octopus.Platform.Model.ScopeValue("Environments-1","Environments-2")))
-#$Variable.Scope.Add([Octopus.platform.Model.Scopefield]::Role, (New-Object Octopus.Platform.Model.ScopeValue("WebServer","Database")))
-#$Variable.Scope.Add([Octopus.platform.Model.Scopefield]::Machine, (New-Object Octopus.Platform.Model.ScopeValue("Machines-1")))
-#$Variable.Scope.Add([Octopus.platform.Model.Scopefield]::Action, (New-Object Octopus.Platform.Model.ScopeValue("7455dcd0-c3b3-4ea0-a4c5-58acb6d0a855")))
-
-#Save variable set
-$repository.VariableSets.Modify($variableset)
+#Example
+#UpdateVarInProcess -UserApiKey $APIKey -OctopusUrl $OctopusUrl -ProjectName $project -VariableToModify $VarName -VariableValue $newvalue -EnvironmentScope "Environments-30"
