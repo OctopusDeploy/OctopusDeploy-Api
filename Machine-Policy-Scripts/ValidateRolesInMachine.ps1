@@ -1,6 +1,6 @@
 ﻿#This script will throw an error if at least 1 of the roles in $MandatoryRoles is missing on the machine
 
-$MandatoryRoles = "Octopus2","Octopus1" #List of roles that the Machine should have
+$MandatoryRolesList = "MandatoryRole1","MandatoryRole2" #List of roles that the Machine should have
 
 function Validate-MandatoryMachineRoles ($MandatoryRoles){
 
@@ -20,4 +20,4 @@ function Validate-MandatoryMachineRoles ($MandatoryRoles){
     }
 }
 
-Validate-MandatoryMachineRoles -MandatoryRoles $MandatoryRoles
+Validate-MandatoryMachineRoles -MandatoryRoles $MandatoryRolesList
