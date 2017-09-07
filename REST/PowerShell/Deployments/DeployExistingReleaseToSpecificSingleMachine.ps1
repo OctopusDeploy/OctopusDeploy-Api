@@ -35,7 +35,7 @@ If($Environment.count -eq 0){
 
 #Getting machine
 
-$machine = (Invoke-WebRequest $OctopusURL/api/machines/all -Headers $Header).content | ConvertFrom-Json | ?{$_.Name -eq $MachineName}
+$machine = ((Invoke-WebRequest $OctopusURL/api/machines/all -Headers $Header).content | ConvertFrom-Json) | ?{$_.Name -eq $MachineName}
 
 If($machine.count -eq 0){
     throw "Machine not found: $MachineName"
