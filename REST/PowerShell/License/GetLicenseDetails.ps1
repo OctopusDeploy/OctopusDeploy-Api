@@ -36,8 +36,8 @@ Write-Output "Users: $Users"
 Write-Output "Machines: $Machines"
 
 If($LicenseLevel -eq "Enterprise"){
-    Write-Output "Limit by license: Unlimmited"
-    Write-Output "Available 'Resources': Unlimmited"
+    Write-Output "Limit by license: Unlimited"
+    Write-Output "Available 'Resources': Unlimited"
 }
 else{
     Write-Output "Limit by license: $limit"
