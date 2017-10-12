@@ -23,5 +23,5 @@ else
 }
 var task = repo.Tasks.Get(lastSuccessful.TaskId);
 var taskDetail = repo.Tasks.GetDetails(task);
-var machines = taskDetail.ActivityLog.Children.First (c => c.Name.Equals("Acquire packages", StringComparison.OrdinalIgnoreCase)).Children.Select(c => c.Name);
+var machines = taskDetail.ActivityLogs.First().Children.First(c => c.Name.Equals("Acquire packages", StringComparison.OrdinalIgnoreCase)).Children.Select(c => c.Name);
 machines.Dump();
