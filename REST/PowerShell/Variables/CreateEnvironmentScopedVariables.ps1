@@ -29,7 +29,7 @@ $headers = @{"X-Octopus-ApiKey" = $apiKey}
 If(!$projectId){
     # if we don't have a project Id find the project by name
     $projects = Get-OctopusResource "/api/Projects/all" 
-    $project = $projects | Where { $_.Slug -eq $projectName } | Select -First 1
+    $project = $projects | Where { $_.Name -eq $projectName -or $_.Slug -eq $projectName } | Select -First 1
     $projectId = $project.Id
     Write-Host your project Id is $project.Id
 } Else {
