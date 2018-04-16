@@ -28,6 +28,7 @@ namespace OctopusTestApp
             
             //Check if project exists, if not create it
             if (newproject== null)
+            {
                 //Creates Project
                 repo.Projects.Create(project);
                 //get the new project
