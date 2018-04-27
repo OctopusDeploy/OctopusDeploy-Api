@@ -15,7 +15,7 @@ $environment = $repository.Environments.FindByName($triggerEnvironment)
 
 $triggerFilter = New-Object Octopus.Client.Model.Triggers.MachineFilterResource
 $triggerFilter.EnvironmentIds.Add($environment.Id)
-$triggerFilter.Roles.Add($triggerEnvironment)
+$triggerFilter.Roles.Add($triggerRole)
 $triggerFilter.EventGroups.Add("MachineAvailableForDeployment")
 
 $triggerAction = New-Object Octopus.Client.Model.Triggers.AutoDeployActionResource
