@@ -1,7 +1,7 @@
 Add-Type -Path "C:\Tools\Octopus.Client.dll"
 
-$apikey = ''
-$octopusURI = ''
+$apikey = '' #Your Octopus API Key
+$octopusURI = '' #Your Octopus instance URL
 
 $endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI, $apiKey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
