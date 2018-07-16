@@ -15,3 +15,5 @@ $newtag.Color = "#232323"
 #Modify any other properties of $newTag here
 
 $tagset.Tags.Add($newtag) #You might wanna double check that a tag with that name doesn't exist here.
+
+$repository.TagSets.Modify($tagset)
