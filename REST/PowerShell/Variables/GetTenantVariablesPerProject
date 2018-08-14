@@ -1,0 +1,12 @@
+$OctopusAPIkey = "***REMOVED***"#Octopus API Key
+
+$OctopusURL = "http://OctopusServer/"#Octopus URL
+
+$project = "Projects-31" #Name of the variable set
+
+$header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+
+##Process
+$tenantVariables = (Invoke-WebRequest -UseBasicParsing "$OctopusURL/api/tenantvariables/all?$project" -Headers $header).content #| ConvertFrom-Json
+
+$tenantVariables
