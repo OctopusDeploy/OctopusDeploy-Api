@@ -17,11 +17,17 @@ echo Environment \"$environmentName\" '('$environmentId')'
 accountId=$(wget -nv --header="$header" -O- ${serverUrl}/api/accounts/all | jq ".[] | select(.Name==\"${accountName}\") | .Id" -r)
 echo Account \"$accountName\" '('$accountId')'
 
-# if 'mono' is installed
-machineJson="{\"Endpoint\": {\"CommunicationStyle\":\"Ssh\",\"AccountId\":\"$accountId\",\"Host\":\"$localIp\",\"Port\":\"22\",\"Fingerprint\":\"$fingerprint\"},\"EnvironmentIds\":[\"$environmentId\"],\"Name\":\"$machineName\",\"Roles\":[\"linux\"]}"
-# if 'mono' is not installed or you want to use the .NET Core version of Calamari.
-#dotNetCorePlatform="linux-x64" # Valid values are 'linux-x64' or 'osx-x64'.
-#machineJson="{\"Endpoint\": {\"CommunicationStyle\":\"Ssh\",\"AccountId\":\"$accountId\",\"Host\":\"$localIp\",\"Port\":\"22\",\"Fingerprint\":\"$fingerprint\",\"DotNetCorePlatform\":\"$dotNetCorePlatform\"},\"EnvironmentIds\":[\"$environmentId\"],\"Name\":\"$machineName\",\"Roles\":[\"linux\"]}"
+monoExists=$(command -v mono)
+useDotNetCore= # set this to any value to use .NET Core version of Calamari even if 'mono' is installed
+if [ $monoExists ] && [ ! $useDotNetCore ]
+then
+    # if 'mono' is installed and you don't want to use the .NET Core version of Calamari
+    machineJson="{\"Endpoint\": {\"CommunicationStyle\":\"Ssh\",\"AccountId\":\"$accountId\",\"Host\":\"$localIp\",\"Port\":\"22\",\"Fingerprint\":\"$fingerprint\"},\"EnvironmentIds\":[\"$environmentId\"],\"Name\":\"$machineName\",\"Roles\":[\"linux\"]}"
+else
+    # if 'mono' is not installed or you want to use the .NET Core version of Calamari.
+    dotNetCorePlatform="linux-x64" # Valid values are 'linux-x64' or 'osx-x64'.
+    machineJson="{\"Endpoint\": {\"CommunicationStyle\":\"Ssh\",\"AccountId\":\"$accountId\",\"Host\":\"$localIp\",\"Port\":\"22\",\"Fingerprint\":\"$fingerprint\",\"DotNetCorePlatform\":\"$dotNetCorePlatform\"},\"EnvironmentIds\":[\"$environmentId\"],\"Name\":\"$machineName\",\"Roles\":[\"linux\"]}"
+fi
 machineId=$(wget -nv --header="$header" --post-data "$machineJson" -O- ${serverUrl}/api/machines | jq ".Id" -r)
 if [ -n "$machineId" ]
 then
