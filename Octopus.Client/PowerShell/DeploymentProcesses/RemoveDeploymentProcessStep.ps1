@@ -2,9 +2,9 @@
 # https://www.nuget.org/packages/Octopus.Client/
 Add-Type -Path 'Octopus.Client.dll' 
 
-$apikey = 'API-MCPLE1AQM2VKTRFDLIBMORQHBXA' # Get this from your profile
-$octopusURI = 'http://localhost' # Your server address
-$stepName = 'Raygun - Register Deployment' # The name of the step you want to remove
+$apikey = 'API-KEY' # Get this from your profile
+$octopusURI = 'https://localhost' # Your server address
+$stepName = '' # The name of the step you want to remove
 
 $endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
@@ -19,7 +19,7 @@ foreach ($project in $projects)  {
 
     }
     else {
-        Write-Host "'$stepName' does not exist in this project"
+        Write-Host "'$stepName' does not exist in this project" -ForegroundColor Green
     }
     $repository.DeploymentProcesses.Modify($process)
 } 
