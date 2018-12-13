@@ -5,7 +5,7 @@ Add-Type -Path 'Octopus.Client.dll'
 $apikey = 'API-KEY' # Get this from your profile
 $octopusURI = 'https://localhost' # Your server address
 
-$projectName = @('') # Name of the Project(s) in which you want to add the step, leave empty string for ALL
+$projectNames = @('') # Name of the Project(s) in which you want to add the step, leave empty string for ALL
 $stepTemplateName = '' # Name of Step Template
 $stepName = '' # Custom Name you want to call your step in the project
 $targetRole = '' # Run this step on these deployment targets, leave empty for none
@@ -15,8 +15,8 @@ $environmentName = '' # Name of Environment on which you want this step to run
 $endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
 
-foreach ($name in $projectName) {
-    if (![string]::IsNullOrEmpty($projectName)) {
+foreach ($name in $projectNames) {
+    if (![string]::IsNullOrEmpty($projectNames)) {
         $projects = $repository.Projects.FindByName($name)
     }
     else {
