@@ -1,13 +1,13 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+Add-Type -Path 'Octopus.Client.dll'
  
-$octopusProjectName = @() # Name of the project(s) you want to add/remove the variable set
-$octopusVariableSetName = "" # !! CASE SENSATIVE !! Which variable set do you want to add/remove?
-$apikey = 'API-ABCDEFGHIJKLMNOPQ' # Get this from your profile
-$octopusURI = 'https://yourplace.octopus.app' # Your server address
+$octopusProjectName = @('') # Name of the project(s) you want to add/remove the variable set
+$octopusVariableSetName = '' # !! CASE SENSATIVE !! Which variable set do you want to add/remove?
+$apikey = 'API-Key' # Get this from your profile
+$octopusURI = 'https://localhost' # Your server address
 
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI, $apikey 
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
 
 # Gets all existing variable sets from Octopus
@@ -20,26 +20,22 @@ $indexOfVariableSetIAmUsing = $allVariableSets.name.IndexOf($octopusVariableSetN
 $libraryVariableSet = New-Object Octopus.Client.Model.LibraryVariableSetResource
 $libraryVariableSet = $repository.LibraryVariableSets.Get($allVariableSets[$indexOfVariableSetIAmUsing].Id)
 
-# I don't really know what this does
-$ignoreConfigTransformVariable = new-object Octopus.Client.Model.VariableResource
-$ignoreConfigTransformVariable.Name = "Octopus.Action.Package." + $libraryVariableSet.Name
-$ignoreConfigTransformVariable.Value = "true"
+# You can use this to add 1 new variable to the library set
+#$newVariable = new-object Octopus.Client.Model.VariableResource
+#$newVariable.Name = "newVariableName"
+#$newVariable.Value = "true"
+ 
+#$variables = $repository.VariableSets.Get($libraryVariableSet.VariableSetId)
+#$variables.Variables.Add($newVariable)
+#$repository.VariableSets.Modify($variables)
 
-$variables = $repository.VariableSets.Get($libraryVariableSet.VariableSetId)
-$variables.Variables.Add($ignoreConfigTransformVariable)
-$repository.VariableSets.Modify($variables)
-
-$projects = @()
 # Find the project(s) you want
-foreach($name in $octopusProjectName){
-    $allProjects = $repository.Projects.FindAll()
-    $indexOfProjectIAmUsing = $allProjects.slug.IndexOf($name.ToLower())
-    $project = $allProjects[$indexOfProjectIAmUsing]
-    $projects += $project
-}
+foreach ($name in $octopusProjectName) {
+    $projects = $repository.Projects.FindByName($name)
 
-# Add/Remove Variable Set for all specified projects
-foreach ($project in $projects) {
-    $project.IncludedLibraryVariableSetIds.Remove($libraryVariableSet.Id)
-    $repository.Projects.Modify($project)
+    # Add/Remove Variable Set for all specified projects
+    foreach ($project in $projects) {
+        $project.IncludedLibraryVariableSetIds.Add($libraryVariableSet.Id) #change to .Remove for removing the variable set/script module from all projects
+        $repository.Projects.Modify($project)
+    }
 }

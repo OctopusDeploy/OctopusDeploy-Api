@@ -12,7 +12,7 @@ $targetRole = '' # Run this step on these deployment targets, leave empty for no
 $runOnServer = '' # Set this to true to run the step on the Octopus Server (Must be string "true"|"false")
 $environmentName = '' # Name of Environment on which you want this step to run
 
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI, $apikey 
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
 
 foreach ($name in $projectNames) {
@@ -23,7 +23,7 @@ foreach ($name in $projectNames) {
         $projects = $repository.Projects.GetAll()
     }
 
-    foreach($project in $projects){
+    foreach ($project in $projects) {
         $process = $repository.DeploymentProcesses.Get($project.DeploymentProcessId)
 
         $environmentId = $repository.Environments.FindByName($environmentName).Id
