@@ -71,12 +71,12 @@ $Variables.Variables | ForEach-Object {if (($_.Name -ieq $VariableName) -and (($
 #This is making sure something was found
 if ($ScopesFound -lt 1) {
     Write-Error "Did not find any variables with that name and scope"
-    return -2
+    return -1
 }
 #This is to make sure multiple variables were not found unless override was true
 elseif (($ScopesFound -gt 1) -and (!$OverrideMultipleEnv)) {
     Write-Error "Found more than one scope for that variable name and override was not true"
-    return -3
+    return -1
 }
 
 #Creates a payload to upload back to octopus
