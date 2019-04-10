@@ -24,7 +24,7 @@ var inUsePackagesQ = from release in releases
 					 let action = processes[release.ProjectDeploymentProcessSnapshotId]
 										 .Steps
 										 .SelectMany(s => s.Actions)
-										 .First(s => s.Name == selectedPackage.StepName)
+										 .First(s => s.Name == selectedPackage.ActionName)
 					 select new
 					{
 						Feed = feeds[action.Properties["Octopus.Action.Package.FeedId"].Value],
