@@ -22,9 +22,10 @@ $release.ProjectId = $project.Id
 foreach ($package in $template.Packages)
 {
     $selectedPackage = new-object Octopus.Client.Model.SelectedPackage
-    $selectedPackage.StepName = $package.StepName
+    $selectedPackage.ActionName = $package.ActionName
+    $selectedPackage.PackageReferenceName = $package.PackageReferenceName
     $selectedPackage.Version = $package.VersionSelectedLastRelease # Select a new version if you know it
     $release.SelectedPackages.Add($selectedPackage)
 }
 
-$repository.Releases.Create($release)	
+$repository.Releases.Create($release, $false) # Pass in $true if you want to ignore channel rules
