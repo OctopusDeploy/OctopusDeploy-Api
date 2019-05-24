@@ -1,6 +1,7 @@
 $OctopusURL = YOUR OCTOPUS SERVER
 $APIKey = API KEY WITH PERMISSIONS TO CANCEL DEPLOYMENTS, RETRY DEPLOYMENTS AND DELETE WORKERS
 $workerName = "*YOUR WORKER MACHINE NAME*"
+$workerMatchName = "*$workerName*"
 
 $header = @{ "X-Octopus-ApiKey" = $APIKey }
 
@@ -44,7 +45,7 @@ foreach ($space in $spaceList.Items)
                                 foreach($log in $logElements)
                                 {     
                                     Write-Host $log.MessageText                                   
-                                    if ($log.MessageText -like $workerName)
+                                    if ($log.MessageText -like $workerMatchName)
                                     {
                                         Write-Host "$taskId is currently running on the worker we want to delete, going to cancel it"
                                         $cancelledDeploymentList += @{
@@ -67,7 +68,23 @@ foreach ($space in $spaceList.Items)
 $cancelledDeploymentsCount = $cancelledDeployments.Count
 Write-Host "This process caused me to cancel $cancelledDeploymentsCount deployments, going to delete the worker and retry them"
 
-## Delete Worker Logic GOES HERE
+foreach ($space in $spaceList.Items)
+{
+    $spaceId = $space.Id
+    Write-Host "Finding the workers which match the name"
+    $workerList = (Invoke-WebRequest "$OctopusUrl/api/$spaceId/workers?name=$workerName&skip=0&take=100000" -Headers $header).content | ConvertFrom-Json
+    foreach($worker in $workerList.Items)
+    {
+        $worker.IsDisabled = $true;
+        $workerId = $worker.Id
+        $workerBodyAsJson = $worker | ConvertTo-Json
+
+        Write-Host "Updating $workerId"
+        $workerDisabledResponse = (Invoke-WebRequest "$OctopusUrl/api/$spaceId/workers/$workerId" -Headers $header -Method Put -Body $workerBodyAsJson -ContentType "applicaiton/json").content | ConvertFrom-Json
+
+        Write-Host "Worker disabled response is $workerDisabledResponse"
+    }
+}
 
 ## Retry logic for the cancelled deployments
 foreach ($cancelledDeployment in $cancelledDeploymentList)
