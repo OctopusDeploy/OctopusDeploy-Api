@@ -426,6 +426,9 @@ function PurgeNugetFeeds() {
 	}
 	$inUseFeedIds = @($inUsePackages.Values | Select-Object -Property FeedId -Unique | % { $_.FeedId })
 	Write-Host 'Evaluating and processing feeds'
+	$script:AllFeeds.Keys | ? { $inUseFeedIds -notcontains $_ } | % {
+		Write-Verbose "Skipping feed '$_' ($($script:AllFeeds[$_].FeedUri)). It is not associated with any packages from any releases."
+	}
 	foreach ($inUseFeedId in $inUseFeedIds) {
 		if (Test-FeedId -FeedId $inUseFeedId) {
 			Write-Host "Processing feed '$inUseFeedId' ($($script:AllFeeds[$inUseFeedId].FeedUri))."
