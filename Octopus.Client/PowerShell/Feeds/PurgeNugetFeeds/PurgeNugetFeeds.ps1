@@ -77,8 +77,8 @@ Param(
 	[parameter(Mandatory=$true)][string]$NugetPath,
 	[parameter(Mandatory=$true)][string]$PathToStoreDataAcrossRuns,
 	[parameter()][string]$SpaceId = 'Spaces-1',
-    [parameter()][switch] $ProceedEvenIfPreviousRunMayHavePurgedPackagesItShouldNotHave,
-    [parameter()][switch] $UseCachedListOfPackagesInUse
+	[parameter()][switch] $ProceedEvenIfPreviousRunMayHavePurgedPackagesItShouldNotHave,
+	[parameter()][switch] $UseCachedListOfPackagesInUse
 )
 $ErrorActionPreference = 'Stop'
 if ($PSBoundParameters['Debug']) {
