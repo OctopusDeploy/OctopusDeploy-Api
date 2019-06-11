@@ -44,6 +44,11 @@ Full path to a folder where files from the script run can be accessed by the sub
 The space ID (not name). This only affects which NuGet feeds are queried for candidate packages to purge. Example:
 -SpaceId 'Spaces-1' # Default
 
+.PARAMETER IgnoreRecentPackagesThresholdInSeconds
+Protects packages from purging based on their Published timestamp. This was added to help address cases where
+newer packages are being published with lower versions. Example:
+-IgnoreRecentPackagesThresholdInSeconds 3600 # Default (1 hour)
+
 .PARAMETER ProceedEvenIfPreviousRunMayHavePurgedPackagesItShouldNotHave
 If this switch is present, the script will ignore the result of the following check: At the beginning of each
 run, the script saves a file under -PathToStoreDataAcrossRuns listing any packages that Octopus reports as
@@ -77,6 +82,7 @@ Param(
 	[parameter(Mandatory=$true)][string]$NugetPath,
 	[parameter(Mandatory=$true)][string]$PathToStoreDataAcrossRuns,
 	[parameter()][string]$SpaceId = 'Spaces-1',
+	[parameter()][int]$IgnoreRecentPackagesThresholdInSeconds = 3600, # (1 hour)
 	[parameter()][switch] $ProceedEvenIfPreviousRunMayHavePurgedPackagesItShouldNotHave,
 	[parameter()][switch] $UseCachedListOfPackagesInUse
 )
@@ -339,7 +345,8 @@ function Get-PackageIdAndVersion {
     [CmdletBinding()]
 	[OutputType('System.Collections.Generic.HashSet[string]')]
     Param(
-		[parameter(Mandatory=$true)][Octopus.Client.Model.NuGetFeedResource]$Feed
+		[parameter(Mandatory=$true)][Octopus.Client.Model.NuGetFeedResource]$Feed,
+		[parameter(Mandatory=$true)][System.DateTimeOffset]$PublishedNoLaterThan
 	)
 	# We consume the nuget API directly because of the following shortcomings of various API clients.
 	# - NuGet CLI (list command from nuget.exe or NuGet.Commands.ListCommandRunner from
@@ -354,7 +361,7 @@ function Get-PackageIdAndVersion {
 	
 	$uri = [string]::Join('/', @(
 		$Feed.FeedUri.TrimEnd('/'), 
-		'Packages?$skip=0&$select=Id,NormalizedVersion&$orderby=Id,NormalizedVersion&$filter=Listed%20eq%20true'))
+		'Packages?$skip=0&$select=Id,NormalizedVersion,Published&$orderby=Id,NormalizedVersion&$filter=Listed%20eq%20true'))
 		# ref: https://www.odata.org/documentation/odata-version-2-0/uri-conventions/
 	$packages = New-Object 'System.Collections.Generic.HashSet[string]'
 	$resultPage = 1
@@ -365,7 +372,12 @@ function Get-PackageIdAndVersion {
 		$ProgressPreference = $progPref
 		Write-Progress -Activity "Parsing page $($resultPage++;$resultPage) of packages on $($Feed.FeedUri)"
 		foreach ($packageProperties in ([xml]($response.Content)).feed.entry.properties) {
+			$published = [System.DateTimeOffset]::Parse($packageProperties.Published.InnerText)
+			if ($published -le $PublishedNoLaterThan) {
 			$packages.Add([string]::Join('.', @($packageProperties.Id, $packageProperties.NormalizedVersion))) | Out-Null
+			} else {
+				Write-Verbose "Ignoring package $($packageProperties.Id) $($packageProperties.NormalizedVersion) because it was published at $($published.ToLocalTime()), after the limit of $PublishedNoLaterThan."
+			}
 		}
 		$uri = ([xml]($response.Content)).feed.link | ? { $_.rel -eq 'next' } | % { $_.href }
 	} while ($uri)
@@ -377,6 +389,7 @@ function PurgeNugetFeeds() {
 	Param()
 	$octopusRepository = (new-object Octopus.Client.OctopusRepository (new-object Octopus.Client.OctopusServerEndpoint $OctopusURI, $OctopusApiKey))
 	Write-Host 'Querying Octopus for releases'
+	$publishedNoLaterThan = [System.DateTimeOffset]::Now.Subtract([System.TimeSpan]::FromSeconds($IgnoreRecentPackagesThresholdInSeconds))
 	$releases = $octopusRepository.Releases.FindAll()
 	$inUsePackagesDescription = 'list of packages associated with Octopus releases'
 	$inUsePackagesCacheFile = [System.IO.Path]::Combine($PathToStoreDataAcrossRuns, "Cached $inUsePackagesDescription.xml")
@@ -432,7 +445,7 @@ function PurgeNugetFeeds() {
 	foreach ($inUseFeedId in $inUseFeedIds) {
 		if (Test-FeedId -FeedId $inUseFeedId) {
 			Write-Host "Processing feed '$inUseFeedId' ($($script:AllFeeds[$inUseFeedId].FeedUri))."
-			$packagesOnFeed = Get-PackageIdAndVersion -Feed $script:AllFeeds[$inUseFeedId]
+			$packagesOnFeed = Get-PackageIdAndVersion -Feed $script:AllFeeds[$inUseFeedId] -PublishedNoLaterThan $publishedNoLaterThan
 			foreach ($packageOnFeed in $packagesOnFeed) {
 				# Parse and validate $packageOnFeed, which should be a package ID and version separated by a dot
 				$packageName = ''
