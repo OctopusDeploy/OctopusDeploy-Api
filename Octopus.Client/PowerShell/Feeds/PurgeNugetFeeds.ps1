@@ -36,6 +36,13 @@ Duh.
 .PARAMETER NugetPath
 Full path to the nuget CLI executable.
 
+.PARAMETER NugetSource
+A semicolon-delimited list of NuGet package sources (as URLs) to use for acquiring this script's dependent
+assemblies. If omitted, the package sources will be determined as described at
+https://docs.microsoft.com/en-us/nuget/consume-packages/configuring-nuget-behavior
+Example:
+-NugetSource '\\some\packagesource;https://some/otherpackagesource'
+
 .PARAMETER PathToStoreDataAcrossRuns
 Full path to a folder where files from the script run can be accessed by the subsequent script run. Example:
 -PathToStoreDataAcrossRuns '\\foonas\fooshare\Octopus-PurgeNugetFeeds-Data'
@@ -80,6 +87,7 @@ Param(
 	[parameter(Mandatory=$true)][string]$OctopusUri,
 	[parameter(Mandatory=$true)][string]$OctopusApiKey,
 	[parameter(Mandatory=$true)][string]$NugetPath,
+	[parameter()][string]$NugetSource,
 	[parameter(Mandatory=$true)][string]$PathToStoreDataAcrossRuns,
 	[parameter()][string]$SpaceId = 'Spaces-1',
 	[parameter()][int]$IgnoreRecentPackagesThresholdInSeconds = 3600, # (1 hour)
@@ -90,15 +98,33 @@ $ErrorActionPreference = 'Stop'
 if ($PSBoundParameters['Debug']) {
 	$DebugPreference = 'Continue' # avoid Inquire
 }
+
+function AcquireAssemblies() {
+	[CmdletBinding()]
+	Param()
+	Write-Host 'Acquiring dependent assemblies'
+	if ($NugetSource) {
+		$nugetSourceArg = '-Source'
+	} else {
+		$nugetSourceArg = ''
+	}
+	@('Octopus.Client', 'Octostache') | % { 
+		& $NugetPath install $_ $nugetSourceArg $NugetSource -ExcludeVersion -PackageSaveMode nuspec -Framework net40 -Verbosity $script:NugetVerbosity -NonInteractive
+	}
+}
+
+function LoadAssemblies() {
+	[CmdletBinding()]
+	Param()
+	@('Markdig', 'Sprache') | % { 
+		Copy-Item ".\$_\lib\net40\$_.dll" '.\Octostache\lib\net40\' -Force -WhatIf:$false -Confirm:$false
+	}
 Write-Verbose 'Loading dependent assemblies'
-Add-Type -Path '.\Newtonsoft.Json.dll'
-Add-Type -Path '.\Octopus.Client.dll'
-Add-Type -Path '.\Octostache.dll'
-$script:AllFeeds = New-Object 'System.Collections.Generic.Dictionary[string,Octopus.Client.Model.NuGetFeedResource]'
-$script:ExcludedFeedIds = @()
-$script:IncludedFeedIds = @()
-if (!(Test-Path $PathToStoreDataAcrossRuns -PathType Container)) {
-	New-Item -Path $PathToStoreDataAcrossRuns -ItemType 'directory' -Force  -WhatIf:$false -Confirm:$false
+	@(
+		'.\Newtonsoft.Json\lib\net40\Newtonsoft.Json.dll', 
+		'.\Octopus.Client\lib\net45\Octopus.Client.dll'
+		'.\Octostache\lib\net40\Octostache.dll'
+	) | % { Add-Type -Path $_ }
 }
 
 function Get-InUsePackages {
@@ -156,7 +182,8 @@ function Test-FeedId {
 			Write-Verbose "Skipping feed '$FeedId'. Its details were not found even though it is associated with one or more packages from one or more releases."
 		} elseif (
 			($script:AllFeeds[$FeedId].FeedUri -match $ExcludeFeedRegex) -or `
-			($script:AllFeeds[$FeedId].FeedUri -notmatch $IncludeFeedRegex)) {		
+			($script:AllFeeds[$FeedId].FeedUri -notmatch $IncludeFeedRegex)
+			) {		
 			Write-Verbose "Skipping feed '$FeedId'. Its URL ($($script:AllFeeds[$FeedId].FeedUri)) does not comply with the ExcludeFeedRegex or IncludeFeedRegex parameters."
 		} elseif ($script:AllFeeds[$FeedId].SpaceId -ne $SpaceId) {
 			Write-Verbose "Skipping feed '$FeedId' ($($script:AllFeeds[$FeedId].FeedUri)) from space '($script:AllFeeds[$FeedId].SpaceId)'. Only feeds in space '$SpaceId' are being processed, based on the SpaceId parameter (or its default value)."
@@ -271,13 +298,13 @@ evaluated package name (even though the dynamically-selected package version is 
 
 Processing accounts for channels. Example:
 
-    VERBOSE: Requesting deployment process snapshot for release 571 of 1403
-    VERBOSE: '#{WebProjectPackageName}' evaluated to 'foo.BenefitsPlus.Web'
-    VERBOSE: '#{DataProjectPackage}' evaluated to 'foo.BenefitsPlus.Dacpac'
+	VERBOSE: Requesting deployment process snapshot for release 571 of 1001
+	VERBOSE: '#{WebProjectPackageName}' evaluated to 'foo.App.Web'
+	VERBOSE: '#{DataProjectPackage}' evaluated to 'foo.App.Dacpac'
 
-    VERBOSE: Requesting deployment process snapshot for release 572 of 1403
-    VERBOSE: '#{WebProjectPackageName}' evaluated to 'foo.BenefitsPlus.MVC'
-    VERBOSE: '#{DataProjectPackage}' evaluated to 'foo.BenefitsPlus.DbSchema'
+	VERBOSE: Requesting deployment process snapshot for release 572 of 1001
+	VERBOSE: '#{WebProjectPackageName}' evaluated to 'foo.App.MVC'
+	VERBOSE: '#{DataProjectPackage}' evaluated to 'foo.App.DbSchema'
 #>
 function Get-PackageId {
 	[CmdletBinding()] # Enable -Verbose switch
@@ -333,11 +360,10 @@ function Remove-Package {
 		[parameter(Mandatory=$true)][string]$PackageName,
 		[parameter(Mandatory=$true)][Octopus.Client.Model.SemanticVersion]$PackageVersion
 	)
-	if ($VerbosePreference -eq 'SilentlyContinue') { $nugetVerbosity = 'normal' } else { $nugetVerbosity = 'detailed' }
 	$operation = "Deleting package '$PackageName.$($PackageVersion.ToNormalizedString())'"
 	if ($PSCmdlet.ShouldProcess($Feed.FeedUri, $operation)) {
 		Write-Host "$operation from feed '$($Feed.FeedUri)'"
-		& $NugetPath delete $PackageName $PackageVersion.ToNormalizedString() -Source $Feed.FeedUri -Verbosity $nugetVerbosity -ApiKey $Feed.Username -NonInteractive
+		& $NugetPath delete $PackageName $PackageVersion.ToNormalizedString() -Source $Feed.FeedUri -ApiKey $Feed.Username -Verbosity $script:NugetVerbosity -NonInteractive
 	}
 }
 
@@ -361,7 +387,8 @@ function Get-PackageIdAndVersion {
 	
 	$uri = [string]::Join('/', @(
 		$Feed.FeedUri.TrimEnd('/'), 
-		'Packages?$skip=0&$select=Id,NormalizedVersion,Published&$orderby=Id,NormalizedVersion&$filter=Listed%20eq%20true'))
+		'Packages?$skip=0&$select=Id,NormalizedVersion,Published&$orderby=Id,NormalizedVersion&$filter=Listed%20eq%20true')
+	)
 		# ref: https://www.odata.org/documentation/odata-version-2-0/uri-conventions/
 	$packages = New-Object 'System.Collections.Generic.HashSet[string]'
 	$resultPage = 1
@@ -472,4 +499,17 @@ function PurgeNugetFeeds() {
 	}
 }
 
+if ($VerbosePreference -eq 'SilentlyContinue') { 
+	$script:NugetVerbosity = 'quiet' 
+} else {
+	$script:NugetVerbosity = 'normal' 
+}
+AcquireAssemblies
+LoadAssemblies
+$script:AllFeeds = New-Object 'System.Collections.Generic.Dictionary[string,Octopus.Client.Model.NuGetFeedResource]'
+$script:ExcludedFeedIds = @()
+$script:IncludedFeedIds = @()
+if (!(Test-Path $PathToStoreDataAcrossRuns -PathType Container)) {
+	New-Item -Path $PathToStoreDataAcrossRuns -ItemType 'directory' -Force  -WhatIf:$false -Confirm:$false
+}
 PurgeNugetFeeds
