@@ -10,13 +10,13 @@ $octopusURI = 'http://OctopusServer/' # Your server address
 $endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
 
-# This script searches the Events (Audit log) for events of Category Queued, and looks into the RelatedDocumentIds field for further refining.
+# This script searches the Events (Audit log) for events of Category Queued and looks into the RelatedDocumentIds field for further refining.
 # This script will return the name of a user who started a deployment (queued), but you need to enter one or more of the following.
 # 
 # Properties of the RelatedDocumentIds for DeploymentQueued.
 # Projects-342, Releases-965, Environments-1, ServerTasks-159414, Channels-362, ProjectGroups-1
 #
-# The easiest way to find a single result is by using the ServerTasks-ID in my example below.(Searching time can vary based on amount of events)
+# The easiest way to find a single result is by using the ServerTasks-ID in my example below. (Searching time can vary based on amount of events)
 
 $serverTasksID = "ServerTasks-159414"
 
