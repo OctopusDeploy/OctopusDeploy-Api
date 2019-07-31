@@ -1,20 +1,32 @@
-﻿$headers = @{"X-Octopus-ApiKey"="API-xxxxxxxxxxxxxxxxxxxxxxxxx"} 
+##Configuration##
+$ApiKey = "" 
+$OctopusUrl = ""
 
-$environments = Invoke-RestMethod "http://octopus.url/api/environments/all" -Headers $headers -Method Get
-$theEnvironment = $environments | ? { $_.Name -eq "TheEnvironmentName" }
+$sshTargetName = ""
 
-$accounts = Invoke-RestMethod "http://octopus.url/api/accounts/all" -Headers $headers -Method Get
-$theAccount = $accounts | ? { $_.Name -eq "TheAccount" }
+$hostnameOrIpAddress = ""
 
-$hostnameOrIpAddress = "127.0.0.1"
-$discovered = Invoke-RestMethod "http://octopus.url/api/machines/discover?host=$hostnameOrIpAddress&type=Ssh" -Headers $headers -Method Get
+$EnvironmentName = ""
+$AccountName = ""
 
-#$discovered.Name = "MySshTargetName" # If you wanted to change the name of the deployment target (default is host name)
-$discovered.Roles += "MyRole"
-$discovered.EnvironmentIds += $theEnvironment.Id
-$discovered.Endpoint.AccountId = $theAccount.Id
+$Role = ""
 
+##Execution##
+$headers = @{"X-Octopus-ApiKey" = $ApiKey}
 
-$discovered | ConvertTo-Json -Depth 10
+$environment = (Invoke-RestMethod "$OctopusUrl/api/environments/all" -Headers $headers -Method Get) | ? { $_.Name -eq $EnvironmentName } 
 
-Invoke-RestMethod "http://octopus.url/api/machines" -Headers $headers -Method Post -Body ($discovered | ConvertTo-Json -Depth 10)
+$account = (Invoke-RestMethod "$OctopusUrl/api/accounts/all" -Headers $headers -Method Get) | ? { $_.Name -eq $AccountName }
+
+$discovered = Invoke-RestMethod "$OctopusUrl/api/machines/discover?host=$hostnameOrIpAddress&type=Ssh" -Headers $headers -Method Get
+
+$target = @{
+            Name = $sshTargetName
+            EnvironmentIds = @($environment.Id)
+            Endpoint = $discovered.Endpoint
+            Roles = @($Role)
+          }
+
+$target.Endpoint.AccountId = $account.Id
+
+Invoke-RestMethod "$OctopusUrl/api/machines" -Headers $headers -Method Post -Body ($target | ConvertTo-Json -Depth 2)
