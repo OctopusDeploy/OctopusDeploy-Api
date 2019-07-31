@@ -1,15 +1,11 @@
 ##Configuration##
-$ApiKey = "" 
-$OctopusUrl = ""
-
-$sshTargetName = ""
-
-$hostnameOrIpAddress = ""
-
-$EnvironmentName = ""
-$AccountName = ""
-
-$Role = ""
+$ApiKey = "API-123456" 
+$OctopusUrl = "http://myOctopus.com"
+$sshTargetName = "TheNameOfMYSSHTarget"
+$hostnameOrIpAddress = "127.0.0.1"
+$EnvironmentName = "MyEnvironmentName"
+$AccountName = "MyAccountName"
+$Role = "MyRole"
 
 ##Execution##
 $headers = @{"X-Octopus-ApiKey" = $ApiKey}
