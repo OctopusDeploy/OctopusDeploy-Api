@@ -29,7 +29,7 @@ class utility {
         $octodeployApiKeyValue = [Environment]::GetEnvironmentVariable($octoApiKey, $environmentVariableTarget);
 
         if (-not($octodeployApiKeyValue)) {
-            Write-Warning "API Key is required.  See Readme for help.";
+            Write-Warning "API Key is required.  See APIKey_Create.ps1 for help.";
             $apiKey = Read-Host 'What is your api key?';
 
             if ($apiKey) {
