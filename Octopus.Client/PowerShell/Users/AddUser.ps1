@@ -6,12 +6,12 @@ param([Parameter(Mandatory)] [string] $aDGroupName);
 $ErrorActionPreference = "Stop";
 
 function get_ad_group_members ([Parameter(Mandatory = $true)] $aDGroupName) {
-    $serverName = [Utility]::get_domaincontroller_name();
+    $serverName = [Utility]::domainControllerName;
 
     # Fetch ADUSers for the provided Group
     Get-ADGroupMember -Identity $aDGroupName -server $serverName -Recursive |
-      Get-ADUser -Property DisplayName, EmailAddress | 
-      Select-Object Name, ObjectClass, DisplayName, UserPrincipalName, EmailAddress;    
+        Get-ADUser -Property DisplayName, EmailAddress | 
+        Select-Object Name, ObjectClass, DisplayName, UserPrincipalName, EmailAddress;    
 }
 
 function get_octo_users_all ([Parameter(Mandatory = $true)] $repository) {
@@ -31,10 +31,8 @@ function process_octo_users (
         if ($user) {
             Write-Host "Found" $user.DisplayName -ForegroundColor Gray -BackgroundColor Black;
         }
-        else {
-            if (!$testOnly) {
-                add_octo_user $adUser $repository;
-            }                                  
+        else {           
+            add_octo_user $adUser $repository;                                 
         }
     }
 }
@@ -54,7 +52,7 @@ function add_octo_user (
         Write-Host "Added" $userToAdd.DisplayName -ForegroundColor Green -BackgroundColor Black;
     }
     else {
-        Write-Warning "Invalid User
+        Write-Warning "Invalid User";
     }
 }
 
