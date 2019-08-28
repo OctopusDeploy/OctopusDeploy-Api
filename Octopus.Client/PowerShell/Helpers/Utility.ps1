@@ -87,6 +87,22 @@ class utility {
             return;
         }
     }
+    
+    [void] verify_octoposh_module () {
+        if (!$this.check_command("Set-OctopusConnectionInfo")) {
+            Write-Host "Installing Octoposh for you...";
+            Install-Module -Name Octoposh -force;
+            Write-Host "Importing Octoposh for you...";
+            Import-Module Octoposh;
+
+            if (!$this.check_command("Set-OctopusConnectionInfo")) {
+                Write-Error "Unable to install Octoposh for you. You''ll need to follow the ReadMe.";
+                throw "Octoposh is not installed...";
+            }
+
+            Write-Host "Octoposh setup complete...";
+        }
+    }
 
     [void] cie_working_directory () {
         $path = [utility]::workingDirectory;
