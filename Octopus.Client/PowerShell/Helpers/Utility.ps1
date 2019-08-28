@@ -103,6 +103,10 @@ class utility {
             Write-Host "Octoposh setup complete...";
         }
     }
+    
+    [bool] check_command ($cmdName) {
+        return [bool](Get-Command -Name "$cmdName" -ErrorAction SilentlyContinue);
+    }
 
     [void] cie_working_directory () {
         $path = [utility]::workingDirectory;
