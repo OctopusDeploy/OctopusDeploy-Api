@@ -21,8 +21,7 @@ function get_octo_users_all ([Parameter(Mandatory = $true)] $repository) {
 function process_octo_users (
     [Parameter(Mandatory = $true, ValueFromPipeline = $true)] $repository, 
     [Parameter(Mandatory = $true, ValueFromPipeline = $true)] $adUsers, 
-    [Parameter(Mandatory = $true, ValueFromPipeline = $true)] $allOctoUsers,
-    [Parameter(Mandatory = $true, ValueFromPipeline = $true)] $testOnly) {
+    [Parameter(Mandatory = $true, ValueFromPipeline = $true)] $allOctoUsers ) {
    
     foreach ($adUser in $adUsers) {
         # Find Octo User by ADUser Email
@@ -59,13 +58,13 @@ function add_octo_user (
 function main {
     Clear-Host;
     
-    . '.\PowerShell\Helpers\octo-utility.ps1';
+    . '.\Helpers\Utility.ps1';
     $repository = [utility]::new().get_octopus_repository();
 
     $adUsers = get_ad_group_members $aDGroupName;
     $allOctoUsers = get_octo_users_all $repository;
 
-    process_octo_users $repository $adUsers $allOctoUsers $testOnly;
+    process_octo_users $repository $adUsers $allOctoUsers;
 }
 
 main;
