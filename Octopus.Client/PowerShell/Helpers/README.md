@@ -17,3 +17,6 @@ See \Users\AddUser.ps1 for usage example but basically just dot source this in y
 . '.\PowerShell\Helpers\octo-utility.ps1';
 
 $repository = [utility]::new().get_octopus_repository();
+
+#### Disclaimer
+**You must assign the static variables based on your needs.**
