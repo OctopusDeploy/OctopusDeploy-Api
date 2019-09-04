@@ -2,7 +2,7 @@
 $apikey = 'API-0ADTLEYBFOF6SYGFD15CZRRT1C' # Get this from your profile
 $octopusURI = 'http://localhost:8065' # Your server address
 $Role = "MyTargetRole" #The Role you want to look for
-$OctoClientDll = 'C:\Program Files\Octopus Deploy\Tentacle\Octopus.Client.dll'
+$OctoClientDll = 'C:\Program Files\Octopus Deploy\Tentacle\Octopus.Client.dll' #If you don't have this DLL on disc, you can download it from https://www.nuget.org/packages/Octopus.Client/
 
 ##EXECUTION
 Add-Type -Path $OctoClientDll
