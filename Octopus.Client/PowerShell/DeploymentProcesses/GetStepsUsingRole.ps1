@@ -18,7 +18,7 @@ foreach($project in $allProjects){
     $dp = $repository.DeploymentProcesses.Get($project.Links.DeploymentProcess)
 
     foreach ($step in $dp.Steps){
-        if($step.properties.'Octopus.Action.TargetRoles' -and ($step.properties.'Octopus.Action.TargetRoles'.Value -contains $Role )){
+        if($step.properties.'Octopus.Action.TargetRoles' -and ($step.properties.'Octopus.Action.TargetRoles'.Value.Split(',') -Icontains $Role )){
             "Step [$($step.Name)] from project [$($project.Name)] is using the role [$($Role )]"
         }
     }
