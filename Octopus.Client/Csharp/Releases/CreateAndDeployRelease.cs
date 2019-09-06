@@ -46,19 +46,22 @@ namespace OctopusClient_Test
                 Version = releaseVersion
             };
 
-            foreach (var packages in template.Packages)
+            foreach (var package in template.Packages)
             {
-                var selectedPackage = new SelectedPackage();
-                selectedPackage.StepName = packages.StepName;
-
+                var selectedPackage = new SelectedPackage 
+                { 
+                    ActionName = package.ActionName,
+                    PackageReferenceName = package.PackageReferenceName
+                };
+                
                 //If you don't pass a value to FixedPackageVersion, Octopus will look for the latest one in the feed.
                 if (string.IsNullOrEmpty(fixedPackageVersion))
                 {
                     //Gettin the latest version of the package available in the feed.
                     //This is probably the most complicated line. The expression can get tricky, as a step(action) might be a parent and have many children(more nested actions)
                     var packageStep =
-                        process.Steps.FirstOrDefault(s => s.Actions.Any(a => a.Name == selectedPackage.StepName))?
-                            .Actions.FirstOrDefault(a => a.Name == selectedPackage.StepName);
+                        process.Steps.FirstOrDefault(s => s.Actions.Any(a => a.Name == selectedPackage.ActionName))?
+                            .Actions.FirstOrDefault(a => a.Name == selectedPackage.ActionName);
 
                     var packageId = packageStep.Properties["Octopus.Action.Package.PackageId"].Value;
                     var feedId = packageStep.Properties["Octopus.Action.Package.FeedId"].Value;
