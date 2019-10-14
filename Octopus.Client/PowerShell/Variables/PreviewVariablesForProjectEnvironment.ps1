@@ -1,5 +1,5 @@
 ﻿$OctopusUrl = "" # example https://myoctopus.something.com
-$APIKey = "" 
+$APIKey = ""  # example API-XXXXXXXXXXXXXXXXXXXXXXXXXXX
 $environmentName = "Development"
 $spaceName = "Default"
 $projectName = ""
@@ -24,6 +24,7 @@ $projectFilter = @($projects | Where {$_.Name -eq $projectName})
 $projectId = $projectFilter[0].Id
 Write-Host "The projectId for Project Name $projectName in space $spaceName is $projectId"
 
+## Finally, get the evaluated variables for the provided scope
 $evaluatedVariables = (Invoke-RestMethod -UseBasicParsing "$OctopusURL/api/$spaceId/variables/preview?project=$projectId&environment=$environmentId" -Headers $header).Variables
 
 Write-Host "Printing evaluated variables for Project Name $projectName and Environment Name $environmentName"
