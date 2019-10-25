@@ -2,12 +2,16 @@
 $OctopusServerUrl = "https://YourServerUrl"
 $ApiKey = "API-YourAPIKey"
 $RoleName = "RoleToLookFor"
+$SpaceName = "Default" # Leave blank if you're using an older version of Octopus or you want to search all spaces
+
+# Get the space id
+$spaceId = ((Invoke-RestMethod -Method Get -Uri "$OctopusServerUrl/api/spaces/all" -Headers @{"X-Octopus-ApiKey"="$ApiKey"}) | Where-Object {$_.Name -eq $SpaceName}).Id
 
 # Get reference to role
 $role = (Invoke-RestMethod -Method Get -Uri "$OctopusServerUrl/api/userroles/all" -Headers @{"X-Octopus-ApiKey"="$ApiKey"}) | Where-Object {$_.Name -eq $RoleName}
 
 # Get list of teams
-$teams = (Invoke-RestMethod -Method Get -Uri ("$OctopusServerUrl/api/teams/all") -Headers @{"X-Octopus-ApiKey"="$ApiKey"})
+$teams = (Invoke-RestMethod -Method Get -Uri ("$OctopusServerUrl/api/{0}teams/all" -f $(if ([string]::IsNullOrEmpty($spaceId)) {""} else {"$spaceId/"})) -Headers @{"X-Octopus-ApiKey"="$ApiKey"})
 
 # Loop through teams
 foreach ($team in $teams)
