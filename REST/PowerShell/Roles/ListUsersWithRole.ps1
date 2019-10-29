@@ -1,50 +1,99 @@
 ﻿# Define working variables
-$OctopusServerUrl = "https://YourServerUrl"
-$ApiKey = "API-YourAPIKey"
-$RoleName = "RoleToLookFor"
-$SpaceName = "Default" # Leave blank if you're using an older version of Octopus or you want to search all spaces
+$octopusBaseURL = "https://youroctourl/api"
+$octopusAPIKey = "API-YOURAPIKEY"
+$headers = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 
-# Get the space id
-$spaceId = ((Invoke-RestMethod -Method Get -Uri "$OctopusServerUrl/api/spaces/all" -Headers @{"X-Octopus-ApiKey"="$ApiKey"}) | Where-Object {$_.Name -eq $SpaceName}).Id
+$roleName = "Project Deployer"
+$spaceName = "" # Leave blank if you're using an older version of Octopus or you want to search all spaces
 
-# Get reference to role
-$role = (Invoke-RestMethod -Method Get -Uri "$OctopusServerUrl/api/userroles/all" -Headers @{"X-Octopus-ApiKey"="$ApiKey"}) | Where-Object {$_.Name -eq $RoleName}
-
-# Get list of teams
-$teams = (Invoke-RestMethod -Method Get -Uri ("$OctopusServerUrl/api/{0}teams/all" -f $(if ([string]::IsNullOrEmpty($spaceId)) {""} else {"$spaceId/"})) -Headers @{"X-Octopus-ApiKey"="$ApiKey"})
-
-# Loop through teams
-foreach ($team in $teams)
+try
 {
-    # Check for scoped user roles
-    $scopedUserRoleLinks = $scopedUserRoleLinks = $team.Links | Where-Object -Property "ScopedUserRoles"
+    # Get the space id
+    $spaceId = ((Invoke-RestMethod -Method Get -Uri "$octopusBaseURL/spaces/all" -Headers $headers -ErrorVariable octoError) | Where-Object {$_.Name -eq $spaceName}).Id
 
-    # Loop through the links
-    foreach ($scopedUserRoleLink in $scopedUserRoleLinks)
+    # Get reference to role
+    $role = (Invoke-RestMethod -Method Get -Uri "$octopusBaseURL/userroles/all" -Headers $headers -ErrorVariable octoError) | Where-Object {$_.Name -eq $roleName}
+
+    # Get list of teams
+    $teams = (Invoke-RestMethod -Method Get -Uri "$octopusBaseURL/teams/all" -Headers $headers -ErrorVariable octoError)
+
+    # Loop through teams
+    foreach ($team in $teams)
     {
         # Get the scoped user role
-        $scopedUserRole = Invoke-RestMethod -Method Get -Uri ("$OctopusServerUrl$($scopedUserRoleLink.Self)/scopeduserroles") -Headers @{"X-Octopus-ApiKey"="$ApiKey"}
-
-        # Check to see if the team has the role
-        if ($null -ne ($scopedUserRole.Items | Where-Object {$_.UserRoleId -eq $role.Id}))
+        $scopedUserRoles = Invoke-RestMethod -Method Get -Uri ("$octopusBaseURL/teams/$($team.Id)/scopeduserroles") -Headers $headers -ErrorVariable octoError
+        
+        # Loop through the scoped user roles
+        foreach ($scopedUserRole in $scopedUserRoles)
         {
-            # Display team name
-            Write-Output "Team: $($team.Name)"
-
-            # Loop through members
-            foreach ($userId in $team.MemberUserIds)
+            # Check to see if space was specified
+            if (![string]::IsNullOrEmpty($spaceId))
             {
-                # Get user object
-                $user = Invoke-RestMethod -Method Get -Uri ("$OctopusServerUrl/api/users/$userId") -Headers @{"X-Octopus-ApiKey"="$ApiKey"}
-                
-                # Display user
-                Write-Output "$($user.DisplayName)"
+                # Filter items by space
+                $scopedUserRole.Items = $scopedUserRole.Items | Where-Object {$_.SpaceId -eq $spaceId}
             }
 
-            # External groups
-            Write-Output "External security groups: $($team.ExternalSecurityGroups.Id)"
-        }
+            # Check to see if the team has the role
+            if ($null -ne ($scopedUserRole.Items | Where-Object {$_.UserRoleId -eq $role.Id}))
+            {
+                # Display team name
+                Write-Output "Team: $($team.Name)"
+
+                # check space id
+                if ([string]::IsNullOrEmpty($spaceName))
+                {
+                    # Get the space id
+                    $teamSpaceId = ($scopedUserRole.Items | Where-Object {$_.UserRoleId -eq $role.Id}).SpaceId
+
+                    # Get the space name
+                    $teamSpaceName = (Invoke-RestMethod -Method Get -Uri "$octopusBaseURL/spaces/$teamSpaceId" -Headers $headers -ErrorVariable octoError).Name
+
+                    # Display the space name
+                    Write-Output "Space: $teamSpaceName"
+                }
+                else
+                {
+                    # Display the space name
+                    Write-Output "Space: $spaceName"
+                }
+
+                Write-Output "Users:"
+
+                # Loop through members
+                foreach ($userId in $team.MemberUserIds)
+                {
+                    # Get user object
+                    $user = Invoke-RestMethod -Method Get -Uri ("$octopusBaseURL/users/$userId") -Headers $headers -ErrorVariable octoError
+                    
+                    # Display user
+                    Write-Output "$($user.DisplayName)"
+                }
+
+                # Check for external security groups
+                if (($null -ne $team.ExternalSecurityGroups) -and ($team.ExternalSecurityGroups.Count -gt 0))
+                {
+                    # External groups
+                    Write-Output "External security groups:"
+
+                    # Loop through groups
+                    foreach ($group in $team.ExternalSecurityGroups)
+                    {
+                        # Display group
+                        Write-Output "$($group.Id)"
+                    }
+                }
+            }
+        }   
     }
-
 }
-
+catch
+{
+    if ([string]::IsNullOrEmpty($octoError))
+    {
+        Write-Output "There was an error during the request: $($octoError.Message)"
+    }
+    else
+    {
+        Write-Output "An error occurred: $($_.Exception.Message)"
+    }
+}

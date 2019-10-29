@@ -1,52 +1,77 @@
-var octopusServerUrl = "https://YourServerUrl";
-var apiKey = "https://YourServerUrl";
+var octopusBaseURL = "https://youroctourl/api";
+var octopusAPIKey = "API-YOURAPIKEY";
 
-
-var endpoint = new OctopusServerEndpoint(octopusServerUrl, apiKey);
+var endpoint = new OctopusServerEndpoint(octopusBaseURL, octopusAPIKey);
 var repository = new OctopusRepository(endpoint);
 
 string roleName = "Project Deployer";
 var spaceName = "";
 
-var spaceId = repository.Spaces.FindByName(spaceName);
-
-// Get reference to the role
-var role = repository.UserRoles.FindByName(roleName);
-
-// Get all teams to search
-var teams = repository.Teams.FindAll();
-
-// Check to see if a spaceid was specified
-if (spaceId != null)
+try
 {
-    // limit teams to the specific space
-    teams = teams.Where(x => x.SpaceId == spaceId.Id).ToList();
-}
+    // Get space id
+    var space = repository.Spaces.FindByName(spaceName);
 
-// Loop through the teams
-foreach (var team in teams)
-{
-    // Retrieve scoped user roles
-    var scopedUserRoles = repository.Teams.GetScopedUserRoles(team);
+    // Get reference to the role
+    var role = repository.UserRoles.FindByName(roleName);
 
-    // Loop through returned roles
-    foreach (var scopedUserRole in scopedUserRoles)
+    // Get all teams to search
+    var teams = repository.Teams.FindAll();
+
+    // Loop through the teams
+    foreach (var team in teams)
     {
-        // Check to see if it's the role we're looking for
-        if (scopedUserRole.UserRoleId == role.Id)
+        // Retrieve scoped user roles
+        var scopedUserRoles = repository.Teams.GetScopedUserRoles(team);
+
+        // Check to see if there was a space name specified
+        if (!string.IsNullOrEmpty(spaceName))
         {
-            // Output team name
-            Console.WriteLine(string.Format("Team: {0}", team.Name));
+            // filter returned scopedUserRoles
+            scopedUserRoles = scopedUserRoles.Where(x => x.SpaceId == space.Id).ToList();
+        }
 
-            // Loop through team members
-            foreach (var member in team.MemberUserIds)
+        // Loop through returned roles
+        foreach (var scopedUserRole in scopedUserRoles)
+        {
+            // Check to see if it's the role we're looking for
+            if (scopedUserRole.UserRoleId == role.Id)
             {
-                // Get the user object
-                var user = repository.Users.Get(member);
+                // Output team name
+                Console.WriteLine(string.Format("Team: {0}", team.Name));
 
-                // Display the user name
-                Console.WriteLine(user.DisplayName);
+                // Output space name
+                Console.WriteLine(string.Format("Space: {0}", repository.Spaces.Get(scopedUserRole.SpaceId).Name));
+
+                Console.WriteLine("Users:")
+
+                // Loop through team members
+                foreach (var member in team.MemberUserIds)
+                {
+                    // Get the user object
+                    var user = repository.Users.Get(member);
+
+                    // Display the user name
+                    Console.WriteLine(user.DisplayName);
+                }
+
+                // Check for external groups
+                if ((team.ExternalSecurityGroups != null) && (team.ExternalSecurityGroups.Count > 0))
+                {
+                    //
+                    Console.WriteLine("External security groups:");
+
+                    // Iterate through external security groups
+                    foreach (var group in team.ExternalSecurityGroups)
+                    {
+                        Console.WriteLine(group.Id);
+                    }
+                }
             }
         }
     }
+}
+catch (Exception ex)
+{
+    Console.Writeline(ex.Message);
 }
