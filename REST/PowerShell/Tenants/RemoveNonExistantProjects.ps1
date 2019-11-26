@@ -13,9 +13,6 @@ foreach ($tenant in $tenantList.Items)
 {
     $tenantModified = $false
 
-    Write-Host "Pulling the variables for $($tenant.Name) in the event we have to remove a project"
-    $tenantVariables = Invoke-RestMethod "$OctopusUrl/api/$SpaceId/tenants/$($tenant.Id)/variables" -Headers $header
-
     $assignedProjects = $tenant.ProjectEnvironments | Get-Member | where {$_.MemberType -eq "NoteProperty"} | Select-Object -Property "Name"
 
     foreach ($project in $assignedProjects)
@@ -31,7 +28,6 @@ foreach ($tenant in $tenantList.Items)
             Write-Host "Tenant $($tenant.Name) is assigned to the project $projectId which does not exist anymore - removing reference"
             $tenantModified = $true
             $tenant.ProjectEnvironments.PSObject.Properties.Remove($projectId)
-            $tenantVariables.ProjectVariables.PSObject.Properties.Remove($projectId)
         }
     }
 
@@ -42,16 +38,9 @@ foreach ($tenant in $tenantList.Items)
         Write-Host "The new tenant body will be:"
         Write-Host $tenantBodyAsJson
 
-        $tenantVariablesBodyAsJson = $tenantVariables | ConvertTo-Json -Depth 10
-        Write-Host "The new tenant variables will be:"
-        Write-Host $tenantVariablesBodyAsJson
-
         if ($WhatIf -eq $false)
         {
             Write-Host "What if set to false, hitting the API"
-
-            Write-Host "Removing the dead project variables"
-            Invoke-RestMethod "$OctopusUrl/$($tenantVariables.Links.Self)" -Method PUT -Body $tenantVariablesBodyAsJson -Headers $header
 
             Write-Host "Removing the dead projects from the tenant"
             Invoke-RestMethod "$OctopusUrl/$($tenant.Links.Self)" -Method PUT -Body $tenantBodyAsJson -Headers $header
