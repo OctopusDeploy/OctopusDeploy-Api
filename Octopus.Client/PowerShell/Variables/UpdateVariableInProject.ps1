@@ -54,4 +54,4 @@ $newvalue = "" # New value to set to the variable
 $project = ""
 $APIKey = ""
 #Example
-#UpdateVarInProcess -UserApiKey $APIKey -OctopusUrl $OctopusUrl -ProjectName $project -VariableToModify $VarName -VariableValue $newvalue -EnvironmentScope "Environments-30"
+#UpdateVarInProject -UserApiKey $APIKey -OctopusUrl $OctopusUrl -ProjectName $project -VariableToModify $VarName -VariableValue $newvalue -EnvironmentScope "Environments-30"
