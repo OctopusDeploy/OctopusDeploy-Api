@@ -47,7 +47,6 @@ $ErrorActionPreference = 'Stop'
 if ($PSBoundParameters['Debug']) {
 	$DebugPreference = 'Continue' # avoid Inquire
 }
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
 function AcquireAssemblies() {
 	[CmdletBinding()]
@@ -63,7 +62,6 @@ function LoadAssemblies() {
 	Param()
 	Write-Verbose 'Loading dependent assemblies'
 	@(
-		# '.\Newtonsoft.Json\lib\net40\Newtonsoft.Json.dll', 
 		'.\Octopus.Client\lib\net45\Octopus.Client.dll'
 	) | % { Add-Type -Path $_ }
 }
