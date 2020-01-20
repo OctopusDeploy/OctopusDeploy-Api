@@ -1,7 +1,7 @@
 $apikey = 'XXXXXX' # Get this from your profile
 $OctopusUrl = 'https://OctopusURL/' # Your Octopus Server address
 $spaceName = "Default" # Name of the Space
-$projectId = "ProjectID" # Get this from the Spaces URL
+$projectId = "ProjectID" # Get this from the URL when you have browsed to the project i.e https://OctopusURL/app#/Spaces-42/projects/project10/deployments becomes project10
 
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
