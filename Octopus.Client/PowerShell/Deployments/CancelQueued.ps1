@@ -6,7 +6,7 @@ $projectId = "ProjectID" # Get this from the Spaces URL
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
 
-Add-Type -Path 'C:\Program Files\Octopus Deploy\Tentacle\Octopus.Client.dll'
+Add-Type -Path 'Octopus.Client.dll'
 
 # Set up endpoint and repository
 $endpoint = new-object Octopus.Client.OctopusServerEndpoint $OctopusUrl, $APIKey
