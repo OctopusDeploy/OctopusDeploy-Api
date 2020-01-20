@@ -1,20 +1,26 @@
+$apikey = 'XXXXXX' # Get this from your profile
+$OctopusUrl = 'https://OctopusURL/' # Your Octopus Server address
+$spaceName = "Default" # Name of the Space
+$projectId = "ProjectID" # Get this from the Spaces URL
+
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
 
-$apikey = 'API-xxx' # Get this from your profile
-$octopusURI = 'http://localhost' # Your Octopus Server address
+Add-Type -Path 'C:\Program Files\Octopus Deploy\Tentacle\Octopus.Client.dll'
 
-$projectId = "Projects-x" # Get this from /api/projects
+# Set up endpoint and repository
+$endpoint = new-object Octopus.Client.OctopusServerEndpoint $OctopusUrl, $APIKey
+$repository = new-object Octopus.Client.OctopusRepository $endpoint
 
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI, $apikey 
-$repository = New-Object Octopus.Client.OctopusRepository $endpoint
+# Find Space
+$space = $repository.Spaces.FindByName($spaceName)
+$repository = New-Object -TypeName Octopus.Client.OctopusRepository $endpoint, ([Octopus.Client.RepositoryScope]::ForSpace($space))
 
-$deployments = $repository.Deployments.FindAll(@($projectId), @()) 
-$queued = $repository.Tasks.FindMany({ param ($t) return $t.State -eq "Queued" })
+# Kill Tasks
+$deployments = $repository.Deployments.FindAll() 
+$queued = $repository.Tasks.FindAll() | Where-Object {$_.State -eq "Queued" -and $_.HasBeenPickedUpByProcessor -eq $false}
 foreach ($task in $queued)
 {
-    if($deployments.Items.Exists({param ($t) return $t.TaskId -eq $task.Id})) {
-        $repository.Tasks.Cancel($task)
-    }    
+    Write-Output "Killing task $($task.Id)"
+    $repository.Tasks.Cancel($task)
 }
