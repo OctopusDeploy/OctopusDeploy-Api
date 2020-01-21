@@ -8,19 +8,19 @@ $projectId = "ProjectID" # Get this from the URL when you have browsed to the pr
 
 Add-Type -Path 'Octopus.Client.dll'
 
-# Set up endpoint and repository
+# Set up endpoint and Spaces repository
 $endpoint = new-object Octopus.Client.OctopusServerEndpoint $OctopusUrl, $APIKey
-$repository = new-object Octopus.Client.OctopusRepository $endpoint
+$client = new-object Octopus.Client.OctopusClient $endpoint
 
 # Find Space
-$space = $repository.Spaces.FindByName($spaceName)
-$repository = New-Object -TypeName Octopus.Client.OctopusRepository $endpoint, ([Octopus.Client.RepositoryScope]::ForSpace($space))
+$space = $client.ForSystem().Spaces.FindByName($spaceName)
+$spaceRepository = $client.ForSpace($space)
 
 # Kill Tasks
-$deployments = $repository.Deployments.FindAll() 
-$queued = $repository.Tasks.FindAll() | Where-Object {$_.State -eq "Queued" -and $_.HasBeenPickedUpByProcessor -eq $false}
+$deployments = $spaceRepository.Deployments.FindAll() 
+$queued = $spaceRepository.Tasks.FindAll() | Where-Object {$_.State -eq "Queued" -and $_.HasBeenPickedUpByProcessor -eq $false}
 foreach ($task in $queued)
 {
     Write-Output "Killing task $($task.Id)"
-    $repository.Tasks.Cancel($task)
+    $spaceRepository.Tasks.Cancel($task)
 }
