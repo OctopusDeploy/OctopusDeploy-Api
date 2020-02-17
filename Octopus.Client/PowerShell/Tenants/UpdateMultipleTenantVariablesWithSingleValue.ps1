@@ -34,13 +34,20 @@ foreach($projectKey in $variables.ProjectVariables.Keys)
 
     foreach($envKey in $project.Variables.Keys) {
         # Find current value
-        $templateEnvVariable = ($project.Variables[$envKey].GetEnumerator() | Where-Object Key -eq $variableTemplateId | Select-Object -First 1).Value
-        $currentValue = $templateEnvVariable.Value
-        Write-Host "Found $variableTemplateName in Environment '$envKey' with Value = $currentValue"
+        $templateEnvVariableObject = ($project.Variables[$envKey].GetEnumerator() | Where-Object Key -eq $variableTemplateId | Select-Object -First 1)
+        # If only Default value exists, add new value in 
+        if($null -eq $templateEnvVariableObject ) {
+            Write-Host "No value found for $variableTemplateName, adding in new Value=$newValue for Environment '$envKey'"
+            $project.Variables[$envKey][$variableTemplateId] = New-Object Octopus.Client.Model.PropertyValueResource $newValue
+        } 
+        else {
+            $templateEnvVariable = $templateEnvVariableObject.Value
+            $currentValue = $templateEnvVariable.Value
+            Write-Host "Found $variableTemplateName in Environment '$envKey' with Value = $currentValue"
         
-        # Set the new value for each env
-        $project.Variables[$envKey][$variableTemplateId] = New-Object Octopus.Client.Model.PropertyValueResource $newValue
-
+            # Set the new value for each env
+            $project.Variables[$envKey][$variableTemplateId] = New-Object Octopus.Client.Model.PropertyValueResource $newValue
+        }
     }
 }
 
