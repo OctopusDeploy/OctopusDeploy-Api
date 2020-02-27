@@ -36,9 +36,8 @@ var runbookToCloneProcess = spaceRepo.RunbookProcesses.Get(runbookToClone.Runboo
 var destinationProject = spaceRepo.Projects.FindByName(destinationProjectName);
 
 var newRunbookName = $"{runbookToClone.Name} - Clone";
-var newRunbookDescription = $@"{runbookToClone.Description};
+var newRunbookDescription = $@"{runbookToClone.Description}
 
--------
 Cloned from project {sourceProject.Name} with Id {sourceProject.Id}
 ";
 
