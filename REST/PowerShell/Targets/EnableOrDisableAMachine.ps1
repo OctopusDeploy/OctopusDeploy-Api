@@ -1,6 +1,6 @@
 ﻿###CONFIG###
-$OctopusURL = "***REMOVED***" #Octopus Server root URL
-$APIKey = "***REMOVED***" #Octopus API Key
+$OctopusURL = "https://octopus.url" #Octopus Server root URL
+$APIKey = "API-XXXXXXXXXXXXXXXXXXXXXXXXXX" #Octopus API Key
 
 $machineName = "South" #Name of the machine to enable/disable
 

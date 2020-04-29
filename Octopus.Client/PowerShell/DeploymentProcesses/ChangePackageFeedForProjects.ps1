@@ -1,12 +1,12 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+Add-Type -Path 'Octopus.Client.dll'
 
-$apikey = 'API-XXXXXXXXXXXXXXXXXXXXXXXXXX' # Get this from your profile
+$apikey = 'API-XXXXXXXXXXXXXXXXXXXXXX' # Get this from your profile
 $octopusURI = 'https://octopus.url' # Your server address
 $projectSearchString = "FOO" # Common string contained in projects to change
 
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
 
 $repository.Projects.FindMany({Param($p) $p.Name.Contains($projectSearchString)}) | % {

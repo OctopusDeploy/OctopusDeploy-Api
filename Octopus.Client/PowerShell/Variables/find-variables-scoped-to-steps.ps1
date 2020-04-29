@@ -1,10 +1,10 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
 
-Add-Type -Path 'C:\MyScripts\Octopus.Client\Octopus.Client.dll' 
+Add-Type -Path 'C:\MyScripts\Octopus.Client\Octopus.Client.dll'
 
-$apikey = 'API-54321G2E2UJ2QRO5WIIPI12345' # Get this from your profile
-$octopusURI = 'http://OctopusServer/' # Your Octopus Server address
+$apikey = 'API-XXXXXXXXXXXXXXXXXXXXXXXXXX' # Get this from your profile
+$octopusURI = 'https://octopus.url' # Your Octopus Server address
 
 $projectName = "TestProp"  # Enter project you want to search
 

@@ -1,5 +1,5 @@
-$OctopusAPIKey = "API-XXXXXXXXXXXXXXXXXXXXXXXXXX"
-$OctopusUrl = "http://localhost:82"
+$OctopusAPIKey = "API-XXXXXXXXXXXXXXXXXXXXXX"
+$OctopusUrl = "https://octopus.url"
 $SpaceId = "Spaces-22"
 $WhatIf = $true
 

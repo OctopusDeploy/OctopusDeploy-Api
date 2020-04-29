@@ -1,6 +1,6 @@
 static void Main(string[] args)
 {
-  var endpoint = new OctopusServerEndpoint("http://localhost/", "API-XXXXXXXXXXXXXXXXXXXXXXXXXX");
+  var endpoint = new OctopusServerEndpoint("https://octopus.url", "API-XXXXXXXXXXXXXXXXXXXXXXXXXX");
   var repository = new OctopusRepository(endpoint);
 
   var tentacleEndpoint = new ListeningTentacleEndpointResource();

@@ -12,14 +12,14 @@ namespace OctopusClient_Test
     {
         static void Main(string[] args)
         {
-            var apiKey = "***REMOVED***";
-            var octopusURL = "http://localhost:82";
+            var apiKey = "API-XXXXXXXXXXXXXXXXXXXXXXXXXX";
+            var octopusURL = "https://octopus.url";
             var projectName = "testproject2";
             var releaseVersion = "";
             var channelName = "Default";
             var environmentName = "Dev";
             var fixedPackageVersion = "";
-            
+
             var endpoint = new OctopusServerEndpoint(octopusURL, apiKey);
             var repository = new OctopusRepository(endpoint);
 
@@ -48,12 +48,12 @@ namespace OctopusClient_Test
 
             foreach (var package in template.Packages)
             {
-                var selectedPackage = new SelectedPackage 
-                { 
+                var selectedPackage = new SelectedPackage
+                {
                     ActionName = package.ActionName,
                     PackageReferenceName = package.PackageReferenceName
                 };
-                
+
                 //If you don't pass a value to FixedPackageVersion, Octopus will look for the latest one in the feed.
                 if (string.IsNullOrEmpty(fixedPackageVersion))
                 {
@@ -67,7 +67,7 @@ namespace OctopusClient_Test
                     var feedId = packageStep.Properties["Octopus.Action.Package.FeedId"].Value;
 
                     var feed = repository.Feeds.Get(feedId);
-                    
+
                     var latestPackageVersion = repository.Feeds.GetVersions(feed, new[] { packageId }).FirstOrDefault();
 
                     selectedPackage.Version = latestPackageVersion.Version;
@@ -76,7 +76,7 @@ namespace OctopusClient_Test
                 {
                     selectedPackage.Version = fixedPackageVersion;
                 }
-                
+
                 newrelease.SelectedPackages.Add(selectedPackage);
             }
 

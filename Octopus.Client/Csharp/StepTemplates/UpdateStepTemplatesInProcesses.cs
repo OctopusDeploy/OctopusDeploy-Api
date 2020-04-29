@@ -12,9 +12,9 @@ namespace OctopusClient_Test
     {
         static void Main(string[] args)
         {
-            var apiKey = "***REMOVED***";
-            var octopusURL = "http://localhost:82";
-            
+            var apiKey = "API-XXXXXXXXXXXXXXXXXXXXXXXXXX";
+            var octopusURL = "https://octopus.url";
+
             var endpoint = new OctopusServerEndpoint(octopusURL, apiKey);
             var client = new OctopusClient(endpoint);
             var repository = new OctopusRepository(endpoint);
@@ -24,12 +24,12 @@ namespace OctopusClient_Test
             {
                 var usages = client.Get<ActionTemplateUsageResource[]>(actionTemplate.Links["Usage"]);
                 var usagesToUpdate = usages.Where(u => u.Version != actionTemplate.Version.ToString());
-                
+
                 if (!usagesToUpdate.Any()) continue;
-                
+
                 var actionsByProcessId = usagesToUpdate.GroupBy(u => u.DeploymentProcessId);
                 var actionIdsByProcessId = actionsByProcessId.ToDictionary(g => g.Key, g => g.Select(u => u.ActionId).ToArray());
-                    
+
                 var actionUpdate = new ActionsUpdateResource();
                 actionUpdate.Version = actionTemplate.Version;
                 actionUpdate.ActionIdsByProcessId = actionIdsByProcessId;

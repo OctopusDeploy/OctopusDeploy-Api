@@ -1,6 +1,6 @@
-$OctopusAPIkey = "***REMOVED***"#Octopus API Key
+$OctopusAPIkey = "API-XXXXXXXXXXXXXXXXXXXXXXXXXX"#Octopus API Key
 
-$OctopusURL = "http://OctopusServer/"#Octopus URL
+$OctopusURL = "https://octopus.url"#Octopus URL
 
 $project = "Projects-31" #Name of the variable set
 

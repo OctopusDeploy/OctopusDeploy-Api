@@ -1,5 +1,5 @@
 ##CONFIG
-$apikey = 'API-XXXXXXXXXXXXXXXXXXXXXXXXXX' # Get this from your profile
+$apikey = 'API-XXXXXXXXXXXXXXXXXXXXXX' # Get this from your profile
 $octopusURI = 'https://octopus.url' # Your server address
 $Role = "MyTargetRole" #The Role you want to look for
 $OctoClientDll = 'C:\Program Files\Octopus Deploy\Tentacle\Octopus.Client.dll' #If you don't have this DLL on disc, you can download it from https://www.nuget.org/packages/Octopus.Client/
@@ -7,7 +7,7 @@ $OctoClientDll = 'C:\Program Files\Octopus Deploy\Tentacle\Octopus.Client.dll' #
 ##EXECUTION
 Add-Type -Path $OctoClientDll
 
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
 
 $allProjects = $repository.Projects.GetAll()
