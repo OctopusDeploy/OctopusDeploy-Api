@@ -9,7 +9,9 @@ $header = @{ "X-Octopus-ApiKey" = $APIKey }
 
 $environment = (Invoke-WebRequest "$OctopusURL/api/environments/$EnvironmentID" -Headers $header).content | ConvertFrom-Json
 
-$machines = ((Invoke-WebRequest ($OctopusURL + $environment.Links.Machines) -Headers $header).content | ConvertFrom-Json).items
+$environmentMachines = $Environment.Links.Machines.Split("{")[0]
+
+$machines = ((Invoke-WebRequest ($OctopusURL + $environmentMachines) -Headers $header).content | ConvertFrom-Json).items
 
 $MachinesInRole = $machines | ?{$Role -in $_.Roles}
 
