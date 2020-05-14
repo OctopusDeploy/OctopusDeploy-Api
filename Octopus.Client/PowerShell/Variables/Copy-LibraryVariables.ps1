@@ -62,7 +62,7 @@ function LoadAssemblies() {
 	Param()
 	Write-Verbose 'Loading dependent assemblies'
 	@(
-		'.\Octopus.Client\lib\net45\Octopus.Client.dll'
+		'.\Octopus.Client\lib\net452\Octopus.Client.dll'
 	) | % { Add-Type -Path $_ }
 }
 
