@@ -122,7 +122,7 @@ function LoadAssemblies() {
 Write-Verbose 'Loading dependent assemblies'
 	@(
 		'.\Newtonsoft.Json\lib\net40\Newtonsoft.Json.dll', 
-		'.\Octopus.Client\lib\net45\Octopus.Client.dll'
+		'.\Octopus.Client\lib\net452\Octopus.Client.dll'
 		'.\Octostache\lib\net40\Octostache.dll'
 	) | % { Add-Type -Path $_ }
 }
