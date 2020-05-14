@@ -4,7 +4,7 @@ $servicePrincipalName = "Existing Azure Service Principal Name"
 $spaceName = "Default"
 $azureResourceGroupName = "Azure resource Group Name"
 
-$path = Join-Path (Get-Item ((Get-Package Octopus.Client).source)).Directory.FullName "lib/net45/Octopus.Client.dll"
+$path = Join-Path (Get-Item ((Get-Package Octopus.Client).source)).Directory.FullName "lib/net452/Octopus.Client.dll"
 
 Add-Type -Path $path
 
