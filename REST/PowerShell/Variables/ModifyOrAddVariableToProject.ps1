@@ -6,6 +6,7 @@ Function Get-OctopusProject {
         $ProjectName,
         $SpaceId
     )
+
     # Call API to get all projects, then filter on name
     $octopusProject = Invoke-RestMethod -Method "get" -Uri "$OctopusServerUrl/api/projects/all" -Headers @{"X-Octopus-ApiKey" = "$ApiKey" }
 
@@ -21,6 +22,7 @@ Function Get-OctopusProjectVariables {
         $ApiKey,
         $SpaceId
     )
+
     # Get reference to the variable list
     return (Invoke-RestMethod -Method "get" -Uri "$OctopusServerUrl/api/variables/$($OctopusDeployProject.VariableSetId)" -Headers @{"X-Octopus-ApiKey" = "$ApiKey" })
 }
@@ -31,26 +33,30 @@ Function Get-SpaceId {
     param(
         $Space
     )
+
     $spaceName = $Space
     $spaceList = Invoke-RestMethod "$OctopusServerUrl/api/spaces?Name=$spaceName" -Headers @{"X-Octopus-ApiKey" = $ApiKey }
     $spaceFilter = @($spaceList.Items | Where { $_.Name -eq $spaceName })
     $spaceId = $spaceFilter[0].Id
+
     return $spaceId
 }
+
 Function Get-EnvironmentId {
     # Define parameters
     param(
         $EnvironmentName,
         $SpaceId
     )
+
     $environmentList = Invoke-RestMethod "$OctopusServerUrl/api/$spaceId/environments?skip=0&take=1000&name=$environmentName" -Headers @{"X-Octopus-ApiKey" = $ApiKey }
     $environmentFilter = @($environmentList.Items | Where { $_.Name -eq $environmentName })
     $environmentId = $environmentFilter[0].Id
+
     return $environmentId
 }
 
 Function Modify-Variable {
-
     # Define parameters
     param(
         $VariableSet,
@@ -86,7 +92,6 @@ Function Modify-Variable {
 }
 
 Function Add-Variable {
-
     # Define parameters
     param(
         $VariableSet,
@@ -96,6 +101,7 @@ Function Add-Variable {
         $VariableRoleScope
 
     )
+
     #Find the environment ID based on the name given by the parameter.
     $environmentObj = $VariableSet.ScopeValues.Environments | Where { $_.Name -eq $VariableEnvScope } | Select -First 1
     
@@ -108,6 +114,7 @@ Function Add-Variable {
             }
         }
     }
+
     #If there is an Env but no Role scope, add variable this way
     if ($VariableEnvScope -and !$VariableRoleScope) {
         $tempVariable = @{
@@ -120,6 +127,7 @@ Function Add-Variable {
             }
         }
     }
+
     #If there is a Role Scope but no Env scope, add the variable this way
     if ($VariableRoleScope -and !$VariableEnvScope) {
         $tempVariable = @{
@@ -132,6 +140,7 @@ Function Add-Variable {
             }
         }
     }
+
     #If both scopes exis, add the variable this way
     if ($VariableEnvScope -and $VariableRoleScope) {
         $tempVariable = @{
@@ -147,6 +156,7 @@ Function Add-Variable {
             }
         }
     }
+
     #add the variable to the variable set
     $VariableSet.Variables += $tempVariable
 }
@@ -178,7 +188,6 @@ try {
 
     ##### PUT ANY MODIFY AND ADD COMMANDS HERE #####
 
-    
     ##### PUT ANY MODIFY AND ADD COMMANDS HERE #####
 
     # Convert object to json to upload it
@@ -186,8 +195,6 @@ try {
     #Write-Host $jsonBody
     # Save the variables to the variable set
     Invoke-RestMethod -Method "put" -Uri "$OctopusServerUrl/api/variables/$($octopusProjectVariables.Id)" -Body $jsonBody -Headers @{"X-Octopus-ApiKey"=$ApiKey}
-    
-
 }
 catch {
     Write-Error $_.Exception.Message
