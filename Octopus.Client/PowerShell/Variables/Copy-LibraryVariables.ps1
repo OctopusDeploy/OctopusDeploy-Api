@@ -8,15 +8,24 @@ Example:
 -OctopusUri 'https://foo.com/api'
 
 .PARAMETER OctopusApiKey
-Duh.
+Note: If copying between spaces, ensure that the account corresponding to the 
+API key has the requisite permissions in both spaces.
 
 .PARAMETER NugetPath
 Full path to the nuget CLI executable. Example:
 -NugetPath 'c:\foo\NuGet4.6.2.exe'
 
+.PARAMETER SourceSpaceId
+The ID (not name) of the space in which the source library variable set resides. Example:
+-SpaceId 'Spaces-1' # Default
+
 .PARAMETER SourceLibraryVariableSetId
 Example:
 -SourceLibraryVariableSetId 'LibraryVariableSets-1'
+
+.PARAMETER DestinationSpaceId
+The ID (not name) of the space in which the destination library variable set resides. Example:
+-SpaceId 'Spaces-1' # Default
 
 .PARAMETER DestinationLibraryVariableSetId
 Example:
@@ -39,7 +48,9 @@ Param(
 	[parameter(Mandatory = $true)][string]$OctopusUri,
 	[parameter(Mandatory = $true)][string]$OctopusApiKey,
 	[parameter(Mandatory = $true)][string]$NugetPath,
+	[parameter()][string]$SourceSpaceId = 'Spaces-1',
 	[parameter(Mandatory = $true)][string]$SourceLibraryVariableSetId,
+	[parameter()][string]$DestinationSpaceId = 'Spaces-1',
 	[parameter(Mandatory = $true)][string]$DestinationLibraryVariableSetId,
 	[parameter(Mandatory = $true)][string]$VariableNameRegexPattern
 )
@@ -53,7 +64,7 @@ function AcquireAssemblies() {
 	Param()
 	Write-Host 'Acquiring dependent assemblies'
 	@('Octopus.Client') | % { 
-		& $NugetPath install $_ $nugetSourceArg $NugetSource -ExcludeVersion -PackageSaveMode nuspec -Framework net40 -Verbosity $script:NugetVerbosity -NonInteractive
+		& $NugetPath install $_ $nugetSourceArg $NugetSource -ExcludeVersion -PackageSaveMode nuspec -Framework net45 -Verbosity $script:NugetVerbosity -NonInteractive
 	}
 }
 
@@ -79,24 +90,36 @@ $octopusRepository = (New-Object Octopus.Client.OctopusRepository (New-Object Oc
 
 $headers = @{"X-Octopus-ApiKey" = $OctopusApiKey}
 
-function Get-OctopusResource([string]$uri) {
-  # From https://github.com/OctopusDeploy/OctopusDeploy-Api/blob/master/REST/PowerShell/Variables/MigrateVariableSetVariablesToProject.ps1
-    Write-Host "[GET]: $uri"
-    return Invoke-RestMethod -Method Get -Uri "$OctopusUri/$uri" -Headers $headers
+function Get-OctopusResource([string]$uri, [string]$spaceId) {
+	# Adapted from https://github.com/OctopusDeploy/OctopusDeploy-Api/blob/master/REST/PowerShell/Variables/MigrateVariableSetVariablesToProject.ps1
+	$uriWithSpace = [string]::Join('/', @(
+			$OctopusUri.TrimEnd('/'), 
+			$spaceId))
+	$fullUri = [string]::Join('/', @(
+			$uriWithSpace,
+			$uri))
+	Write-Host "[GET]: $fullUri"
+	return Invoke-RestMethod -Method Get -Uri $fullUri -Headers $headers
 }
 
-function Put-OctopusResource([string]$uri, [object]$resource) {
-  # Adapted from https://github.com/OctopusDeploy/OctopusDeploy-Api/blob/master/REST/PowerShell/Variables/MigrateVariableSetVariablesToProject.ps1
-    Write-Host "[PUT]: $uri"
-    Invoke-RestMethod -Method Put -Uri "$OctopusUri/$uri" -Body $($resource | ConvertTo-Json -Depth 10) -Headers $headers
+function Put-OctopusResource([string]$uri, [string]$spaceId, [object]$resource) {
+	# Adapted from https://github.com/OctopusDeploy/OctopusDeploy-Api/blob/master/REST/PowerShell/Variables/MigrateVariableSetVariablesToProject.ps1
+	$uriWithSpace = [string]::Join('/', @(
+			$OctopusUri.TrimEnd('/'), 
+			$spaceId))
+	$fullUri = [string]::Join('/', @(
+			$uriWithSpace,
+			$uri))
+	Write-Host "[PUT]: $fullUri"
+	Invoke-RestMethod -Method Put -Uri $fullUri -Body $($resource | ConvertTo-Json -Depth 10) -Headers $headers
 }
 
-$sourceLibraryVariableSet = Get-OctopusResource "/libraryvariablesets/$SourceLibraryVariableSetId"
+$sourceLibraryVariableSet = Get-OctopusResource "/libraryvariablesets/$SourceLibraryVariableSetId" $SourceSpaceId
 $sourceGlobalVariableSetId = $sourceLibraryVariableSet.VariableSetId
-$sourceGlobalVariableSet = Get-OctopusResource "/variables/$sourceGlobalVariableSetId"
-$destinationLibraryVariableSet = Get-OctopusResource "/libraryvariablesets/$DestinationLibraryVariableSetId"
+$sourceGlobalVariableSet = Get-OctopusResource "/variables/$sourceGlobalVariableSetId" $SourceSpaceId
+$destinationLibraryVariableSet = Get-OctopusResource "/libraryvariablesets/$DestinationLibraryVariableSetId" $DestinationSpaceId
 $destinationGlobalVariableSetId = $destinationLibraryVariableSet.VariableSetId
-$destinationGlobalVariableSet = Get-OctopusResource "/variables/$destinationGlobalVariableSetId"
+$destinationGlobalVariableSet = Get-OctopusResource "/variables/$destinationGlobalVariableSetId" $DestinationSpaceId
 
 $changeMade = $false
 $sourceGlobalVariableSet.Variables | % {
@@ -104,8 +127,21 @@ $sourceGlobalVariableSet.Variables | % {
 		if($_.IsSensitive) {
 			Write-Warning "Variable '$($_.Name)' will not be copied. It is marked Sensitive, so its value cannot be read."
 		} else {
-			Write-Host "Preparing to add variable '$($_.Name)' with value '$($_.Value)' in '$destinationGlobalVariableSetId'"
-		    $destinationGlobalVariableSet.Variables += $_
+			Write-Verbose "Preparing to add variable '$($_.Name)' with value '$($_.Value)' in '$destinationGlobalVariableSetId'"
+			if (($SourceSpaceId -ne $DestinationSpaceId) -and $_.Scope -and ($_.Scope.Count -ne 0)) {
+				$scopeCategories = @('Environment', 'Role')
+				$scopeWarnings = @("You must ensure variable '$($_.Name)' with value '$($_.Value)' is scoped appropriately in the destination space.")
+				$scopeWarningDetails = @()
+				foreach ($scopeCategory in $scopeCategories) {
+					if ($_.Scope.$scopeCategory) {
+						$scopeWarningDetails += ("$scopeCategory(s): " +
+							(@(foreach ($scopeId in $_.Scope.$scopeCategory) { $sourceGlobalVariableSet.ScopeValues.$("$scopeCategory`s").Where( { $_.Id -eq $scopeId }).Name }) -join ', '))
+					}
+				}
+				$scopeWarnings += $("'$($_.Name)'/'$($_.Value)': " + $($scopeWarningDetails -join '; '))
+				foreach ($scopeWarning in $scopeWarnings) { Write-Warning $scopeWarning }
+			}
+			$destinationGlobalVariableSet.Variables += $_
 			$changeMade = $true
 		}
 	}
