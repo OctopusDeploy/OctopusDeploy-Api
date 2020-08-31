@@ -1,7 +1,7 @@
-Add-Type -Path 'Octopus.Client.dll' 
+Add-Type -Path 'Octopus.Client.dll'
 
-$apikey = 'API-8XOCMCU281E5KWBONGUJHOL85M' # Get this from your profile
-$octopusURI = 'http://OctopusServer/' # Your server address
+$apikey = 'API-XXXXXXXXXXXXXXXXXXXXXX' # Get this from your profile
+$octopusURI = 'https://octopus.url' # Your server address
 
 $stepName = "API-ADDED-STEP" # The name of the step to be created
 $role = "Webserver" # The machine role to run this step against
@@ -10,7 +10,7 @@ $scriptBody = "Write-Host 'Hello world'" # The body of the script step
 ## Uncomment the below line (And the other two) to scope the step to an Environment ##
 #$environment = "Dev" #  The name of the Environment to scope step to
 
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
 
 $allProjects = $repository.Projects.GetAll()
@@ -19,7 +19,7 @@ $allProjects = $repository.Projects.GetAll()
 #$environmentToAdd = $repository.Environments.FindByName($environment).Id
 
 $step = New-Object Octopus.Client.Model.DeploymentStepResource # Create new step object
-$step.Name = $stepName 
+$step.Name = $stepName
 $step.Condition = [Octopus.Client.Model.DeploymentStepCondition]::Success # Step run condition (Success = Only run if previous step succeeds)
 $step.Properties.Add("Octopus.Action.TargetRoles", $role)
 

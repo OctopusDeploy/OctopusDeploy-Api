@@ -11,17 +11,17 @@ void Main()
 	//
 
 	// 1. Your Octopus URL
-	var octopusUrl = "http://localhost:8065";
+	var octopusUrl = "https://octopus.url";
 
 	// 2. An API key, preferably for a Service Account (http://docs.octopusdeploy.com/display/OD/Service+Accounts)
 	var apiKey = "API-XXXXXXXXXXXXXXXXXXXXXX";
-	
+
 	// 3. Path to the package file to upload
 	var packageFilePath = @"C:\Temp\HelloWorldWebApp.2.1.0.0.nupkg";
-	
+
 	// 4. true to overwrite existing packages (Requires: BuiltInFeedAdminister permission)
 	var replaceExisting = false;
-	
+
 	var packageUrl = octopusUrl + "/api/packages/raw?replace=" + replaceExisting;
 	Console.WriteLine("Uploading {0} to {1}", packageFilePath, packageUrl);
 

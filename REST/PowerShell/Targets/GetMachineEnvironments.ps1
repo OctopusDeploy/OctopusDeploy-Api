@@ -1,6 +1,6 @@
 ﻿###CONFIG###
-$APIKey = "API-ZC3CBI9HG0XBD3CYYBTWM9UWB8" #API Key to auth agains the Octopus API
-$OctopusURL = "http://NY-Octopus1"#Base URL of your Octopus instance.
+$APIKey = "API-XXXXXXXXXXXXXXXXXXXXXXXXXX" #API Key to auth agains the Octopus API
+$OctopusURL = "https://octopus.url" #Base URL of your Octopus instance.
 
 ###PROCESS##
 $header = @{ "X-Octopus-ApiKey" = $APIKey }
@@ -13,7 +13,7 @@ $machine = (Invoke-WebRequest $OctopusURL/api/machines/$MachineID -Headers $head
 
 foreach ($envID in $machine.environmentIDs){
     $env = $AllEnvironments | ?{$_.id -eq $envID}
-    $EnvironmentNames += $env.name    
+    $EnvironmentNames += $env.name
 }
 
 #This variable contains an array with the names of the environments where this machine is on

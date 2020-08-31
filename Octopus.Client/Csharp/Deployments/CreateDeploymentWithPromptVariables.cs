@@ -1,6 +1,6 @@
 ////CONFIG////
-var apiKey = "API-12345678910";
-var server = "http://localhost:8065";
+var apiKey = "API-XXXXXXXXXXXXXXXXXXXXXXXXXX";
+var server = "https://octopus.url";
 var environmentName = "MyEnvironment";
 var projectName = "MyProject";
 var releaseVersion = "0.0.1";
@@ -32,7 +32,7 @@ foreach (var element in preview.Form.Elements)
 	if(variableInput == null){
 		continue;
 	}
-	
+
 	string val;
 	if(PromptedVariablesForm.TryGetValue(variableInput.Name, out val)){
 		formValues.Add(element.Name, val);
