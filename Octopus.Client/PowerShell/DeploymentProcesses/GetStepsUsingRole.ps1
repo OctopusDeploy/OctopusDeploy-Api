@@ -1,25 +1,36 @@
-##CONFIG
-$apikey = 'API-XXXXXXXXXXXXXXXXXXXXXX' # Get this from your profile
-$octopusURI = 'https://octopus.url' # Your server address
-$Role = "MyTargetRole" #The Role you want to look for
-$OctoClientDll = 'C:\Program Files\Octopus Deploy\Tentacle\Octopus.Client.dll' #If you don't have this DLL on disc, you can download it from https://www.nuget.org/packages/Octopus.Client/
+# You can this dll from your Octopus Server/Tentacle installation directory or from
+# https://www.nuget.org/packages/Octopus.Client/
+Add-Type -Path "path\to\Octopus.Client.dll"
 
-##EXECUTION
-Add-Type -Path $OctoClientDll
+# Octopus variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$spaceName = "default"
+$roleName = "My role"
 
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
-$allProjects = $repository.Projects.GetAll()
+# Get space
+$space = $repository.Spaces.FindByName($spaceName)
+$repositoryForSpace = $client.ForSpace($space)
 
-"Looking for steps with the role $($Role) in them..."
+$projectList = $repositoryForSpace.Projects.GetAll()
 
-foreach($project in $allProjects){
-    $dp = $repository.DeploymentProcesses.Get($project.Links.DeploymentProcess)
+"Looking for steps with the role $($roleName) in them..."
 
-    foreach ($step in $dp.Steps){
-        if($step.properties.'Octopus.Action.TargetRoles' -and ($step.properties.'Octopus.Action.TargetRoles'.Value.Split(',') -Icontains $Role )){
-            "Step [$($step.Name)] from project [$($project.Name)] is using the role [$($Role )]"
+foreach($project in $projectList)
+{
+    # Get deployment process    
+    $deploymentProcess = $repositoryForSpace.DeploymentProcesses.Get($project.DeploymentProcessId)
+
+    # Loop through steps
+    foreach ($step in $deploymentProcess.Steps)
+    {
+        if($step.properties.'Octopus.Action.TargetRoles' -and ($step.properties.'Octopus.Action.TargetRoles'.Value.Split(',') -Icontains $roleName ))
+        {
+            "Step [$($step.Name)] from project [$($project.Name)] is using the role [$($roleName )]"
         }
     }
 }
