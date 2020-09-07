@@ -22,9 +22,7 @@ try
     # Filter tenants by tag set
     $tenants = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/tenants/tag-test?tags=$canonicalTagSet" -Headers $header)
 
-    #$tenants
     $tenantProperties = Get-Member -InputObject $tenants -MemberType NoteProperty
-    #$props
     foreach ($tenantProp in $tenantProperties)
     {           
         $tenantId = $tenantProp.Name
