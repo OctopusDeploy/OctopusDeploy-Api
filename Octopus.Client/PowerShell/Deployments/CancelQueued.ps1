@@ -1,26 +1,34 @@
-$apikey = 'XXXXXX' # Get this from your profile
-$OctopusUrl = 'https://OctopusURL/' # Your Octopus Server address
-$spaceName = "Default" # Name of the Space
-$projectId = "ProjectID" # Get this from the URL when you have browsed to the project i.e https://OctopusURL/app#/Spaces-42/projects/project10/deployments becomes project10
-
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
 
-Add-Type -Path 'Octopus.Client.dll'
+# Load octopus.client assembly
+Add-Type -Path "path\to\Octopus.Client.dll"
 
-# Set up endpoint and Spaces repository
-$endpoint = new-object Octopus.Client.OctopusServerEndpoint $OctopusUrl, $APIKey
-$client = new-object Octopus.Client.OctopusClient $endpoint
+# Octopus variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$spaceName = "default"
 
-# Find Space
-$space = $client.ForSystem().Spaces.FindByName($spaceName)
-$spaceRepository = $client.ForSpace($space)
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
+$repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
-# Kill Tasks
-$deployments = $spaceRepository.Deployments.FindAll() 
-$queued = $spaceRepository.Tasks.FindAll() | Where-Object {$_.State -eq "Queued" -and $_.HasBeenPickedUpByProcessor -eq $false}
-foreach ($task in $queued)
+try
 {
-    Write-Output "Killing task $($task.Id)"
-    $spaceRepository.Tasks.Cancel($task)
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
+
+    # Get tasks
+    $queuedDeployments = $repositoryForSpace.Tasks.FindAll() | Where-Object {$_.State -eq "Queued" -and $_.HasBeenPickedUpByProcessor -eq $false -and $_.Name -eq "Deploy"}
+
+    # Loop through results
+    foreach ($task in $queuedDeployments)
+    {
+        $repositoryForSpace.Tasks.Cancel($task)   
+    }
+}
+catch
+{
+    Write-Host $_.Exception.Message
 }
