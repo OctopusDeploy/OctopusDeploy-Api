@@ -1,17 +1,58 @@
-static void Main(string[] args)
+// If using .net Core, be sure to add the NuGet package of System.Security.Permissions
+
+// Reference Octopus.Client
+//#r "path\to\Octopus.Client.dll"
+
+using Octopus.Client;
+using Octopus.Client.Model;
+
+// Declare working varibles
+var octopusURL = "https://youroctourl";
+var octopusAPIKey = "API-YOURAPIKEY";
+string spaceName = "default";
+string hostName = "MyHost";
+int tentaclePort = 10933;
+string[] environmentNames = { "Development", "Production" };
+string[] roles = { "MyRole" };
+List<string> environmentIds = new List<string>();
+
+// Create repository object
+var endpoint = new OctopusServerEndpoint(octopusURL, octopusAPIKey);
+var repository = new OctopusRepository(endpoint);
+var client = new OctopusClient(endpoint);
+
+try
 {
-  var endpoint = new OctopusServerEndpoint("https://octopus.url", "API-XXXXXXXXXXXXXXXXXXXXXXXXXX");
-  var repository = new OctopusRepository(endpoint);
+    // Get space
+    var space = repository.Spaces.FindByName(spaceName);
+    var repositoryForSpace = client.ForSpace(space);
 
-  var tentacleEndpoint = new ListeningTentacleEndpointResource();
-  tentacleEndpoint.Thumbprint = "551290ED75D2A4AEBBB6F31778DB1C0D4865B091";
-  tentacleEndpoint.Uri = "https://localhost:10933";
+    // Get environments
+    foreach (var environmentName in environmentNames)
+    {
+        environmentIds.Add(repositoryForSpace.Environments.FindByName(environmentName).Id);
+    }
 
-  var tentacle = new MachineResource();
-  tentacle.Endpoint = tentacleEndpoint;
-  tentacle.EnvironmentIds.Add("Environments-1");
-  tentacle.Roles.Add("demo-role");
-  tentacle.Name = "Demo tentacle";
+    // Discover host
+    var newTarget = repositoryForSpace.Machines.Discover(hostName, tentaclePort);
 
-  repository.Machines.Create(tentacle);
+    // Fill in details for target
+    foreach (string environmentId in environmentIds)
+    {
+        // Add to target
+        newTarget.EnvironmentIds.Add(environmentId);
+    }
+
+    foreach (string role in roles)
+    {
+        newTarget.Roles.Add(role);
+    }
+
+    // Add machine to space
+    repositoryForSpace.Machines.Create(newTarget);
+}
+catch (Exception ex)
+{
+    Console.WriteLine(ex.Message);
+    return;
 }

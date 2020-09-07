@@ -1,26 +1,59 @@
-# You can this dll from your Octopus Server/Tentacle installation directory or from
-# https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+# Load octopus.client assembly
+Add-Type -Path "c:\octopus.client\Octopus.Client.dll"
 
-$apikey = 'API-xxx' # Get this from your profile
-$octopusURI = 'http://localhost' # Your Octopus Server address
+# Octopus variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$spaceName = "default"
+$hostName = "MyHost"
+$tentacleThumbprint = "TentacleThumbprint"
+$tentacleIdentifier = "PollingTentacleIdentifier" # Must match value in Tentacle.config file on tentacle machine; ie poll://RandomCharacters
+$environmentNames = @("Development", "Production")
+$roles = @("MyRole")
 
-$tentacleThumbprint = "3BE9C24663D3CE052CFF9D0591914FADB8DEAF30" # Your Tentacle thumbprint
-$environmentId = "Environments-1" # Get this from /api/environments
-$role = "demo-role" # The role of the machine
-$machineName = "Demo tentacle" # The name of the machine
 
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
-$tentacleEndpoint = New-Object Octopus.Client.Model.Endpoints.PollingTentacleEndpointResource
-$tentacleEndpoint.Thumbprint = $tentacleThumbprint
-$tentacleEndpoint.Uri = "poll://" + (([char[]]([char]'A'..[char]'Z') | sort {get-random})[0..20] -Join '') + "/"
+try
+{
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
 
-$tentacle = New-Object Octopus.Client.Model.MachineResource
-$tentacle.Endpoint = $tentacleEndpoint
-$tentacle.EnvironmentIds.Add($environmentId) 
-$tentacle.Roles.Add($role) 
-$tentacle.Name = $machineName
+    # Get environment ids
+    $environments = $repositoryForSpace.Environments.FindAll() | Where-Object {$environmentNames -contains $_.Name}
 
-$repository.Machines.Create($tentacle)
+    # Create new polling tentacle resource
+    $newTarget = New-Object Octopus.Client.Model.Endpoints.PollingTentacleEndpointResource
+
+    $newTarget.Uri = "poll://$tentacleIdentifier"
+    $newTarget.Thumbprint = $tentacleThumbprint
+
+    # Create new machien resourece
+    $tentacle = New-Object Octopus.Client.Model.MachineResource
+    $tentacle.Endpoint = $newTarget
+    $tentacle.Name = $hostName
+    
+    
+    # Add properties to host
+    foreach ($environment in $environments)
+    {
+        # Add to target
+        $tentacle.EnvironmentIds.Add($environment.Id)
+    }
+
+    foreach ($role in $roles)
+    {
+        # Add to target
+        $tentacle.Roles.Add($role)
+    }
+        
+    # Add to machine to space
+    $repositoryForSpace.Machines.Create($tentacle)
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}

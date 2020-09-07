@@ -1,27 +1,51 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+# Load octopus.client assembly
+Add-Type -Path "path\to\Octopus.Client.dll"
 
-$apikey = 'API-xxx' # Get this from your profile
-$octopusURI = 'http://localhost' # Your Octopus Server address
+# Octopus variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$spaceName = "default"
+$hostName = "MyHost"
+$tentaclePort = "10933"
+$environmentNames = @("Development", "Production")
+$roles = @("MyRole")
 
-$tentacleThumbprint = "551290ED75D2A4AEBBB6F31778DB1C0D4865B091" # Your Tentacle thumbprint
-$tentacleUri = "https://localhost:10933" # Your Tentacle address
-$environmentId = "Environments-1" # Get this from /api/environments
-$role = "demo-role" # The role for this machine
-$machineName = "Demo tentacle" # The name of this machine
-
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
-$tentacleEndpoint = New-Object Octopus.Client.Model.EndPoints.ListeningTentacleEndpointResource
-$tentacleEndpoint.Thumbprint = $tentacleThumbprint
-$tentacleEndpoint.Uri = $tentacleUri
+try
+{
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
 
-$tentacle = New-Object Octopus.Client.Model.MachineResource
-$tentacle.Endpoint = $tentacleEndpoint
-$tentacle.EnvironmentIds.Add($environmentId) 
-$tentacle.Roles.Add($role) 
-$tentacle.Name = $machineName
+    # Get environment ids
+    $environments = $repositoryForSpace.Environments.GetAll() | Where-Object {$environmentNames -contains $_.Name}
 
-$repository.Machines.Create($tentacle)
+    # Discover host
+    $newTarget = $repositoryForSpace.Machines.Discover($hostName, $tentaclePort)
+
+    # Add properties to host
+    foreach ($environment in $environments)
+    {
+        # Add to target
+        $newTarget.EnvironmentIds.Add($environment.Id) | Out-Null
+    }
+
+    foreach ($role in $roles)
+    {
+        # Add to target
+        $newTarget.Roles.Add($role) | Out-Null
+    }
+    $newTarget.IsDisabled = $false
+    
+    # Add to machine to space
+    $repositoryForSpace.Machines.Create($newTarget)
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}
