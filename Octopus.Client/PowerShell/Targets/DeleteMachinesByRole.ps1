@@ -1,18 +1,35 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+# Load octopus.client assembly
+Add-Type -Path "path\to\Octopus.Client.dll"
 
-$apikey = 'API-MCPLE1AQM2VKTRFDLIBMORQHBXA' # Get this from your profile
-$octopusURI = 'http://localhost' # Your server address
+# Octopus variables
+$octopusURL = "https://youroctourl/api"
+$octopusAPIKey = "API-YOURAPIKEY"
+$spaceName = "default"
+$role = "MyRole"
 
-$role = "Demo-role" # The role that you want to delete
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
+$repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
-$endpoint = new-object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
-$repository = new-object Octopus.Client.OctopusRepository $endpoint
-
-$machines = $repository.Machines.FindMany({param($m) $role -in $m.Roles})
-
-foreach ($machine in $machines)
+try
 {
-    $repository.Machines.Delete($machine)
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
+
+    # Get machine list
+    $machines = $repositoryForSpace.Machines.GetAll() | Where-Object {$role -in $_.Roles}
+
+    # Loop through list
+    foreach ($machine in $machines)
+    {
+        # Delete machine
+        $repositoryForSpace.Machines.Delete($machine)
+    }
+}
+catch
+{
+    Write-Host $_.Exception.Message
 }
