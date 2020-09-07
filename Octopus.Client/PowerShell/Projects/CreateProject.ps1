@@ -1,20 +1,37 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+# Load octopus.client assembly
+Add-Type -Path "path\to\Octopus.Client.dll"
 
-$apikey = 'API-MYAPIKEY' # Get this from your profile
-$octopusURI = 'http://MY-OCTOPUS' # Your server address
+# Octopus variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$spaceName = "default"
+$projectName = "MyProject"
+$projectGroupName = "Default project group"
+$lifecycleName = "Default lifecycle"
 
-$projectName = "My project via the api" # Name of the new project
-$projectGroupName = "All projects" # Name of the existing project group the new project will be added to
-$lifecycleName = "Default Lifecycle" # Name of the existing lifecycle the new project will use
-
-
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
-$projectGroup = $repository.ProjectGroups.FindByName($projectGroupName)
-$lifecycle = $repository.Lifecycles.FindByName($lifecycleName)
+try
+{
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
 
-$project = $repository.Projects.CreateOrModify($projectName, $projectGroup, $lifecycle)
-$project.Save()
+    # Get project group
+    $projectGroup = $repositoryForSpace.ProjectGroups.FindByName($projectGroupName)
+
+    # Get lifecycle
+    $lifecycle = $repositoryForSpace.Lifecycles.FindByName($lifecycleName)
+
+    # Create new project
+    $project = $repositoryForSpace.Projects.CreateOrModify($projectName, $projectGroup, $lifecycle)
+    $project.Save()
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}
