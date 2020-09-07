@@ -1,13 +1,13 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-
 # Load octopus.client assembly
 Add-Type -Path "path\to\Octopus.Client.dll"
 
 # Octopus variables
-$octopusURL = "https://youroctourl"
+$octopusURL = "https://youroctourl/api"
 $octopusAPIKey = "API-YOURAPIKEY"
 $spaceName = "default"
+$role = "MyRole"
 
 $endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
@@ -19,13 +19,14 @@ try
     $space = $repository.Spaces.FindByName($spaceName)
     $repositoryForSpace = $client.ForSpace($space)
 
-    # Get tasks
-    $queuedDeployments = $repositoryForSpace.Tasks.FindAll() | Where-Object {$_.State -eq "Queued" -and $_.HasBeenPickedUpByProcessor -eq $false -and $_.Name -eq "Deploy"}
+    # Get machine list
+    $machines = $repositoryForSpace.Machines.GetAll() | Where-Object {$role -in $_.Roles}
 
-    # Loop through results
-    foreach ($task in $queuedDeployments)
+    # Loop through list
+    foreach ($machine in $machines)
     {
-        $repositoryForSpace.Tasks.Cancel($task)   
+        # Delete machine
+        $repositoryForSpace.Machines.Delete($machine)
     }
 }
 catch

@@ -1,13 +1,14 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-
 # Load octopus.client assembly
-Add-Type -Path "path\to\Octopus.Client.dll"
+Add-Type -Path "c:\octopus.client\Octopus.Client.dll"
 
 # Octopus variables
 $octopusURL = "https://youroctourl"
 $octopusAPIKey = "API-YOURAPIKEY"
 $spaceName = "default"
+$machineName = "MyMachine"
+$machinePolicyName = "MyPolicy"
 
 $endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
@@ -19,14 +20,15 @@ try
     $space = $repository.Spaces.FindByName($spaceName)
     $repositoryForSpace = $client.ForSpace($space)
 
-    # Get tasks
-    $queuedDeployments = $repositoryForSpace.Tasks.FindAll() | Where-Object {$_.State -eq "Queued" -and $_.HasBeenPickedUpByProcessor -eq $false -and $_.Name -eq "Deploy"}
+    # Get machine list
+    $machine = $repositoryForSpace.Machines.FindByName($machineName)
 
-    # Loop through results
-    foreach ($task in $queuedDeployments)
-    {
-        $repositoryForSpace.Tasks.Cancel($task)   
-    }
+    # Get machine policy
+    $machinePolicy = $repositoryForSpace.MachinePolicies.FindByName($machinePolicyName)
+
+    # Change machine policy for machine
+    $machine.MachinePolicyId = $machinePolicy.Id
+    $repositoryForSpace.Machines.Modify($machine)
 }
 catch
 {

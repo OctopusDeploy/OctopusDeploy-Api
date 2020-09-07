@@ -1,27 +1,53 @@
-﻿##CONFIG
-$OctopusURL = "" #Octopus URL
-$OctopusAPIKey = "" #Octopus API Key
-
-$AccountName = "" #Name you want to give to the account.
-$ClientId = "" #Your Azure Active Directory Client ID. This is a GUID in the format xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx. This value is known as Client ID in the Azure Portal, and Application ID in the API.
-$Password = "" #The password for the Azure Active Directory application. This value is known as Key in the Azure Portal, and Password in the API.
-$SubscriptionID = "" #Your Azure subscription ID. This is a GUID in the format xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-$TenantId = "" #Your Azure Active Directory Tenant ID. This is a GUID in the format xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-
-##PROCESS##
+﻿# Define working variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+$spaceName = "default"
 
-$body = @{
-    AccountType = "AzureServicePrincipal"
-    ClientId = $ClientId
-    EnvironmentIds = "" #Scoped to all environments
-    #EnvironmentIds = @("Environments-1","Environments-21") #Scoped to specific environments
-    Name = $AccountName
-    Password = @{
-                    NewValue = $Password
-                }
-    SubscriptionNumber = $SubscriptionID
-    TenantId= $TenantId
-} | ConvertTo-Json
+# Azure service principle details
+$azureSubscriptionNumber = "Subscription-Guid"
+$azureTenantId = "Tenant-Guid"
+$azureClientId = "Client-Guid"
+$azureSecret = "Secret"
 
-Invoke-WebRequest $OctopusURL/api/accounts -Method Post -Headers $header -Body $body
+# Octopus Account details
+$accountName = "Azure Account"
+$accountDescription = "My Azure Account"
+$accountTenantParticipation = "Untenanted"
+$accountTenantTags = @()
+$accountTenantIds = @()
+$accountEnvironmentIds = @()
+
+try
+{
+    # Get space
+    $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
+    
+    # Create JSON payload
+    $jsonPayload = @{
+        AccountType = "AzureServicePrincipal"
+        AzureEnvironment = ""
+        SubscriptionNumber = $azureSubscriptionNumber
+        Password = @{
+            HasValue = $true
+            NewValue = $azureSecret
+        }
+        TenantId = $azureTenantId
+        ClientId = $azureClientId
+        ActiveDirectoryEndpointBaseUri = ""
+        ResourceManagementEndpointBaseUri = ""
+        Name = $accountName
+        Description = $accountDescription
+        TenantedDeploymentParticipation = $accountTenantParticipation
+        TenantTags = $accountTenantTags
+        TenantIds = $accountTenantIds
+        EnvironmentIds = $accountEnvironmentIds
+    }
+
+    # Add Azure account
+    Invoke-RestMethod -Method Post -Uri "$octopusURL/api/$($space.Id)/accounts" -Body ($jsonPayload | ConvertTo-Json -Depth 10) -Headers $header
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}

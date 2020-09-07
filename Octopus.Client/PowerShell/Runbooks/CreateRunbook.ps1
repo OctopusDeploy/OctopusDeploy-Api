@@ -1,6 +1,5 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-
 # Load octopus.client assembly
 Add-Type -Path "path\to\Octopus.Client.dll"
 
@@ -8,6 +7,8 @@ Add-Type -Path "path\to\Octopus.Client.dll"
 $octopusURL = "https://youroctourl"
 $octopusAPIKey = "API-YOURAPIKEY"
 $spaceName = "default"
+$projectName = "MyProject"
+$runbookName = "MyRunbook"
 
 $endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
@@ -19,14 +20,23 @@ try
     $space = $repository.Spaces.FindByName($spaceName)
     $repositoryForSpace = $client.ForSpace($space)
 
-    # Get tasks
-    $queuedDeployments = $repositoryForSpace.Tasks.FindAll() | Where-Object {$_.State -eq "Queued" -and $_.HasBeenPickedUpByProcessor -eq $false -and $_.Name -eq "Deploy"}
+    # Get project
+    $project = $repositoryForSpace.Projects.FindByName($projectName)
 
-    # Loop through results
-    foreach ($task in $queuedDeployments)
-    {
-        $repositoryForSpace.Tasks.Cancel($task)   
-    }
+    # Create runbook retention object
+    $runbookRetentionPolicy = New-Object Octopus.Client.Model.RunbookRetentionPeriod
+    $runbookRetentionPolicy.QuantityToKeep = 100
+    $runbookRetentionPolicy.ShouldKeepForever = $false
+
+
+    # Create runbook object
+    $runbook = New-Object Octopus.Client.Model.RunbookResource
+    $runbook.Name = $runbookName
+    $runbook.ProjectId = $project.Id
+    $runbook.RunRetentionPolicy = $runbookRetentionPolicy
+    
+    # Save
+    $repositoryForSpace.Runbooks.Create($runbook)
 }
 catch
 {

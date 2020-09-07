@@ -5,8 +5,9 @@ $headers = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 
 $spaceName = "Default"
 $projectName = "Your Project Name"
-$environmentName = "Development"
+$environmentName = "Dev"
 $channelName = "Default"
+$tenantNames = @("Customer A Name", "Customer B Name")
 
 try {
     # Get space id
@@ -64,14 +65,22 @@ try {
     Write-Host "Creating release with these values: $releaseBody"
     $release = Invoke-WebRequest -Uri $octopusSpaceUrl/releases -Method POST -Headers $headers -Body $releaseBody -ErrorVariable octoError | ConvertFrom-Json
 
-    # Create deployment
-    $deploymentBody = @{
-        ReleaseId     = $release.Id
-        EnvironmentId = $environment.Id
-    } | ConvertTo-Json
+    # Create deployment for each tenant
+    $tenants = Invoke-WebRequest -Uri "$octopusSpaceUrl/tenants/all" -Headers $headers -ErrorVariable octoError | ConvertFrom-Json
 
-    Write-Host "Creating deployment with these values: $deploymentBody"
-    $deployment = Invoke-WebRequest -Uri $octopusSpaceUrl/deployments -Method POST -Headers $headers -Body $deploymentBody -ErrorVariable octoError
+    $tenantNames | ForEach-Object {
+        $name = $_
+        $tenant = $tenants | Where-Object { $_.Name -eq $name }
+
+        $deploymentBody = @{
+            ReleaseId     = $release.Id
+            EnvironmentId = $environment.Id
+            TenantId      = $tenant.Id
+        } | ConvertTo-Json
+
+        Write-Host "Creating deployment with these values: $deploymentBody"
+        $deployment = Invoke-WebRequest -Uri $octopusSpaceUrl/deployments -Method POST -Headers $headers -Body $deploymentBody -ErrorVariable octoError
+    }
 }
 catch {
     Write-Host "There was an error during the request: $($octoError.Message)"

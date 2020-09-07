@@ -1,33 +1,52 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+# Load Octopous Client assembly
+Add-Type -Path 'c:\octopus.client\Octopus.Client.dll' 
 
-$apikey = 'API-MCPLE1AQM2VKTRFDLIBMORQHBXA' # Get this from your profile
-$octopusURI = 'http://localhost' # Your server address
+# Declare Octopus variables
+$apikey = 'API-YOURAPIKEY' 
+$octopusURI = 'https://youroctourl'
+$projectName = "MyProject"
 
-$projectId = "Projects-100" # Get this from /api/projects
-$stepName = "Run a script" # The name of the step
-$role = "demo-role" # The machine role to run this step on
-$scriptBody = "Write-Host 'Hello world'" # The script to run
-
+# Create repository object
 $endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient($endpoint)
 
-$project = $repository.Projects.Get($projectId)
-$process = $repository.DeploymentProcesses.Get($project.DeploymentProcessId)
+# Get reference to space
+$space = $repository.Spaces.FindByName($spaceName)
+$repositoryForSpace = $client.ForSpace($space)
 
-$step = New-Object Octopus.Client.Model.DeploymentStepResource
-$step.Name = $stepName
-$step.Condition = [Octopus.Client.Model.DeploymentStepCondition]::Success
-$step.Properties.Add("Octopus.Action.TargetRoles", $role)
+try
+{
+    # Get project
+    $project = $repositoryForSpace.Projects.FindByName($projectName)
 
-$scriptAction = New-Object Octopus.Client.Model.DeploymentActionResource
-$scriptAction.ActionType = "Octopus.Script"
-$scriptAction.Name = $stepName
-$scriptAction.Properties.Add("Octopus.Action.Script.ScriptBody", $scriptBody)
+    # Get project process
+    $process = $repositoryForSpace.DeploymentProcesses.Get($project.DeploymentProcessId)
 
-$step.Actions.Add($scriptAction)
+    # Define new step
+    $stepName = "Run a script" # The name of the step
+    $role = "My role" # The machine role to run this step on
+    $scriptBody = "Write-Host 'Hello world'" # The script to run
+    $step = New-Object Octopus.Client.Model.DeploymentStepResource
+    $step.Name = $stepName
+    $step.Condition = [Octopus.Client.Model.DeploymentStepCondition]::Success
+    $step.Properties.Add("Octopus.Action.TargetRoles", $role)
 
-$process.Steps.Add($step)
+    # Define script action
+    $scriptAction = New-Object Octopus.Client.Model.DeploymentActionResource
+    $scriptAction.ActionType = "Octopus.Script"
+    $scriptAction.Name = $stepName
+    $scriptAction.Properties.Add("Octopus.Action.Script.ScriptBody", $scriptBody)
 
-$repository.DeploymentProcesses.Modify($process)
+    # Add step to process
+    $step.Actions.Add($scriptAction)
+    $process.Steps.Add($step)
+    $repositoryForSpace.DeploymentProcesses.Modify($process)
+}
+catch
+{
+    # Display error
+    Write-Host $_.Exception.Message
+}

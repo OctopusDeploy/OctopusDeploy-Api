@@ -1,18 +1,38 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+# Load octopus.client assembly
+Add-Type -Path "path\to\Octopus.Client.dll"
 
-$apikey = 'API-RKXKTNS8D7SDADKUUA0OHTMFSW' # Get this from your profile
-$octopusURI = 'http://localhost' # Your server address
+# Octopus variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$spaceName = "default"
+$projectName = "MyProject"
 
-$projectId = "projects-1"
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
+$repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
-$endpoint = new-object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
-$repository = new-object Octopus.Client.OctopusRepository $endpoint
-
-$releases = $repository.Releases.FindMany({param($r) $r.ProjectId -eq $projectId})
-
-foreach ($release in $releases)
+try
 {
-    $repository.Releases.Delete($release)
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
+
+    # Get project
+    $project = $repositoryForSpace.Projects.FindByName($projectName)
+
+    # Get releases
+    $releases = $repositoryForSpace.Releases.FindMany({param($r) $r.ProjectId -eq $project.Id})
+
+    # Loop through results
+    foreach ($release in $releases)
+    {
+        # Delete release
+        $repositoryForSpace.Releases.Delete($release)
+    }
+}
+catch
+{
+    Write-Host $_.Exception.Message
 }
