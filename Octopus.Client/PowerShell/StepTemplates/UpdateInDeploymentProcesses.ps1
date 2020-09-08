@@ -31,7 +31,7 @@ Function Update-StepTemplatesOnDeploymentProcesses
         [Parameter(Mandatory=$true)]
         [string]$APIKey,
 
-        # Full path of Octopus.client.dll. You can get it from https://www.nuget.org/packages/Octopus.Client/
+        # Full path of Octopus.Client.dll. You can get it from https://www.nuget.org/packages/Octopus.Client/
         [Parameter(Mandatory=$false)]
         $OctopusClientDLLPath = "C:\Program Files\Octopus Deploy\Tentacle\octopus.client.dll" #Default Tentacle install dir
     )
