@@ -20,7 +20,7 @@ try
             $targetId = $target.Id
             Write-Highlight "Deleting the target $targetId because the name matches the machineName"
 
-            $deleteResponse = (Invoke-RestMethod "$OctopusUrl/api/$($space.Id)machines/$targetId" -Headers $header -Method Delete)
+            $deleteResponse = (Invoke-RestMethod "$OctopusUrl/api/$($space.Id)/machines/$targetId" -Headers $header -Method Delete)
 
             Write-Host "Delete Response $deleteResponse"
             break
