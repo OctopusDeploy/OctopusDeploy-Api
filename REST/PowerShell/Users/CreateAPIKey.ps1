@@ -1,26 +1,34 @@
-﻿##CONFIG
-$OctopusURL = "" #Base url of Octopus server
-$APIKey = "" #API Key to authenticate to Octopus Server
+﻿# Define working variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 
-$UserName = "" #UserName of the user for which the API key will be created. You can check this value from the web portal under Configuration/Users
-$APIKeyPurpose = "" #Purpose of the API Key. This field is mandatory.
+# UserName of the user for which the API key will be created. You can check this value from the web portal under Configuration/Users
+$UserName = "" 
 
-##PROCESS
-$header = @{ "X-Octopus-ApiKey" = $APIKey }
+# Purpose of the API Key. This field is mandatory.
+$APIKeyPurpose = ""
 
-$body = @{
-  Purpose = $APIKeyPurpose
-  } | ConvertTo-Json
+try
+{
+    # Create payload
+    $body = @{
+        Purpose = $APIKeyPurpose
+    } | ConvertTo-Json
 
+    # Getting all users to filter target user by name
+    $allUsers = (Invoke-WebRequest "$OctopusURL/api/users/all" -Headers $header -Method Get).content | ConvertFrom-Json
 
-#Getting all users to filter target user by name
-$allUsers = (Invoke-WebRequest "$OctopusURL/api/users/all" -Headers $header -Method Get).content | ConvertFrom-Json
+    # Getting user that owns API Key.
+    $User = $allUsers | Where-Object { $_.username -eq $UserName }
 
-#Getting user that owns API Key that will be deleted
-$User = $allUsers | where{$_.username -eq $UserName}
+    # Creating API Key
+    $CreateAPIKeyResponse = (Invoke-WebRequest "$OctopusURL/api/users/$($User.id)/apikeys" -Method Post -Headers $header -Body $body -Verbose).content | ConvertFrom-Json
 
-#Creating API Key
-$CreateAPIKeyResponse = (Invoke-WebRequest "$OctopusURL/api/users/$($User.id)/apikeys" -Method Post -Headers $header -Body $body -Verbose).content | ConvertFrom-Json
-
-#Printing new API Key
-Write-output "API Key created: $($CreateAPIKeyResponse.apikey)"
+    # Printing new API Key
+    Write-Output "API Key created: $($CreateAPIKeyResponse.apikey)"
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}
