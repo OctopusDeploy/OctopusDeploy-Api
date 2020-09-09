@@ -1,32 +1,54 @@
 ﻿# You can reference this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
 
-Add-Type -Path 'Octopus.Client.dll' 
+Add-Type -Path "c:\octopus.client\Octopus.Client.dll"
 
-$OctopusUrl = "" # example https://myoctopus.something.com
-$APIKey = "" # example API-XXXXXXXXXXXXXXXXXXXXXXXXXXX
-$roleName = "System administrator"
+# Octopus variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$spaceName = "default"
+$userRoleName = "Deployment creator"
 
-$endpoint = new-object Octopus.Client.OctopusServerEndpoint $OctopusUrl,$APIKey 
-$repository = new-object Octopus.Client.OctopusRepository $endpoint
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
+$repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
-## Next find the roleId for the Role name
-$userRoleId = $repository.UserRoles.FindOne({param($r) if ($r.Name -eq $roleName){$true}}).Id
-Write-Host "The userRoleId for $roleName is $userRoleId"
+try
+{
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
 
-## Next, let's find the teams
-$teamsList = $repository.Teams.FindAll()
-$targetTeams = @()
+    # Get team
+    $teams = $repositoryForSpace.Teams.FindAll()
 
-## Finally, loop through each teams scoped user roles and find the one we are searching for
-foreach ($team in $teamsList) {
+    # Get user role
+    $userRole = $repositoryForSpace.UserRoles.FindByName($userRoleName)
     
-    $teamScopedUserRoles = $repository.Teams.GetScopedUserRoles($team);
-    $roleFilter = @($teamScopedUserRoles | Where {$_.UserRoleId -eq $userRoleId})
-    if($roleFilter.Count -gt 0) {
-        $targetTeams+=$team.Name
+    # Loop through teams
+    $teamNames = @()
+    foreach ($team in $teams)
+    {
+        # Get scopeduserrole
+        $scopedUserRole = $repositoryForSpace.Teams.GetScopedUserRoles($team) | Where-Object {$_.UserRoleId -eq $userRole.Id}
+
+        # Check for null
+        if ($null -ne $scopedUserRole)
+        {
+            # Add to list
+            $teamNames += $team.Name
+        }
     }
+
+    # Loop through results
+    Write-Host "The following teams are using role $($userRoleName):"
+    foreach ($teamName in $teamNames)
+    {
+        Write-Host "$teamName"
+    }
+
 }
-Write-Host
-Write-Host "Teams with userRole '$roleName' are:"
-$targetTeams
+catch
+{
+    Write-Host $_.Exception.Message
+}

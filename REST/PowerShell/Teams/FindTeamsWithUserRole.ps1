@@ -1,28 +1,44 @@
-﻿$OctopusUrl = "" # example https://myoctopus.something.com
-$APIKey = "" # example API-XXXXXXXXXXXXXXXXXXXXXXXXXXX
-$roleName = "System administrator"
+﻿# Define working variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+$spaceName = "default"
+$userRoleName = "Deployment creator"
 
-$header = @{ "X-Octopus-ApiKey" = $APIKey }
+try
+{
+    # Get space
+    $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
 
-## First, let's find the roleId for the Role name
-$userRoleList = Invoke-RestMethod "$OctopusUrl/api/userroles/all" -Headers $header
-$userRoleFilter = @($userRoleList | Where {$_.Name -eq $roleName})
-$userRoleId = $userRoleFilter[0].Id
-Write-Host "The userRoleId for $roleName is $userRoleId"
+    # Get user role
+    $userRole = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/userroles/all" -Headers $header) | Where-Object {$_.Name -eq $userRoleName}
 
-## Next, let's find the teams
-$teamsList = Invoke-RestMethod "$OctopusUrl/api/teams?includeSystem=true" -Headers $header 
-$targetTeams = @()
+    # Get teams collection
+    $teams = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/teams/all" -Headers $header
+    
+    # Loop through teams
+    $teamNames = @()
+    foreach ($team in $teams)
+    {
+        # Get scoped roles for team
+        $scopedUserRole = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/teams/$($team.Id)/scopeduserroles" -Headers $header).Items | Where-Object {$_.UserRoleId -eq $userRole.Id}
 
-## Finally, loop through each teams scoped user roles and find the one we are searching for
-foreach ($team in $teamsList.Items) {
-    $teamId = $team.Id
-    $teamScopedUserRoles = Invoke-RestMethod  -UseBasicParsing "$OctopusUrl/api/teams/$teamId/scopeduserroles" -Headers $header
-    $roleFilter = @($teamScopedUserRoles.Items | Where {$_.UserRoleId -eq $userRoleId})
-    if($roleFilter.Count -gt 0) {
-        $targetTeams+=$team.Name
+        # Check for null
+        if ($null -ne $scopedUserRole)
+        {
+            # Add to teams
+            $teamNames += $team.Name
+        }
+    }
+
+    # Loop through results
+    Write-Host "The following teams are using role $($userRoleName):"
+    foreach ($teamName in $teamNames)
+    {
+        Write-Host "$teamName"
     }
 }
-Write-Host
-Write-Host "Teams with userRole '$roleName' are:"
-$targetTeams
+catch
+{
+    Write-Host $_.Exception.Message
+}
