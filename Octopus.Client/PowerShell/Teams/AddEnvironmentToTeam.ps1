@@ -1,18 +1,45 @@
-# You can this dll from your Octopus Server/Tentacle installation directory or from
-# https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+Add-Type -Path "path\to\Octopus.Client.dll"
 
-$apikey = 'API-MCPLE1AQM2VKTRFDLIBMORQHBXA' # Get this from your profile
-$octopusURI = 'http://localhost' # Your server address
+# Octopus variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$spaceName = "default"
+$environmentNames = @("Test", "Production")
+$teamName = "MyTeam"
+$userRoleName = "Deployment creator"
 
-$endpoint = new-object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
-$repository = new-object Octopus.Client.OctopusRepository $endpoint
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
+$repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
+$environmentIds = @()
 
-$teamId = "Teams-1" # Get this from /api/teams
-$environmentId = "Environments-1" # Get this from /api/environments
+try
+{
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
 
-$team = $repository.Teams.Get($teamID)
+    # Get team
+    $team = $repositoryForSpace.Teams.FindByName($teamName)
 
-$team.EnvironmentIds.Add($environmentId)
+    # Get user role
+    $userRole = $repositoryForSpace.UserRoles.FindByName($userRoleName)
+    
+    # Get scopeduserrole
+    $scopedUserRole = $repositoryForSpace.Teams.GetScopedUserRoles($team) | Where-Object {$_.UserRoleId -eq $userRole.Id}
 
-$repository.Teams.Modify($team)
+    # Get environments
+    $environments = $repositoryForSpace.Environments.GetAll() | Where-Object {$environmentNames -contains $_.Name}
+    foreach ($environment in $environments)
+    {
+        # Add Id
+        $scopedUserRole.EnvironmentIds.Add($environment.Id)
+    }
+
+    # Update the scoped user role object
+    $repositoryForSpace.ScopedUserRoles.Modify($scopedUserRole)
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}
