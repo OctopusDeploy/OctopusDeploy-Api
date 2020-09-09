@@ -1,20 +1,47 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+Add-Type -Path 'path\to\Octopus.Client.dll'
 
-$apikey = 'API-xxx' # Get this from your profile
-$octopusURI = 'http://localhost' # Your Octopus Server address
+$octopusURL = "https://youroctourl/"
+$octopusAPIKey = "API-YOURAPIKEY"
 
-$releaseId = "Releases-1" # Get this from /api/releases
-$environmentId = "Environments-1" # Get this from /api/environments
+$spaceName = "Default"
+$projectName = "Your Project Name"
+$releaseVersion = "0.0.1"
+$environmentName = "Development"
 
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
-$repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint($octopusURL, $octopusAPIKey)
+$repository = New-Object Octopus.Client.OctopusRepository($endpoint)
 
-$release = $repository.Releases.Get($releaseId); 
-$deployment = new-object Octopus.Client.Model.DeploymentResource
-$deployment.ReleaseId = $release.Id
-$deployment.ProjectId = $release.ProjectId
-$deployment.EnvironmentId = $environmentId
+try {
+    # Get space id
+    $space = $repository.Spaces.FindByName($spaceName)
+    Write-Host "Using Space named $($space.Name) with id $($space.Id)"
 
-$repository.Deployments.Create($deployment)
+    # Create space specific repository
+    $repositoryForSpace = [Octopus.Client.OctopusRepositoryExtensions]::ForSpace($repository, $space)
+
+    # Get environment by name
+    $environment = $repositoryForSpace.Environments.FindByName($environmentName)
+    Write-Host "Using Environment named $($environment.Name) with id $($environment.Id)"
+
+    # Get project by name
+    $project = $repositoryForSpace.Projects.FindByName($projectName)
+    Write-Host "Using Project named $($project.Name) with id $($project.Id)"
+
+    # Get release by version
+    $release = $repositoryForSpace.Projects.GetReleaseByVersion($project, $releaseVersion);
+    Write-Host "Using release version $($release.Version) with id $($release.Id)"
+
+    # Create deployment
+    $deployment = New-Object Octopus.Client.Model.DeploymentResource -Property @{
+        ReleaseId     = $release.Id
+        EnvironmentId = $environment.Id
+    }
+
+    Write-Host "Creating deployment for release $($release.Version) of project $projectName to environment $environmentName"
+    $deployment = $repositoryForSpace.Deployments.Create($deployment)
+}
+catch {
+    Write-Host $_.Exception.Message
+}
