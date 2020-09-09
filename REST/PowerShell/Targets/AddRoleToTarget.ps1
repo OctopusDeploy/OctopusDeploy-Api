@@ -1,16 +1,25 @@
-# set up variables
-$apikey = ""
-$octopusURL = ""
-$filter = "My Deployment Target"
+# Define working variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+$spaceName = "default"
+$machineName = "MyMachine"
+$targetRole = "MyRole"
 
+try
+{
+    # Get space
+    $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
 
-# apply a new role to an existing machine
-$machines = Invoke-RestMethod -uri ($octopusURL, "/api/machines/all?apikey=", $apikey -join "")
-$machine = $machines | ? { $_.Name -eq $filter} 
-$machine.roles += ("mynewrole")
-$putTo = ($octopusURL, "/api/machines/", $machine.Id , "?apikey=", $apikey -join "")
-$putresult = Invoke-RestMethod -uri $putTo -Method PUT -Body ($machine |convertto-json -depth 5)
+    # Get machine
+    $machine = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/machines/all" -Headers $header) | Where-Object {$_.Name -eq $machineName}
+    
+    # Add target role
+    $machine.roles += ($targetRole)
 
-
-# prove it's worked correctly
-Write-Output $putresult
+    Invoke-RestMethod -Method Put -Uri "$octopusURL/api/$($space.Id)/machines/$($machine.Id)" -Body ($machine | ConvertTo-Json -Depth 10) -Headers $header
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}
