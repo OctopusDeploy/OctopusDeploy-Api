@@ -1,23 +1,25 @@
-﻿###CONFIG###
-$OctopusURL = "https://octopus.url" #Octopus Server root URL
-$APIKey = "API-XXXXXXXXXXXXXXXXXXXXXXXXXX" #Octopus API Key
+﻿# Define working variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+$machineName = "MyMachine"
+$machineEnabled = $true
 
-$machineName = "South" #Name of the machine to enable/disable
+try
+{
+    # Get space
+    $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
 
-###PROCESS###
-$header = @{ "X-Octopus-ApiKey" = $APIKey }
+    # Get machine
+    $machine = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/machines/all" -Headers $header) | Where-Object {$_.Name -eq $machineName}
 
-#Getting all machines
-$allmachines = (Invoke-WebRequest $OctopusURL/api/machines/all -Headers $header).content | ConvertFrom-Json
+    # Enable/disable machine
+    $machine.IsDisabled = !$machineEnabled
 
-#Filtering machine by name
-$machine = $allmachines | ?{$_.name -eq $machineName}
-
-#Setting the "IsDisabled" property
-$machine.IsDisabled = $true #Set to $false to disable the machine
-
-#Converting $machine into a JSON blob to PUT is back to the server
-$body = $machine | ConvertTo-Json -Depth 4
-
-#Pushing the modified machine to the userver
-Invoke-WebRequest ($OctopusURL + $machine.Links.Self) -Method Put -Body $body -Headers $header
+    # Update machine
+    Invoke-RestMethod -Method Put -Uri "$octopusURL/api/$($space.Id)/machines/$($machine.Id)" -Headers $header -Body ($machine | ConvertTo-Json -Depth 10)
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}
