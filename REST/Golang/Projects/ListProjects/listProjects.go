@@ -13,7 +13,7 @@ func main() {
 	apiKey := os.Args[2]
 
 	response, err := http.NewRequest("GET", url+"/api/projects", nil)
-	response.Header.Add("X-Octopus-ApiKey", apiKey)
+	response.Header.Set("X-Octopus-ApiKey", apiKey)
 
 	if err != nil {
 		log.Println(err)
