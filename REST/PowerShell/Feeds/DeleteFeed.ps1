@@ -1,8 +1,22 @@
-﻿$OctopusAPIkey = "" #Your Octopus API Key
-$OctopusURL = "" #Your Octopus base url
-
+﻿$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+$spaceName = "default"
+$feedName = "nuget.org"
 
-$feedID = "" #ID of the feed you want to delete. The best way to get this ID is by going to Library -> External feeds -> [Edit] on the feed you want to delete -> Check the ID
+try
+{
+    # Get space
+    $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
 
-Invoke-WebRequest "$OctopusURL/api/feeds/$feedID" -Headers $header -Method Delete
+    # Get feedID
+    $feed = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/feeds/all" -Headers $header) | Where-Object {$_.Name -eq $feedName}
+    $feedID = $feed.Id
+    
+    # Delete Feed
+    Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/feeds/$feedID" -Headers $header -Method Delete
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}
