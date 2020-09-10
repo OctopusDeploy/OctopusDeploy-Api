@@ -1,31 +1,60 @@
 # You can this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+Add-Type -Path "path\to\Octopus.Client.dll"
 
-$apikey = 'API-ABC123' # Get this from your profile
-$octopusURI = 'http://octopus-uri' # Your server address
+# Octopus variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$spaceName = "default"
 
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
-function ClearSensitiveVariables($variableSetId) {
-    $vars = $repository.VariableSets.Get($variableSetId)
-    foreach ($var in $vars.Variables) {
-        if (!$var.IsSensitive) { continue }
+Function Clear-SensitiveVariables
+{
+    # Define function variables
+    param ($VariableSetId)
 
-        $var.Value = "secret"
-        $changed = $true
+    # Get the variable set
+    $variableSet = $repositoryForSpace.VariableSets.Get($VariableSetId)
+
+    # Loop through variables
+    foreach ($variable in $VariableSet)
+    {
+        # Check for sensitive
+        if ($variable.IsSensitive)
+        {
+            $variable.Value = [string]::Empty
+        }
     }
 
-    $repository.VariableSets.Modify($vars)
+    # Update set
+    $repositoryForSpace.VariableSets.Modify($variableSet)
 }
 
-$libVarSets = $repository.LibraryVariableSets.GetAll()
-foreach ($lvs in $libVarSets) {
-    ClearSensitiveVariables($lvs.VariableSetId)    
-}
+try
+{
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
 
-$projects = $repository.Projects.GetAll()
-foreach ($proj in $projects) {
-    ClearSensitiveVariables($proj.VariableSetId)
+    # Loop through projects
+    foreach ($project in $repositoryForSpace.Projects.GetAll())
+    {
+        # Clear the sensitive ones
+        Clear-SensitiveVariables -VariableSetId $project.VariableSetId
+    }
+    
+    # Loop through library variable sets
+    foreach ($libararySet in $repositoryForSpace.LibraryVariableSets.GetAll())
+    {
+        # Clear sensitive ones
+        Clear-SensitiveVariables -VariableSetId $libararySet.VariableSetId
+    }
+
+}
+catch
+{
+    Write-Host $_.Exception.Message
 }
