@@ -1,6 +1,23 @@
-﻿$OctopusAPIkey = "" #Your Octopus API Key
-$OctopusURL = "" #Your Octopus base url
-
+﻿$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+$spaceName = "default"
 
-(Invoke-WebRequest "$OctopusURL/api/feeds" -Headers $header -Method Get).content | ConvertFrom-Json | select -ExpandProperty items
+try
+{
+    # Get space
+    $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
+
+    # Get all feeds
+    $feeds = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/feeds/all" -Headers $header)
+    
+    # Enumerate each feed
+    foreach($feed in $feeds)
+    {
+        $feed
+    }
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}
