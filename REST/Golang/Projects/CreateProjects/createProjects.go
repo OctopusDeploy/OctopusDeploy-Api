@@ -20,7 +20,7 @@ func createProject(URL string, apiKey string) {
 
 	body, _ := json.Marshal(map[string]string{
 		"ProjectGroupId": "Projects-1",
-		"Name":           "testGoCodeee",
+		"Name":           "testGoCodeeeee",
 		"LifecycleID":    "DevLifecycle",
 	})
 
@@ -33,7 +33,11 @@ func createProject(URL string, apiKey string) {
 	put.Header.Set("X-Octopus-ApiKey", apiKey)
 
 	client := &http.Client{}
-	resp, _ := client.Do(put)
+	resp, err := client.Do(put)
 
-	fmt.Println(resp)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Response Status:", resp.Status)
 }
