@@ -1,49 +1,36 @@
-﻿$OctopusAPIKey = 'YOUR API KEY'
-$ServerUrl = 'https://YOUR INSTANCE NAME/api'
-$ProjectId = '' #Project Id to remove
+﻿# Define working variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+$projectName = "MyProject"
+$spaceName = "default"
+$teamName = "MyTeam"
 
-# Add the API key to the headers so we can query the server
-$header = New-Object "System.Collections.Generic.Dictionary[[String],[String]]"
-$header.Add("X-Octopus-ApiKey", $OctopusAPIKey)
-
-# First we need a list of all the possible teams to update
-$teamUrl = "$ServerUrl/teams?skip=0&take=2147483647"
-Write-Host "Getting all the teams from $teamUrl"
-$teamResponse = Invoke-RestMethod $teamUrl -Headers $header
-
-#From here on out any requests we make will be updates, let's update the headers to handle that
-$header.Add("x-http-method-override", "PUT")
-
-$teamList = $teamResponse.Items
-
-foreach ($team in $teamList)
+try
 {
-    $projectIds = $team.ProjectIds
-    $teamName = $team.Name
-    $teamId = $team.Id
+    # Get space
+    $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
 
-    if ($projectIds -match $ProjectId)
+    # Get project
+    $project = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/all" -Headers $header) | Where-Object {$_.Name -eq $projectName}
+
+    # Get team
+    $team = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/teams" -Headers $header).Items | Where-Object {$_.Name -eq $teamName}
+
+    # Get scoped user roles
+    $scopedUserRoles = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/teams/$($team.Id)/scopeduserroles" -Headers $header).Items | Where-Object {$_.ProjectIds -contains $project.Id}
+    
+    # Loop through results and remove project Id
+    foreach ($scopedUserRole in $scopedUserRoles)
     {
-        Write-Host "Found ProjectId on $teamName"
-
-        $newProjectIds = @()
-        foreach ($arrayId in $projectIds)
-        {
-            if ($arrayId -ne $ProjectId)
-            {
-                $newProjectIds += $arrayId
-            }
-        }
-
-        $team.ProjectIds = $newProjectIds
-
-        $jsonRequest = $team | ConvertTo-Json
-
-        Write-Host "Sending in the request $jsonRequest"
-
-        $teamUpdateUrl = "$ServerUrl/teams/$teamId"
-        Write-Host "Updating the team at $teamUpdateUrl"
-        Invoke-RestMethod $teamUpdateUrl -Headers $header -Method POST -Body $jsonRequest
+        # Filter out project
+        $scopedUserRole.ProjectIds = ,($scopedUserRole.ProjectIds | Where-Object {$_ -notcontains $project.Id}) # Yes, the , is supposed to be there
+        
+        # Update scoped user role
+        Invoke-RestMethod -Method Put -Uri "$octopusURL/api/$($space.Id)/scopeduserroles/$($scopedUserRole.Id)" -Body ($scopedUserRole | ConvertTo-Json -Depth 10) -Headers $header
     }
 }
-
+catch
+{
+    Write-Host $_.Exception.Message
+}
