@@ -1,19 +1,34 @@
-﻿# You can this dll from your Octopus Server/Tentacle installation directory or from
+﻿# You can get this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+# Load octopus.client assembly
+Add-Type -Path "c:\octopus.client\Octopus.Client.dll"
 
-$apikey = '' #Your API Key
-$octopusURI = '' # Your server address
+# Octopus variables
+$octopusURL = "http://octotemp"
+$octopusAPIKey = "API-APIKEY"
+$spaceName = "default"
+$eventDate = "9/9/2020"
 
-$endpoint = new-object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
-$repository = new-object Octopus.Client.OctopusRepository $endpoint
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
+$repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
-[System.DateTimeOffset]$after = "10/7/2015"
-[System.DateTimeOffset]$before = "10/8/2015"
+try
+{
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
 
-#Using lambda expression to filter events using the FindMany method
-$repository.Events.FindMany(
-    {param($e) if(($e.Occurred -gt $after) -and ($e.Occurred -lt $before)){
-        $true
-        }
-    })
+    # Get events
+    $events = $repositoryForSpace.Events.FindAll() | Where-Object {($_.Occurred -ge [datetime]$eventDate) -and ($_.Occurred -le ([datetime]$eventDate).AddDays(1).AddSeconds(-1))}
+
+    # Display events
+    foreach ($event in $events)
+    {
+        $event
+    }
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}
