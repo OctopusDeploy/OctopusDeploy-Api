@@ -23,7 +23,7 @@ try
     $project = $repositoryForSpace.Projects.FindByName($projectName)
 
     # Get project triggers
-    $projectTriggers = $repositoryForSpace.ProjectTriggers.FindMany({param($p) $p.ProjectId -eq $project.Id})
+    $projectTriggers = $repositoryForSpace.Projects.GetAllTriggers($project)
 
     # Loop through triggers
     foreach ($projectTrigger in $projectTriggers)
