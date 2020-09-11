@@ -1,20 +1,21 @@
-﻿##CONFIG##
-$OctopusAPIkey = "" #Octopus API Key
-$OctopusURL = "" #Octopus URL
-$ProjectName = "" #Project to delete
-
-##PROCESS##
+﻿# Define working variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+$projectName = "MyProject"
 
-$allprojects = (Invoke-WebRequest $OctopusURL/api/projects/all -Method Get -Headers $header).content | ConvertFrom-Json
+try
+{
+    # Get space
+    $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
 
-$ProjectToDelete = $allprojects | ?{$_.Name -eq $ProjectName}
+    # Get project
+    $project = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/all" -Headers $header) | Where-Object {$_.Name -eq $projectName}
 
-If(!([string]::IsNullOrEmpty($ProjectToDelete))){
-    Invoke-WebRequest ($OctopusURL + $ProjectToDelete.links.self) -Method Delete -Headers $header
+    # Delete project
+    Invoke-RestMethod -Method Delete -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)" -Headers $header
 }
-else{
-    Write-Output "No project found with the name: $ProjectName"
+catch
+{
+    Write-Host $_.Exception.Message
 }
-
-
