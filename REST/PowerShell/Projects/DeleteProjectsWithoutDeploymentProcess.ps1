@@ -1,62 +1,31 @@
-﻿[CmdletBinding()]
-Param(
-    [Parameter(Mandatory=$true,Position=1)]
-    [string]$OctopusUrl = "http://localhost:80",
+﻿# Define working variables
+$octopusURL = "https://youroctopusurl"
+$octopusAPIKey = "API-KEY"
+$header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 
-    [Parameter(Mandatory=$true,Position=2)]
-    [string]$ApiKey,
-    
-    [Parameter(Mandatory=$false,Position=3)]
-    [switch]$Delete
-    
-)
+try
+{
+    # Get space
+    $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
 
-Write-Host "Querying against $OctopusUrl with key $ApiKey\r\n"
+    # Get project
+    $projects = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/all" -Headers $header
 
-# Octopus GET
-Function Get-FromOctopus([string]$relUrl) {
-  $uri = "$OctopusUrl$relUrl`?apiKey=$ApiKey"
-  try {
-    return Invoke-RestMethod -Uri $uri -Method Get
-  }
-  catch {
-    if ($_.Exception.Response.StatusCode.value__ -eq 404) {
-      return $null
-    } else {
-      throw $_.Exception
+    # Loop through projects
+    foreach ($project in $projects)
+    {
+        # Get deployment process
+        $deploymentProcess = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/deploymentprocesses/$($project.DeploymentProcessId)" -Headers $header
+
+        # Check to see if there's a process
+        if (($null -eq $deploymentProcess.Steps) -or ($deploymentProcess.Steps.Count -eq 0))
+        {
+            # Delete project
+            Invoke-RestMethod -Method Delete -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)" -Headers $header
+        }
     }
-  }
 }
-
-# Octopus POST
-Function Post-ToOctopus([string]$relUrl, $postObject) {
-  $deserialised = $postObject | ConvertTo-Json
-  return Invoke-RestMethod -Uri "$OctopusUrl$relUrl`?apiKey=$ApiKey" -Body $deserialised -Method Post
-}
-
-# Octopus DELETE
-Function Delete-FromOctopus([string]$relUrl) {
-  return Invoke-RestMethod -Uri "$OctopusUrl$relUrl`?apiKey=$ApiKey" -Body $deserialised -Method Delete
-}
-
-### Put logic here ###
-$projects = Get-FromOctopus -relUrl "/api/projects/all"
-$projectsToDelete = @()
-ForEach ($p in $projects) {
-  $name = $p.Name
-  $processLink = $p.Links.DeploymentProcess
-  $process = Get-FromOctopus -relUrl $processLink
-  if ($process -ne $null) {
-    Write-Host "Project '$name' has a process template with $($process.Steps.Count) steps"
-  } else {
-    $projectsToDelete += $p.Id
-    Write-Host "Project '$name' appears to be missing a process template and will be deleted" -foregroundcolor "red"
-  }
-}
-
-if ($Delete) {
-  ForEach ($p in $projectsToDelete) {
-    Write-Host "Deleting Project '$p'" -foregroundcolor "red"
-    Delete-FromOctopus -relUrl "/api/projects/$p"
-  }
+catch
+{
+    Write-Host $_.Exception.Message
 }

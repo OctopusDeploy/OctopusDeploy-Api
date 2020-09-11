@@ -1,39 +1,41 @@
-[CmdletBinding()]
-Param(
-    [Parameter(Mandatory=$true,Position=1)]
-    [string]$OctopusUrl = "http://localhost:80",
+# You can get this dll from your Octopus Server/Tentacle installation directory or from
+# https://www.nuget.org/packages/Octopus.Client/
+# Load octopus.client assembly
+Add-Type -Path "path\to\Octopus.Client.dll"
 
-    [Parameter(Mandatory=$true,Position=2)]
-    [string]$ApiKey,
-    
-    [Parameter(Mandatory=$false,Position=3)]
-    [switch]$Delete
-    
-)
+# Octopus variables
+$octopusURL = "https://youroctopusurl"
+$octopusAPIKey = "API-KEY"
+$spaceName = "default"
 
-Add-Type -Path "Octopus.Client.dll"
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
+$repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
-$endpoint = new-object Octopus.Client.OctopusServerEndpoint "$($OctopusURL)","$($APIKey)"    
-$repository = new-object Octopus.Client.OctopusRepository $endpoint            
+try
+{
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
 
-### Put logic here ###
+    # Get project
+    $projects = $repositoryForSpace.Projects.GetAll()
 
-$projects = $repository.Projects.Findall()
-$projectsToDelete = @()
-ForEach ($p in $projects) {
-  $name = $p.Name  
-  if (![string]::IsNullOrEmpty($p.DeploymentProcessId)) {
-    $process = $repository.DeploymentProcesses.Get($p.links.deploymentprocess)
-    Write-Host "Project '$name' has a process template with $($process.Steps.Count) steps"
-  } else {
-    $projectsToDelete += $p
-    Write-Host "Project '$name' appears to be missing a process template and will be deleted" -foregroundcolor "red"
-  }
+    # Loop through projects
+    foreach ($project in $projects)
+    {
+        # Get deployment process
+        $deploymentProcess = $repositoryForSpace.DeploymentProcesses.Get($project.DeploymentProcessId)
+
+        # Check for emtpy process
+        if (($null -eq $deploymentProcess.Steps) -or ($deploymentProcess.Steps.Count -eq 0))
+        {
+            # Delete project
+            $repositoryForSpace.Projects.Delete($project)
+        }
+    }
 }
-
-if ($Delete) {
-  ForEach ($p in $projectsToDelete) {
-    Write-Host "Deleting Project $($p.name)" -foregroundcolor "red"
-    $repository.Projects.delete($p)
-  }
+catch
+{
+    Write-Host $_.Exception.Message
 }
