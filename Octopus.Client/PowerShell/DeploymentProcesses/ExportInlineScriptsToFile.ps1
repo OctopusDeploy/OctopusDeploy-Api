@@ -2,7 +2,7 @@
 # Useful to move from inline scripts to scripts in packages (to gain advantages of source control)
 # Currently assumes that the scripts are powershell
 
-# You can this dll from your Octopus Server/Tentacle installation directory or from
+# You can get this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
 Add-Type -Path 'Octopus.Client.dll'
 

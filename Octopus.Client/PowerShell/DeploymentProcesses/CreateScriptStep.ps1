@@ -1,4 +1,4 @@
-# You can this dll from your Octopus Server/Tentacle installation directory or from
+# You can get this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
 # Load Octopous Client assembly
 Add-Type -Path 'c:\octopus.client\Octopus.Client.dll' 
