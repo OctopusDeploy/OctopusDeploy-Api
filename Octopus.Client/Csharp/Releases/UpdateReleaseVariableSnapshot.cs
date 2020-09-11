@@ -5,12 +5,10 @@
 
 using Octopus.Client;
 using Octopus.Client.Model;
-
-// Declare working varibles
-var octopusURL = "https://youroctourl";
-var octopusAPIKey = "API-YOURAPIKEY";
-string spaceName = "default";
+var spaceName = "default";
 string projectName = "MyProject";
+string channelName = "Default";
+string releaseVersion = "1.0.0.0";
 
 // Create repository object
 var endpoint = new OctopusServerEndpoint(octopusURL, octopusAPIKey);
@@ -26,15 +24,14 @@ try
     // Get project
     var project = repositoryForSpace.Projects.FindByName(projectName);
 
-    // Get releases
-    var releases = repositoryForSpace.Releases.FindMany(p => p.ProjectId == project.Id);
+    // Get channel
+    var channel = repositoryForSpace.Channels.FindOne(r => r.ProjectId == project.Id && r.Name == channelName);
 
-    // Loop through results
-    foreach (var release in releases)
-    {
-        // Delete release
-        repositoryForSpace.Releases.Delete(release);
-    }
+    // Get release
+    var release = repositoryForSpace.Releases.FindOne(r => r.ProjectId == project.Id && r.ChannelId == channel.Id && r.Version == releaseVersion);
+
+    // Update variable snapshot
+    repositoryForSpace.Releases.SnapshotVariables(release);
 }
 catch (Exception ex)
 {
