@@ -1,31 +1,87 @@
 # You can get this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+# Load octopus.client assembly
+Add-Type -Path "path\to\Octopus.Client.dll"
 
-$apikey = 'API-MCPLE1AQM2VKTRFDLIBMORQHBXA' # Get this from your profile
-$octopusURI = 'http://localhost' # Your server address
+# Octopus variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$spaceName = "default"
+$projectName = "MyProject"
+$channelName = "default"
+$releaseVersion = "1.0.0.0"
 
-$projectId = "Projects-1" # Get this from /api/projects
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
+$repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
-$endpoint = new-object Octopus.Client.OctopusServerEndpoint $octopusURI,$apikey 
-$repository = new-object Octopus.Client.OctopusRepository $endpoint
-
-$project = $repository.Projects.Get($projectId)
-$process = $repository.DeploymentProcesses.Get($project.DeploymentProcessId)
-$channel = $repository.Channels.FindByName($project,"Default") #Provide a valid channel
-$template = $repository.DeploymentProcesses.GetTemplate($process,$channel)
-
-$release = new-object Octopus.Client.Model.ReleaseResource
-$release.Version = $template.NextVersionIncrement
-$release.ProjectId = $project.Id
-
-foreach ($package in $template.Packages)
+try
 {
-    $selectedPackage = new-object Octopus.Client.Model.SelectedPackage
-    $selectedPackage.ActionName = $package.ActionName
-    $selectedPackage.PackageReferenceName = $package.PackageReferenceName
-    $selectedPackage.Version = $package.VersionSelectedLastRelease # Select a new version if you know it
-    $release.SelectedPackages.Add($selectedPackage)
-}
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
 
-$repository.Releases.Create($release, $false) # Pass in $true if you want to ignore channel rules
+    # Get project
+    $project = $repositoryForSpace.Projects.FindByName($projectName)
+
+    # Get deployment process
+    $deploymentProcess = $repositoryForSpace.DeploymentProcesses.Get($project.DeploymentProcessId)
+
+    # Get channel
+    $channel = $repositoryForSpace.Channels.FindOne({param($c) $c.Name -eq $channelName -and $c.ProjectId -eq $project.Id})
+
+    # Gather selected packages
+    $selectedPackages = @()
+    foreach ($step in $deploymentProcess.Steps)
+    {
+        # Loop through actions
+        foreach ($action in $step.Actions)
+        {
+            # Check for package
+            if ($null -ne $action.Packages)
+            {
+                # Loop through packages
+                foreach ($package in $action.Packages)
+                {
+                    # Get feed
+                    $feed = $repositoryForSpace.Feeds.Get($package.FeedId)
+
+                    # Check to see if it's the built in
+                    if ($feed.FeedType -eq [Octopus.Client.Model.FeedType]::BuiltIn)
+                    {
+                        # Get the package version
+                        $packageVersion = $repositoryForSpace.BuiltInPackageRepository.ListPackages($package.PackageId).Items[0].Version
+
+                        # Create selected package pobject
+                        $selectedPackage = New-Object Octopus.Client.Model.SelectedPackage
+                        $selectedPackage.ActionName = $action.Name
+                        $selectedPackage.PackageReferenceName = $package.PackageId
+                        $selectedPackage.Version = $packageVersion
+
+                        # Add to collection
+                        $selectedPackages += $selectedPackage
+                    }
+                }
+            }
+        }
+    }
+
+    # Create a new release resource
+    $release = New-Object Octopus.Client.Model.ReleaseResource
+    $release.ChannelId = $channel.Id
+    $release.ProjectId = $project.Id
+    $release.Version = $releaseVersion
+
+    # Add selected packages
+    foreach ($selectedPackage in $selectedPackages)
+    {
+        $release.SelectedPackages.Add($selectedPackage)
+    }
+
+    # Create release
+    $repositoryForSpace.Releases.Create($release, $false)
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}
