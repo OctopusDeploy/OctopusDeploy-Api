@@ -1,35 +1,29 @@
-###CONFIG###
-$OctopusURL = "[YOUR URL]" #Octopus Server root URL
-$APIKey = "[YOUR API KEY]" #Octopus API Key
-$triggersIsDisabled = $true
+# Define working variables
+$octopusURL = "https://youroctourl"
+$octopusAPIKey = "API-YOURAPIKEY"
+$header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+$projectName = "MyProject"
 
-###PROCESS###
-$header = @{ "X-Octopus-ApiKey" = $APIKey }
-#Getting all machines
-$allprojects = Invoke-RestMethod "$OctopusURL/api/projects/all" -Headers $header
-
-foreach ($project in $allprojects)
+try
 {
-    $projectId = $project.Id
-    $projectName = $project.Name
+    # Get space
+    $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
 
-    Write-Host "Getting all the triggers for $projectName"
+    # Get project
+    $project = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/all" -Headers $header) | Where-Object {$_.Name -eq $projectName}
 
-    $projectTriggers = Invoke-RestMethod "$OctopusUrl/api/projects/$projectId/triggers" -Headers $header
-    foreach ($trigger in $projectTriggers.Items)
+    # Get project triggers
+    $projectTriggers = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/triggers" -Headers $header
+
+    # Loop through triggers
+    foreach ($projectTrigger in $projectTriggers.Items)
     {
-        $triggerName = $trigger.Name
-        $triggerId = $triggerId
-        Write-Host "Setting the disabled flag to $triggersIsDisabled for $triggerName"
-        $trigger.IsDisabled = $triggersIsDisabled
-
-        $body = $trigger | ConvertTo-Json -Depth 4
-        $disableTriggerHeader = @{
-            "x-http-method-override" = "PUT"
-            "X-Octopus-ApiKey" = $APIKey
-        }
-
-    Invoke-WebRequest ($OctopusUrl + $trigger.Links.Self) -Headers $header -Body $body -Method Put
-    
+        # Disable the trigger
+        $projectTrigger.IsDisabled = $true
+        Invoke-RestMethod -Method Put -Uri "$octopusURL/api/$($space.Id)/projecttriggers/$($projectTrigger.Id)" -Body ($projectTrigger | ConvertTo-Json -Depth 10) -Headers $header
     }
+}
+catch
+{
+    Write-Host $_.Exception.Message
 }
