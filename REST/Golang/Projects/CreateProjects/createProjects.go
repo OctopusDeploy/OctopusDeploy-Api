@@ -20,7 +20,7 @@ func createProject(URL string, apiKey string) {
 
 	body, _ := json.Marshal(map[string]string{
 		"ProjectGroupId": "Projects-1",
-		"Name":           "testGoCode",
+		"Name":           "testGoCodeee",
 		"LifecycleID":    "DevLifecycle",
 	})
 
