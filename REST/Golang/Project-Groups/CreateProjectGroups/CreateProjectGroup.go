@@ -19,12 +19,10 @@ func main() {
 func createProject(URL string, apiKey string) {
 
 	body, _ := json.Marshal(map[string]string{
-		"ProjectGroupId": "Projects-1",
-		"Name":           "testGoCodeeeee",
-		"LifecycleID":    "DevLifecycle",
+		"Name": "testGoCode",
 	})
 
-	put, err := http.NewRequest("POST", URL+"/api/projectgroup", bytes.NewBuffer(body))
+	put, err := http.NewRequest("POST", URL+"/api/projectgroups", bytes.NewBuffer(body))
 
 	if err != nil {
 		log.Println(err)
