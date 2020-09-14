@@ -42,7 +42,9 @@ func main() {
 	base64Certificate := base64.StdEncoding.EncodeToString(data)
 
 	// Create certificate object
-	octopusCertificate := model.NewCertificate(certificateName, base64Certificate, pfxFilePassword)
+	certificateData := model.NewSensitiveValue(base64Certificate)
+	password := model.NewSensitiveValue(pfxFilePassword)
+	octopusCertificate := model.NewCertificate(certificateName, certificateData, password)
 
 	client.Certificates.Create(octopusCertificate)
 }
