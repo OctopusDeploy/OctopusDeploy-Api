@@ -5,6 +5,9 @@
 
 using Octopus.Client;
 using Octopus.Client.Model;
+
+var octopusURL = "https://youroctourl";
+var octopusAPIKey = "API-YOURAPIKEY";
 var spaceName = "default";
 string projectName = "MyProject";
 string channelName = "Default";

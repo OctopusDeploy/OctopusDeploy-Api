@@ -37,36 +37,41 @@ try
         
         # Get Project template ID
         $variableTemplateId = ($project.Templates | Where-Object Name -eq $variableTemplateName | Select-Object -First 1).Id
-        Write-Host "Found templateId for Template: $variableTemplateName = $variableTemplateId"
+        if($null -ne $variableTemplateId) {
 
-        # Loop through each of the connected environments variables
-        foreach($envKey in $project.Variables.Keys) {
-            
-            # Find variable which matches the current connected environment
-            $templateEnvVariableObject = ($project.Variables[$envKey].GetEnumerator() | Where-Object Key -eq $variableTemplateId | Select-Object -First 1)
-            
-            # If null / only default value exists, add new value in 
-            if($null -eq $templateEnvVariableObject ) {
-                Write-Host "No value found for $variableTemplateName, adding in new Value=$newValue for Environment '$envKey'"
-                $project.Variables[$envKey][$variableTemplateId] = New-Object Octopus.Client.Model.PropertyValueResource $newValue
-            } 
-            else {
+            Write-Host "Found templateId for Template: $variableTemplateName = $variableTemplateId"
 
-                # Get Current value
-                $templateEnvVariable = $templateEnvVariableObject.Value
-                $currentValue = $templateEnvVariable.Value
-                Write-Host "Found $variableTemplateName in Environment '$envKey' with Value = $currentValue"
+            # Loop through each of the connected environments variables
+            foreach($envKey in $project.Variables.Keys) {
+            
+                # Find variable which matches the current connected environment
+                $templateEnvVariableObject = ($project.Variables[$envKey].GetEnumerator() | Where-Object Key -eq $variableTemplateId | Select-Object -ExpandProperty Value -First 1)
+            
+                # If null / only default value exists, add new value in 
+                if($null -eq $templateEnvVariableObject ) {
+                    Write-Host "No value found for $variableTemplateName, adding in new Value=$newValue for Environment '$envKey' "
+                    $project.Variables[$envKey][$variableTemplateId] = New-Object Octopus.Client.Model.PropertyValueResource $newValue
+                } 
+                else {
+
+                    # Get Current value
+                    $currentValue = $templateEnvVariableObject.Value
+                    Write-Host "Found $variableTemplateName in Environment '$envKey' with Value = $currentValue"
         
-                # Set the new value for this connected environment
-                $project.Variables[$envKey][$variableTemplateId] = New-Object Octopus.Client.Model.PropertyValueResource $newValue
+                    # Set the new value for this connected environment
+                    $project.Variables[$envKey][$variableTemplateId] = New-Object Octopus.Client.Model.PropertyValueResource $newValue
+                }
             }
+        }
+        else {
+            Write-Host "Couldnt find project template: $variableTemplateName for project $projectName"
         }
     }
 
     # Update the variables with the new value
-    $spaceRepository.Tenants.ModifyVariables($tenant, $variables)
+    $spaceRepository.Tenants.ModifyVariables($tenant, $variables) | Out-Null
 }
 catch
 {
-    Write-Host $_.Exception.Message
+    Write-Host $_.Exception.Message for
 }
