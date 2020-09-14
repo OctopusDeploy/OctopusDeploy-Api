@@ -1,5 +1,5 @@
 # Define working variables
-$octopusBaseURL = "https://youroctourl/api"
+$octopusURL = "https://youroctourl/api"
 $octopusAPIKey = "API-YOURAPIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 $spaceName = "default"
