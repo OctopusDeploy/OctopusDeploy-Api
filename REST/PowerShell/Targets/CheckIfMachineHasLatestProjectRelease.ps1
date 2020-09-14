@@ -7,7 +7,8 @@ $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 $spaceName = "Default"
 $channelName = "Default"
 $machineName = "MyMachineName"
-$projectSlug = "MyProject"
+# This is the url-friendly name of the project e.g. "My Project" would be "my-project"
+$projectSlug = "my-project"
 
 try
 {
