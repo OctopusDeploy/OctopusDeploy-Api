@@ -27,7 +27,7 @@ try
         $environmentIds += $environment.Id
     }
 
-    # Build projet/environments
+    # Build project/environments
     $projectEnvironments = @{}
     foreach ($projectId in $projectIds)
     {
