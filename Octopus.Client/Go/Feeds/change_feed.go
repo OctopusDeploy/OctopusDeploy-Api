@@ -20,7 +20,7 @@ func main() {
 	}
 
 	// Get Feed
-	feed, err := client.Feeds.FindByName(feedName)
+	feed, err := client.Feeds.GetByName(feedName)
 
 	if err != nil {
 		// TODO: handle error
@@ -30,7 +30,7 @@ func main() {
 	feed.Name = newFeedName
 
 	// Update feed
-	updatedFeed, err := client.Feeds.Update(feed)
+	updatedFeed, err := client.Feeds.Update(*feed)
 
 	if err != nil {
 		// TODO: handle error
