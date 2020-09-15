@@ -56,6 +56,7 @@ try
         $releaseDeploymentId = $deployment.Id
         if($machineTaskDeploymentIds -contains $releaseDeploymentId) {
             $foundRelease = $True
+            Write-Host "Release $($latestRelease.Version) found for machine $($machine.Name) - deploymentId: $($releaseDeploymentId)"
         }
     }
     if($foundRelease -eq $False)
