@@ -39,8 +39,6 @@ try
             Write-Host "Found templateId for Template: $variableTemplateName = $variableTemplateId"
             $projectConnectedEnvironments = $project.Variables | Get-Member | Where-Object {$_.MemberType -eq "NoteProperty"} | Select-Object -ExpandProperty "Name"
 
-        
-            #$project.Variables
             # Loop through each of the connected environments variables
             foreach($envKey in $projectConnectedEnvironments) {
                 
