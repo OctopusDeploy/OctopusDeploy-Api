@@ -1,9 +1,8 @@
 package main
 
 import (
-	"client"
-
 	"github.com/OctopusDeploy/go-octopusdeploy/client"
+	"github.com/OctopusDeploy/go-octopusdeploy/model"
 )
 
 var (
@@ -35,27 +34,27 @@ func main() {
 		// TODO: handle error
 	}
 
-	feedResource, err := client.Feeds.NewNuGetFeed(feedName)
+	feedResource := model.NewNuGetFeed(feedName)
 
 	if err != nil {
 		// TODO: handle error
 	}
 
-	feedResource.SpaceId = space.ID
+	feedResource.SpaceID = space.ID
 	feedResource.FeedURI = feedURI
 	feedResource.DownloadAttempts = downloadAttempts
 	feedResource.DownloadRetryBackoffSeconds = downloadRetryBackoffSeconds
-	feedResource.EnhancedMode = useExtendedApi
+	feedResource.EnhancedMode = useExtendedAPI
 
 	if len(feedUsername) > 0 {
 		feedResource.Username = feedUsername
 	}
 
 	if len(feedPassword) > 0 {
-		feedResource.Password = feedPassword
+		feedResource.Password = model.NewSensitiveValue(feedPassword)
 	}
 
-	feed, err := client.Feeds.Add(feedResource)
+	feed, err := client.Feeds.Add(*feedResource)
 
 	if err != nil {
 		// TODO: handle error
