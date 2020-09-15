@@ -1,8 +1,6 @@
 package main
 
-import (
-	"github.com/OctopusDeploy/go-octopusdeploy/client"
-)
+import "github.com/OctopusDeploy/go-octopusdeploy/client"
 
 var (
 	// Declare working variables
@@ -10,7 +8,8 @@ var (
 	octopusAPIKey    string   = "API-YOURAPIKEY"
 	spaceName        string   = "default"
 	projectName      string   = "MyProject"
-	environmentNames []string = {"Development", "Test"}
+	environmentNames []string = []string{"Development", "Test"}
+	stepName         string   = "Run a script"
 )
 
 func main() {
@@ -23,16 +22,16 @@ func main() {
 	environmentIDs := []string{}
 
 	for _, environmentName := range environmentNames {
-		environmentID, err := client.Environments.FindByName(environmentName)
+		environment, err := client.Environments.GetByName(environmentName)
 
 		if err != nil {
 			// TODO: handle error
 		}
 
-		environmentIDs = append(environmentIDs, environmentID)
+		environmentIDs = append(environmentIDs, environment.ID)
 	}
 
-	project, err := client.Projects.FindByName(projectName)
+	project, err := client.Projects.GetByName(projectName)
 
 	if err != nil {
 		// TODO: handle error
