@@ -19,14 +19,14 @@ func main() {
 	}
 
 	// Get Feed
-	feed, err := client.Feeds.FindByName(feedName)
+	feed, err := client.Feeds.GetByName(feedName)
 
 	if err != nil {
 		// TODO: handle error
 	}
 
 	// Delete feed
-	err := client.Feeds.Delete(feed)
+	err = client.Feeds.Delete(feed.ID)
 
 	if err != nil {
 		// TODO: handle error
