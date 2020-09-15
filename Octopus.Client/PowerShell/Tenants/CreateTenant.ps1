@@ -3,27 +3,60 @@
 
 # You can get this dll from your Octopus Server/Tentacle installation directory or from
 # https://www.nuget.org/packages/Octopus.Client/
-Add-Type -Path 'Octopus.Client.dll' 
+Add-Type -Path "path\to\Octopus.Client.dll"
 
-$apikey = 'API-xxx' # Get this from your profile
-$octopusURI = 'http://localhost' # Your Octopus Server address
+# Octopus variables
+$octopusURL = "https://youroctopusurl"
+$octopusAPIKey = "API-KEY"
+$spaceName = "default"
+$tenantName = "MyTenant"
+$projectNames = @("MyProject")
+$environmentNames = @("Development", "Test")
+$tenantTags = @("MyTagSet/Beta", "MyTagSet/Stable") # Format: TagSet/Tag
 
-$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURI, $apiKey
+$endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
+$client = New-Object Octopus.Client.OctopusClient $endpoint
 
+try
+{
+    # Get space
+    $space = $repository.Spaces.FindByName($spaceName)
+    $repositoryForSpace = $client.ForSpace($space)
 
-$tagSetEditor = $repository.TagSets.CreateOrModify("Hosting")
-$tagSetEditor.AddOrUpdateTag("On premises", "Hosted on site", [Octopus.Client.Model.TagResource+StandardColor]::DarkGreen)
-$tagSetEditor.AddOrUpdateTag("Cloud", "Hosted in the cloud", [Octopus.Client.Model.TagResource+StandardColor]::LightBlue)
-$tagSetEditor.Save()
+    # Get environment ids
+    $environments = $repositoryForSpace.Environments.GetAll() | Where-Object {$environmentNames -contains $_.Name}
 
-$tagSet = $tagSetEditor.Instance
+    # Get projects
+    $projects = $repositoryForSpace.Projects.GetAll() | Where-Object {$projectNames -contains $_.Name}
+    
+    # Create projectenvironments
+    $projectEnvironments = New-Object Octopus.Client.Model.ReferenceCollection
+    foreach ($environment in $environments)
+    {
+        $projectEnvironments.Add($environment.Id) | Out-Null
+    }
 
-
-$project = $repository.Projects.FindByName("Multi tenant project")
-$environment = $repository.Environments.FindByName("Dev")
-
-$tenantEditor = $repository.Tenants.CreateOrModify("John")
-$tenantEditor.WithTag($tagSet.Tags[0])
-$tenantEditor.ConnectToProjectAndEnvironments($project, $environment)
-$tenantEditor.Save()
+    # Create new tenant resource
+    $tenant = New-Object Octopus.Client.Model.TenantResource
+    $tenant.Name = $tenantName
+    
+    # Add tenant tags
+    foreach ($tenantTag in $tenantTags)
+    {
+        $tenant.TenantTags.Add($tenantTag) | Out-Null
+    }
+    
+    # Add project environments
+    foreach ($project in $projects)
+    {
+        $tenant.ProjectEnvironments.Add($project.Id, $projectEnvironments) | Out-Null
+    }
+    
+    # Create the tenant
+    $repositoryForSpace.Tenants.Create($tenant)
+}
+catch
+{
+    Write-Host $_.Exception.Message
+}
