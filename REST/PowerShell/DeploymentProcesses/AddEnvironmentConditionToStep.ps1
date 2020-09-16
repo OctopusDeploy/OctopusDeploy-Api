@@ -29,7 +29,7 @@ try
     foreach ($action in $step.Actions)
     {
         # Add/upate environment(s)
-        $action.Environments = $environments.Id
+        $action.Environments += $environments.Id
     }
 
     # Update the deployment process
