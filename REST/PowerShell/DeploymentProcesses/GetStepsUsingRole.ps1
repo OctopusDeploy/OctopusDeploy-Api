@@ -22,7 +22,7 @@ try
         # Get steps
         foreach ($step in $deploymentProcess.Steps)
         {
-            if (($null -ne $step.Properties.'Octopus.Action.TargetRoles') -and ($step.Properties.'Octopus.Action.TargetRoles' -eq $roleName))
+            if (($null -ne $step.Properties.'Octopus.Action.TargetRoles') -and ($step.Properties.'Octopus.Action.TargetRoles'.Value.Split(',') -Icontains $roleName ))
             {
                 Write-Host "Step $($step.Name) of $($project.Name) is using role $roleName"
             }

@@ -8,18 +8,18 @@ def get_octopus_resource(uri):
     response.raise_for_status()
     return json.loads(response.content.decode('utf-8'))
 space_name = 'Default'
-package_id = 'YourPackageId'
+role_name = 'My target role'
 spaces = get_octopus_resource('{0}/spaces/all'.format(octopus_server_uri))
 space = next((x for x in spaces if x['Name'] == space_name), None)
-projects = get_octopus_resource(
-    '{0}/{1}/projects/all'.format(octopus_server_uri, space['Id']))
+projects = get_octopus_resource('{0}/{1}/projects/all'.format(octopus_server_uri, space['Id']))
 for project in projects:
     uri = '{0}/{1}/deploymentprocesses/{2}'.format(octopus_server_uri, space['Id'], project['DeploymentProcessId'])
     process = get_octopus_resource(uri)
     for step in process['Steps']:
-        packages = [package for action in step['Actions'] for package in action['Packages']]
-        if packages is None:
+        properties = step['Properties']
+        roles_key = 'Octopus.Action.TargetRoles'
+        roles = properties[roles_key].split(',') if roles_key in properties else None
+        if roles is None:
             continue
-        ids = [package['PackageId'] for package in packages]
-        if package_id in ids:
-            print('Step \'{0}\' of project \'{1}\' is using package \'{2}\''.format(step['Name'], project['Name'], package_id))
+        if role_name in roles:
+            print('Step \'{0}\' of project \'{1}\' is using role \'{2}\''.format(step['Name'], project['Name'], role_name))
