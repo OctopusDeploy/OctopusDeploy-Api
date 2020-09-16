@@ -15,7 +15,7 @@ var (
 )
 
 func main() {
-	client, err := client.NewClient(&httpClient, octopusURL, octopusAPIKey, spaceName)
+	client, err := client.NewClient(nil, octopusURL, octopusAPIKey, spaceName)
 
 	if err != nil {
 		// TODO: handle error
