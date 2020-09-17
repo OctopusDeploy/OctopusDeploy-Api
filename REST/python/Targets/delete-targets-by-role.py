@@ -17,7 +17,7 @@ def get_by_name(uri, name):
 
 def get_by_role(uri, role):
     resources = get_octopus_resource(uri)
-    return list(filter(lambda x: role in x['Roles'], resources))
+    return (r for r in resources if role in r['Roles'])
 
 space_name = 'Default'
 target_role = 'your-target-role'
