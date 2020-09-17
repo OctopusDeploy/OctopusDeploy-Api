@@ -22,11 +22,7 @@ space = get_by_name('{0}/spaces/all'.format(octopus_server_uri), space_name)
 library_variable_set = get_by_name('{0}/{1}/libraryvariablesets/all'.format(octopus_server_uri, space['Id']), libraryset_name)
 library_variable_set_id = library_variable_set['Id']
 
-uri = '{0}/{1}/projects/all'.format(octopus_server_uri, space['Id'])
-response = requests.get(uri, headers=headers)
-response.raise_for_status()
-
-projects = json.loads(response.content.decode('utf-8'))
+projects = get_octopus_resource('{0}/{1}/projects/all'.format(octopus_server_uri, space['Id']))
 
 for project in projects:
     project_variable_sets = project['IncludedLibraryVariableSetIds']
