@@ -16,7 +16,7 @@ def get_by_name(uri, name):
     return next((x for x in resources if x['Name'] == name), None)
 
 space_name = 'Default'
-libraryset_name = 'Variable Set A'
+libraryset_name = 'Your variable set name'
 
 space = get_by_name('{0}/spaces/all'.format(octopus_server_uri), space_name)
 library_variable_set = get_by_name('{0}/{1}/libraryvariablesets/all'.format(octopus_server_uri, space['Id']), libraryset_name)
