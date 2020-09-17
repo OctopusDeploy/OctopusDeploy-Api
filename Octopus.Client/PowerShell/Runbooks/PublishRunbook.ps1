@@ -47,7 +47,7 @@ try
                     $feed = $repositoryForSpace.Feeds.Get($package.FeedId)
                     
                     # Check to see if built in
-                    if ($feed.FeedType -eq [Octopus.Client.Model.FeedType]::BuiltIn)
+                    if ($feed.Id -eq "feeds-builtin")
                     {
                         # Get package version
                         $packageVersion = $repositoryForSpace.BuiltInPackageRepository.ListPackages($package.PackageId).Items[0].Version
@@ -55,7 +55,7 @@ try
                         # Create selected package object
                         $selectedPackage = New-Object Octopus.Client.Model.SelectedPackage
                         $selectedPackage.ActionName = $action.Name
-                        $selectedPackage.PackageReferenceName = $package.PackageId
+                        $selectedPackage.PackageReferenceName = ""
                         $selectedPackage.StepName = $step.Name
                         $selectedPackage.Version = $packageVersion
 

@@ -50,7 +50,7 @@ try
                     var feed = repositoryForSpace.Feeds.Get(package.FeedId);
 
                     // Check to see if it's the built in one
-                    if (feed.FeedType == FeedType.BuiltIn)
+                    if (feed.Id == "feeds-builtin")
                     {
                         // Get package version
                         var packageVersion = repositoryForSpace.BuiltInPackageRepository.ListPackages(package.PackageId).Items[0].Version;
@@ -58,7 +58,7 @@ try
                         // Create selected package object
                         Octopus.Client.Model.SelectedPackage selectedPackage = new SelectedPackage();
                         selectedPackage.ActionName = action.Name;
-                        selectedPackage.PackageReferenceName = package.PackageId;
+                        selectedPackage.PackageReferenceName = "";
                         selectedPackage.Version = packageVersion;
 
                         // Add to collection

@@ -41,7 +41,7 @@ try
                     $selectedPackages += @{
                         ActionName = $action.Name
                         Version = $packageVersion
-                        PackageReferenceName = $package.PackageId
+                        PackageReferenceName = ""
                     }
                 }
             }
