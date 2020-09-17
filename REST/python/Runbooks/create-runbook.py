@@ -16,7 +16,7 @@ def get_by_name(uri, name):
     return next((x for x in resources if x['Name'] == name), None)
 
 space_name = 'Default'
-project_name = "Your Project Name"
+project_name = 'Your Project Name'
 runbook_name = 'Your new runbook name'
 
 space = get_by_name('{0}/spaces/all'.format(octopus_server_uri), space_name)

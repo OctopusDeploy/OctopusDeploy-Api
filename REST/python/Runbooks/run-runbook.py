@@ -16,7 +16,7 @@ def get_by_name(uri, name):
     return next((x for x in resources if x['Name'] == name), None)
 
 space_name = 'Default'
-project_name = "Your Project"
+project_name = 'Your Project'
 runbook_name = 'Your Runbook'
 environment_names = ['Development', 'Test']
 environments = []
