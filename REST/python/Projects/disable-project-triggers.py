@@ -1,0 +1,30 @@
+import json
+import requests
+
+octopus_server_uri = 'https://your.octopus.app/api'
+octopus_api_key = 'API-YOURAPIKEY'
+headers = {'X-Octopus-ApiKey': octopus_api_key}
+
+def get_octopus_resource(uri):
+    response = requests.get(uri, headers=headers)
+    response.raise_for_status()
+
+    return json.loads(response.content.decode('utf-8'))
+
+def get_by_name(uri, name):
+    resources = get_octopus_resource(uri)
+    return next((x for x in resources if x['Name'] == name), None)
+
+space_name = 'Default'
+project_name = 'Your project'
+
+space = get_by_name('{0}/spaces/all'.format(octopus_server_uri), space_name)
+project = get_by_name('{0}/{1}/projects/all'.format(octopus_server_uri, space['Id']), project_name)
+project_triggers = get_octopus_resource('{0}/{1}/projects/{2}/triggers'.format(octopus_server_uri, space['Id'], project['Id']))
+
+for trigger in project_triggers['Items']:
+    print('Disabling project trigger {0} ({1})'.format(trigger['Name'], trigger['Id']))
+    trigger['IsDisabled'] = True
+    uri = '{0}/{1}/projecttriggers/{2}'.format(octopus_server_uri, space['Id'], trigger['Id'])
+    response = requests.put(uri, headers=headers, json=trigger)
+    response.raise_for_status()
