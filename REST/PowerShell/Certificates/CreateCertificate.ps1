@@ -37,7 +37,7 @@ try
         EnvironmentIds = $certificateEnvironmentIds
         TenantIds = $certificateTenantIds
         TenantTags = $certificateTenantTags
-        TenantedDeploymentPartificapation = $certificateTenantedDeploymentParticipation
+        TenantedDeploymentParticipation = $certificateTenantedDeploymentParticipation
     }
 
     # Submit request
