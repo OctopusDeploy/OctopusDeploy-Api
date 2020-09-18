@@ -20,10 +20,11 @@ def get_by_name(uri, name):
 space = get_by_name('{0}/spaces/all'.format(octopus_server_uri), space_name)
 space['TaskQueueStopped'] = True
 
+# update task queue to stopped
 uri = '{0}/spaces/{1}'.format(octopus_server_uri, space['Id'])
 response = requests.put(uri, headers=headers, json=space)
 response.raise_for_status()
 
-uri = '{0}/spaces/{1}'.format(octopus_server_uri, space['Id'])
+# Delete space
 response = requests.delete(uri, headers=headers)
 response.raise_for_status()
