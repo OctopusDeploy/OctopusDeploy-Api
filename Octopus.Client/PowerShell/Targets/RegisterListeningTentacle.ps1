@@ -41,7 +41,7 @@ try
         $newTarget.Roles.Add($role) | Out-Null
     }
     $newTarget.IsDisabled = $false
-    
+
     # Add to machine to space
     $repositoryForSpace.Machines.Create($newTarget)
 }
