@@ -35,7 +35,7 @@ try
     var webClient = new System.Net.WebClient();
     webClient.Headers["X-Octopus-ApiKey"] = octopusAPIKey;
     var uri = new Uri(octopusURL + "/" + packageDetails.Links["Raw"]);
-    var filePath = string.Format("{0}\\{1}.{2}{3}", outputFolder, packageName, packageVersion, packageDetails.FileExtension);
+    var filePath = Path.Combine(outputFolder, string.Format("{0}.{1}{2}", packageName, packageVersion, packageDetails.FileExtension));
     
     webClient.DownloadFile(uri, filePath);
     Console.WriteLine("Downloaded file to {0}", filePath);
