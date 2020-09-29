@@ -7,10 +7,10 @@ Function Get-OctopusProject {
         $SpaceId
     )
     # Call API to get all projects, then filter on name
-    $octopusProject = Invoke-RestMethod -Method "get" -Uri "$OctopusServerUrl/api/projects/all" -Headers @{"X-Octopus-ApiKey" = "$ApiKey" }
+    $octopusProject = Invoke-RestMethod -Method "get" -Uri "$OctopusServerUrl/api/$spaceId/projects/all" -Headers @{"X-Octopus-ApiKey" = "$ApiKey" }
 
     # return the specific project
-    return ($octopusProject | Where-Object { $_.Name -eq $ProjectName -and $_.SpaceId -eq $SpaceId})
+    return ($octopusProject | Where-Object { $_.Name -eq $ProjectName })
 }
 
 Function Get-OctopusProjectVariables {
@@ -22,7 +22,7 @@ Function Get-OctopusProjectVariables {
         $SpaceId
     )
     # Get reference to the variable list
-    return (Invoke-RestMethod -Method "get" -Uri "$OctopusServerUrl/api/variables/$($OctopusDeployProject.VariableSetId)" -Headers @{"X-Octopus-ApiKey" = "$ApiKey" })
+    return (Invoke-RestMethod -Method "get" -Uri "$OctopusServerUrl/api/$spaceId/variables/$($OctopusDeployProject.VariableSetId)" -Headers @{"X-Octopus-ApiKey" = "$ApiKey" })
 }
 
 Function Get-SpaceId {
@@ -93,7 +93,8 @@ Function Add-Variable {
         $VariableName,
         $VariableValue,
         $VariableEnvScope,
-        $VariableRoleScope
+        $VariableRoleScope,
+        $IsSensitive = $false
 
     )
     #Create the variable object    
@@ -101,7 +102,7 @@ Function Add-Variable {
         'Name'   = $($VariableName)
         'Value' = $($VariableValue)
         'Type' = 'String'
-        'IsSensitive' = $false
+        'IsSensitive' = $IsSensitive
         'Scope' = @{
           'Environment' =@()
           'Role' =@()
@@ -163,10 +164,16 @@ try {
 
     #Modify-Variable -VariableSet $octopusProjectVariables -VariableName "Test" -VariableValue "New" 
     #Modify-Variable -VariableSet $octopusProjectVariables -VariableName "Test2" -VariableValue "New2" -VariableEnvScope "Development" -SpaceName "Default"
+
     #Add-Variable -VariableSet $octopusProjectVariables -VariableName "TestNew3" -VariableValue "Nothing scoped"
     #Add-Variable -VariableSet $octopusProjectVariables -VariableName "TestNewEnv2" -VariableValue "Env Scoped" -VariableEnvScope "Development"
     #Add-Variable -VariableSet $octopusProjectVariables -VariableName "TestNewRole" -VariableValue "Role Scoped" -VariableRoleScope "Web"
     #Add-Variable -VariableSet $octopusProjectVariables -VariableName "ObjectTesting2" -VariableValue "Both Env and Role Scoped" -VariableEnvScope "Development" -VariableRoleScope "Web"
+
+    #If you want to add a variable as sensitive, set the parameter -IsSensitive $true. It will default to $false otherwise.
+
+    #Add-Variable -VariableSet $octopusProjectVariables -VariableName "SensitiveVariable" -VariableValue "SENSITIVE" -VariableEnvScope "Development" -VariableRoleScope "Web" -IsSensitive $true
+    #Add-Variable -VariableSet $octopusProjectVariables -VariableName "NOTSensitiveVariable" -VariableValue "not SENSITIVE" -VariableEnvScope "Development" -VariableRoleScope "Web"
     
     ###Example of adding multiple Environments or Roles###
 
@@ -183,7 +190,7 @@ try {
     $jsonBody = $octopusProjectVariables | ConvertTo-Json -Depth 10
     #Write-Host $jsonBody
     # Save the variables to the variable set
-    Invoke-RestMethod -Method "put" -Uri "$OctopusServerUrl/api/variables/$($octopusProjectVariables.Id)" -Body $jsonBody -Headers @{"X-Octopus-ApiKey"=$ApiKey}
+    Invoke-RestMethod -Method "put" -Uri "$OctopusServerUrl/api/$spaceId/variables/$($octopusProjectVariables.Id)" -Body $jsonBody -Headers @{"X-Octopus-ApiKey"=$ApiKey}
     
 
 }
