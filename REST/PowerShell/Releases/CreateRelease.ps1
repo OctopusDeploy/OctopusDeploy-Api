@@ -43,7 +43,7 @@ try
     }
 
     # Create release
-    $releaseBody = $releaseBody | ConvertTo-Json
+    $releaseBody = $releaseBody | ConvertTo-Json -depth 10
     Write-Host "Creating release with these values: $releaseBody"
     $release = Invoke-WebRequest -Uri "$octopusURL/api/$($space.id)/releases" -Method POST -Headers $header -Body $releaseBody -ErrorVariable octoError | ConvertFrom-Json
 }
