@@ -24,7 +24,7 @@ try
     foreach ($userRole in $userRoles) {
         $dsUserRole = $desiredStateUserRoles | Where-Object { $_.Id -eq $userRole.Id }
 
-        $comparisonResult = Compare-Object -ReferenceObject $dsUserRole.GrantedSpacePermissions -DifferenceObject $userRole.GrantedSpacePermissions #-PassThru
+        $comparisonResult = Compare-Object -ReferenceObject $dsUserRole.GrantedSpacePermissions -DifferenceObject $userRole.GrantedSpacePermissions 
 
         if ($comparisonResult.Length -gt 0){
             
