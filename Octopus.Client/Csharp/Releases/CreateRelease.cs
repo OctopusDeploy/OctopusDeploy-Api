@@ -21,7 +21,7 @@ var client = new OctopusClient(endpoint);
 
 try
 {
-    // Get space
+    // Get space+repo
     var space = repository.Spaces.FindByName(spaceName);
     var repositoryForSpace = client.ForSpace(space);
 
@@ -31,59 +31,40 @@ try
     // Get channel
     var channel = repositoryForSpace.Channels.FindOne(r => r.ProjectId == project.Id && r.Name == channelName);
 
-    // Get deployment process
-    var deploymentProcess = repositoryForSpace.DeploymentProcesses.Get(project.DeploymentProcessId);
-
-    // Gather selected packages
-    List<Octopus.Client.Model.SelectedPackage> selectedPackages = new List<SelectedPackage>();
-    foreach (var step in deploymentProcess.Steps)
-    {
-        // Loop through actions
-        foreach (var action in step.Actions)
-        {
-            // Check to see if packages are in this action
-            if (action.Packages != null)
-            {
-                // Loop through packages
-                foreach (var package in action.Packages)
-                {
-                    // Get feed
-                    var feed = repositoryForSpace.Feeds.Get(package.FeedId);
-
-                    // Check to see if it's built in
-                    if (feed.FeedType == FeedType.BuiltIn)
-                    {
-                        // Get the package version
-                        var packageVersion = repositoryForSpace.BuiltInPackageRepository.ListPackages(package.PackageId).Items[0].Version;
-
-                        // Create selected package object
-                        Octopus.Client.Model.SelectedPackage selectedPackage = new SelectedPackage();
-                        selectedPackage.ActionName = action.Name;
-                        selectedPackage.PackageReferenceName = package.PackageId;
-                        selectedPackage.Version = packageVersion;
-
-                        // Add to list
-                        selectedPackages.Add(selectedPackage);
-                    }
-                }
-            }
-        }
-    }
-
     // Create release object
     Octopus.Client.Model.ReleaseResource release = new ReleaseResource();
     release.ChannelId = channel.Id;
     release.ProjectId = project.Id;
     release.Version = releaseVersion;
+    release.SelectedPackages = new List<Octopus.Client.Model.SelectedPackage>();
 
-    // Add packages
-    foreach (var selectedPackage in selectedPackages)
+    // Get deployment process
+    var deploymentProcess = repositoryForSpace.DeploymentProcesses.Get(project.DeploymentProcessId);
+
+    // Get template
+    var template = repositoryForSpace.DeploymentProcesses.GetTemplate(deploymentProcess, channel);
+
+    // Loop through the deployment process packages and add to release payload
+    foreach (var package in template.Packages)
     {
+        // Get feed
+        var feed = repositoryForSpace.Feeds.Get(package.FeedId);
+        //var packageVersion = repositoryForSpace.BuiltInPackageRepository.ListPackages(package.PackageId).Items[0].Version;
+        var packageVersion = repositoryForSpace.Feeds.GetVersions(feed, new[] { package.PackageId }).First().Version;
+
+        // Create selected package object
+        Octopus.Client.Model.SelectedPackage selectedPackage = new SelectedPackage();
+        selectedPackage.ActionName = package.ActionName;
+        selectedPackage.PackageReferenceName = package.PackageReferenceName;
+        selectedPackage.Version = packageVersion;
+
+        // Add to release
         release.SelectedPackages.Add(selectedPackage);
     }
 
     // Create release
-    repositoryForSpace.Releases.Create(release, false);
+    var releaseCreated = repositoryForSpace.Releases.Create(release, false);
+    Console.WriteLine("Created release with version: {0}", releaseCreated.Version);
 }
 catch (Exception ex)
 {
