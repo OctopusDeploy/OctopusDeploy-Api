@@ -21,43 +21,32 @@ try
     # Get channel
     $channel = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/channels" -Headers $header).Items | Where-Object {$_.Name -eq $channelName}
 
-    # Loop through the deployment process and gather selected packages
-    $selectedPackages = @()
-    foreach ($step in $deploymentProcess.Steps)
-    {
-        # Loop through the actions
-        foreach($action in $step.Actions)
-        {
-            # Check for packages
-            if ($null -ne $action.Packages)
-            {
-                # Loop through packages
-                foreach ($package in $action.Packages)
-                {
-                    # Get latest version of package
-                    $packageVersion = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/feeds/$($package.FeedId)/packages/versions?packageId=$($package.PackageId)&take=1" -Headers $header).Items[0].Version
+    # Create release payload
+    $releaseBody = @{
+        ChannelId        = $channel.Id
+        ProjectId        = $project.Id
+        Version          = $releaseVersion
+        SelectedPackages = @()
+    }
+    
+    # Get deployment process template
+    $template = Invoke-RestMethod -Uri "$octopusURL/api/$($space.id)/deploymentprocesses/deploymentprocess-$($project.id)/template?channel=$($channel.Id)" -Headers $header
 
-                    # Add package to selected packages
-                    $selectedPackages += @{
-                        ActionName = $action.Name
-                        Version = $packageVersion
-                        PackageReferenceName = $package.PackageId
-                    }
-                }
-            }
+    # Loop through the deployment process packages and add to release payload
+    $template.Packages | ForEach-Object {
+        $uri = "$octopusURL/api/$($space.id)/feeds/$($_.FeedId)/packages/versions?packageId=$($_.PackageId)&take=1"
+        $version = Invoke-RestMethod -Uri $uri -Method GET -Headers $header
+        $version = $version.Items[0].Version
+
+        $releaseBody.SelectedPackages += @{
+            ActionName           = $_.ActionName
+            PackageReferenceName = $_.PackageReferenceName
+            Version              = $version
         }
     }
 
-    # Create json payload
-    $jsonPayload = @{
-        ProjectId = $project.Id
-        ChannelId = $channel.Id
-        Version = $releaseVersion
-        SelectedPackages = $selectedPackages
-    }
-
-    # Create the release
-    Invoke-RestMethod -Method Post -Uri "$octopusURL/api/$($space.Id)/releases" -Body ($jsonPayload | ConvertTo-Json -Depth 10) -Headers $header
+    # Create release
+    $release = Invoke-RestMethod -Uri "$octopusURL/api/$($space.id)/releases" -Method POST -Headers $header -Body ($releaseBody | ConvertTo-Json -depth 10)
 }
 catch
 {
