@@ -49,7 +49,6 @@ try
     {
         // Get feed
         var feed = repositoryForSpace.Feeds.Get(package.FeedId);
-        //var packageVersion = repositoryForSpace.BuiltInPackageRepository.ListPackages(package.PackageId).Items[0].Version;
         var packageVersion = repositoryForSpace.Feeds.GetVersions(feed, new[] { package.PackageId }).First().Version;
 
         // Create selected package object
