@@ -15,9 +15,6 @@ try
     # Get project
     $project = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/all" -Headers $header) | Where-Object {$_.Name -eq $projectName}
 
-    # Get deploymentProcess
-    $deploymentProcess = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/deploymentprocesses/$($project.DeploymentProcessId)" -Headers $header
-
     # Get channel
     $channel = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/channels" -Headers $header).Items | Where-Object {$_.Name -eq $channelName}
 
@@ -45,8 +42,11 @@ try
         }
     }
 
-    # Create release
+    # Create the release
     $release = Invoke-RestMethod -Uri "$octopusURL/api/$($space.id)/releases" -Method POST -Headers $header -Body ($releaseBody | ConvertTo-Json -depth 10)
+    
+    # Display created release
+    $release
 }
 catch
 {
