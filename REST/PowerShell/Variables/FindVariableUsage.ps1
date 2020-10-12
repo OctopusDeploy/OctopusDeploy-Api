@@ -45,8 +45,8 @@ try
             foreach($match in $matchingNamedVariables) {
                 $result = [pscustomobject]@{
                     Project = $project.Name
-                    MatchType = "Project VariableSet"
-                    Context = "Named"
+                    MatchType = "Named Project Variable"
+                    Context = $null
                     AdditionalContext = $null
                     Property = $null
                     Link = "$octopusURL$($project.Links.Web)/variables"
@@ -64,8 +64,8 @@ try
             foreach($match in $matchingValueVariables) {
                 $result = [pscustomobject]@{
                     Project = $project.Name
-                    MatchType = "Project VariableSet"
-                    Context = "Referenced"
+                    MatchType = "Referenced Project Variable"
+                    Context = $null
                     AdditionalContext = $null
                     Property = $null
                     Link = "$octopusURL$($project.Links.Web)/variables"
@@ -129,7 +129,7 @@ try
                         if($null -ne $json -and ($json -like "*$variableToFind*")) {
                             $result = [pscustomobject]@{
                                 Project = $project.Name
-                                MatchType= "Runbook Step"
+                                MatchType = "Runbook Step"
                                 Context = $runbook.Name
                                 AdditionalContext = $step.Name
                                 Property = $propName
