@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"os"
 
@@ -39,6 +38,5 @@ func CreateLifecycle(octopusURL, apiKey, space, name string) *model.Lifecycle {
 
 	client.Lifecycles.Add(lifecycle)
 
-	fmt.Println(lifecycle)
 	return lifecycle
 }
