@@ -1,27 +1,37 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/OctopusDeploy/go-octopusdeploy/client"
 	"github.com/OctopusDeploy/go-octopusdeploy/model"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
 	octopusURL := os.Args[1]
-	apiKey := os.Args[2]
-	space := os.Args[3]
-	name := os.Args[4]
-	projectID := os.Args[5]
+	space := os.Args[2]
+	name := os.Args[3]
+	projectID := os.Args[4]
 
-	octopusAuth(octopusURL, apiKey, space)
-	CreateChannel(octopusURL, apiKey, space, name, projectID)
+	fmt.Println("Enter Password Securely: ")
+	apiKey, err := terminal.ReadPassword(0)
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	APIKey := string(apiKey)
+
+	octopusAuth(octopusURL, APIKey, space)
+	CreateChannel(octopusURL, APIKey, space, name, projectID)
 
 }
 
-func octopusAuth(octopusURL string, apiKey string, space string) *client.Client {
-	client, err := client.NewClient(nil, octopusURL, apiKey, space)
+func octopusAuth(octopusURL, APIKey, space string) *client.Client {
+	client, err := client.NewClient(nil, octopusURL, APIKey, space)
 	if err != nil {
 		log.Println(err)
 	}
@@ -29,8 +39,8 @@ func octopusAuth(octopusURL string, apiKey string, space string) *client.Client 
 	return client
 }
 
-func CreateChannel(octopusURL, apiKey, space, name, projectID string) *model.Channel {
-	client := octopusAuth(octopusURL, apiKey, space)
+func CreateChannel(octopusURL, APIKey, space, name, projectID string) *model.Channel {
+	client := octopusAuth(octopusURL, APIKey, space)
 	Channel, err := model.NewChannel(name, projectID, "New channel")
 
 	if err != nil {
