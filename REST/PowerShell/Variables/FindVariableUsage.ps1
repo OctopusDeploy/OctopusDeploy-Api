@@ -76,7 +76,7 @@ try
             }
         }
 
-        # Search Deployment process if configured
+        # Search Deployment process if enabled
         if($searchDeploymentProcesses -eq $True) {
             # Get project deployment process
             $deploymentProcess = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/deploymentprocesses/$($project.DeploymentProcessId)" -Headers $header)
@@ -106,7 +106,7 @@ try
             }
         }
 
-        # Search Runbook processes if configured
+        # Search Runbook processes if enabled
         if($searchRunbooksProcesses -eq $True) {
             
             # Get project runbooks
