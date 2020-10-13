@@ -46,8 +46,8 @@ try
                 $result = [pscustomobject]@{
                     Project = $project.Name
                     MatchType = "Named Project Variable"
-                    Context = $null
-                    AdditionalContext = $null
+                    Context = $match.Name
+                    AdditionalContext = $match.Value
                     Property = $null
                     Link = "$octopusURL$($project.Links.Web)/variables"
                 }
@@ -65,8 +65,8 @@ try
                 $result = [pscustomobject]@{
                     Project = $project.Name
                     MatchType = "Referenced Project Variable"
-                    Context = $null
-                    AdditionalContext = $null
+                    Context = $match.Name
+                    AdditionalContext = $match.Value
                     Property = $null
                     Link = "$octopusURL$($project.Links.Web)/variables"
                 }
