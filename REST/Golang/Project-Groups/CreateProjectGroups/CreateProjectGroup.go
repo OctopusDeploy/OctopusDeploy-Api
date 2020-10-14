@@ -14,7 +14,6 @@ func main() {
 	octopusURL := os.Args[1]
 	space := os.Args[2]
 	name := os.Args[3]
-	projectID := os.Args[4]
 
 	fmt.Println("Enter Password Securely: ")
 	apiKey, err := terminal.ReadPassword(0)
@@ -26,7 +25,7 @@ func main() {
 	APIKey := string(apiKey)
 
 	octopusAuth(octopusURL, APIKey, space)
-	CreateProjectGroup(octopusURL, APIKey, space, name, projectID)
+	CreateProjectGroup(octopusURL, APIKey, space, name)
 
 }
 
@@ -39,7 +38,7 @@ func octopusAuth(octopusURL, APIKey, space string) *client.Client {
 	return client
 }
 
-func CreateProjectGroup(octopusURL, APIKey, space, name, projectID string) *model.ProjectGroup {
+func CreateProjectGroup(octopusURL, APIKey, space, name string) *model.ProjectGroup {
 	client := octopusAuth(octopusURL, APIKey, space)
 	ProjectGroup := model.NewProjectGroup(name)
 
