@@ -1,41 +1,49 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
+
+	"github.com/OctopusDeploy/go-octopusdeploy/client"
+	"github.com/OctopusDeploy/go-octopusdeploy/model"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
-	URL := os.Args[1]
-	apiKey := os.Args[2]
+	octopusURL := os.Args[1]
+	space := os.Args[2]
+	name := os.Args[3]
+	projectID := os.Args[4]
 
-	createProject(URL, apiKey)
-}
-
-func createProject(URL string, apiKey string) {
-
-	body, _ := json.Marshal(map[string]string{
-		"Name": "testGoCode",
-	})
-
-	put, err := http.NewRequest("POST", URL+"/api/projectgroups", bytes.NewBuffer(body))
+	fmt.Println("Enter Password Securely: ")
+	apiKey, err := terminal.ReadPassword(0)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	put.Header.Set("X-Octopus-ApiKey", apiKey)
+	APIKey := string(apiKey)
 
-	client := &http.Client{}
-	resp, err := client.Do(put)
+	octopusAuth(octopusURL, APIKey, space)
+	CreateProjectGroup(octopusURL, APIKey, space, name, projectID)
 
+}
+
+func octopusAuth(octopusURL, APIKey, space string) *client.Client {
+	client, err := client.NewClient(nil, octopusURL, APIKey, space)
 	if err != nil {
-		panic(err)
+		log.Println(err)
 	}
 
-	fmt.Println("Response Status:", resp.Status)
+	return client
+}
+
+func CreateProjectGroup(octopusURL, APIKey, space, name, projectID string) *model.ProjectGroup {
+	client := octopusAuth(octopusURL, APIKey, space)
+	ProjectGroup := model.NewProjectGroup(name)
+
+	client.ProjectGroups.Add(ProjectGroup)
+
+	return ProjectGroup
 }
