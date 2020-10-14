@@ -117,9 +117,10 @@ for project in projects:
                         if tracked_variable not in variable_tracker:
                             variable_tracker.append(tracked_variable)               
 
-if len(variable_tracker) > 0:
+results_count = len(variable_tracker)
+if results_count > 0:
     print('')    
-    print('Results:')
+    print('Found {0} results:'.format(results_count))
     for tracked_variable in variable_tracker:
         print('Project           : {0}'.format(tracked_variable['Project']))
         print('MatchType         : {0}'.format(tracked_variable['MatchType']))
