@@ -7,7 +7,7 @@ $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 $spaceName = "Default"
 
 # Specify the name of the Library VariableSet to use to find variables usage of
-$variableSetVariableUsagesToFind = "My-VariableSet"
+$variableSetVariableUsagesToFind = "My-Variable-Set"
 
 # Search through Project's Deployment Processes?
 $searchDeploymentProcesses = $True
@@ -33,7 +33,7 @@ try
     $variableSet  = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/variables/$($libraryVariableSet.VariableSetId)" -Headers $header)
     $variables = $variableSet.Variables
 
-    Write-Host "Looking for usage of variables from variable set '$variableSetVariableUsagesToFind' in space: '$spaceName'"
+    Write-Host "Looking for usages of variables from variable set '$variableSetVariableUsagesToFind' in space: '$spaceName'"
 
     # Get all projects
     $projects = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/all" -Headers $header
@@ -62,9 +62,8 @@ try
                         Property = $null
                         Link = "$octopusURL$($project.Links.Web)/variables"
                     }
-                    if($variableTracking -notcontains $result) {
-                        $variableTracking += $result
-                    }
+                    # Add and de-dupe later
+                    $variableTracking += $result
                 }
             }
         }
@@ -97,9 +96,8 @@ try
                                 Property = $propName
                                 Link = "$octopusURL$($project.Links.Web)/deployments/process/steps?actionId=$($step.Actions[0].Id)"
                             }
-                            if($variableTracking -notcontains $result) {
-                                $variableTracking += $result
-                            }
+                            # Add and de-dupe later
+                            $variableTracking += $result
                         }
                     }
                 }
@@ -140,22 +138,22 @@ try
                                     Property = $propName
                                     Link = "$octopusURL$($project.Links.Web)/operations/runbooks/$($runbook.Id)/process/$($runbook.RunbookProcessId)/steps?actionId=$($step.Actions[0].Id)"
                                 }
-                                if($variableTracking -notcontains $result) {
-                                    $variableTracking += $result
-                                }
+                                # Add and de-dupe later
+                                $variableTracking += $result
                             }
                         }
                     }
                 }
             }
         }
-        
     }
     
+    # De-dupe
+    $variableTracking = $variableTracking | Sort-Object -Property * -Unique
+
     if($variableTracking.Count -gt 0) {
         Write-Host ""
-        Write-Host "Results:"
-        $variableTracking
+        Write-Host "Found $($variableTracking.Count) results:"
         if (![string]::IsNullOrWhiteSpace($csvExportPath)) {
             Write-Host "Exporting results to CSV file: $csvExportPath"
             $variableTracking | Export-Csv -Path $csvExportPath -NoTypeInformation
