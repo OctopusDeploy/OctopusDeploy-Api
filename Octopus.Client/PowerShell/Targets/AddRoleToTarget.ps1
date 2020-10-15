@@ -22,7 +22,7 @@ try
     $machine = $repositoryForSpace.Machines.FindByName($machineName)
 
     # Add target role
-    $machine.roles += ($targetRole)
+    $machine.roles.Add($targetRole)
     $repositoryForSpace.Machines.Modify($machine)
 }
 catch
