@@ -1,10 +1,16 @@
 # Define working variables
-$octopusURL = "https://youroctopusurl"
-$octopusAPIKey = "API-KEY"
+$octopusURL = "https://your.octopus.app"
+$octopusAPIKey = "API-YOURAPIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+# Provide the space name
+$spaceName = "Default"
+# Provide a tenant name
 $tenantName = "MyTenant"
+# Provide project names which have multi-tenancy enabled in their settings.
 $projectNames = @("MyProject")
+# provide the environments to connect to the projects.
 $environmentNames = @("Development", "Test")
+# Optionally, provide existing tenant tagsets you wish to apply.
 $tenantTags = @("MyTagSet/Beta", "MyTagSet/Stable") # Format: TagSet/Tag
 
 try
