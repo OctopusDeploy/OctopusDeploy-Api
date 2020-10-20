@@ -1,3 +1,5 @@
+$ErrorActionPreference = "Stop";
+
 # Define working variables
 $octopusURL = "https://youroctourl"
 $octopusAPIKey = "API-YOURAPIKEY"

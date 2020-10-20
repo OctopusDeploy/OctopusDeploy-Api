@@ -1,3 +1,5 @@
+$ErrorActionPreference = "Stop";
+
 # Define working variables
 $octopusURL = "https://youroctourl"
 $octopusAPIKey = "API-YOURAPIKEY"
@@ -12,31 +14,24 @@ $certificatePfxPassword = "PFX-file-password"
 # Convert PFX file to base64
 $certificateContent = [Convert]::ToBase64String((Get-Content -Path $certificateFilePath -Encoding Byte))
 
-try
+# Get space
+$space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
+
+# Get existing certificate
+$certificate = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/certificates/all" -Headers $header) | Where-Object {($_.Name -eq $certificateName) -and ($null -eq $_.Archived)}
+
+# Check to see if multiple certificates were returned
+if ($certificate -is [array])
 {
-    # Get space
-    $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
-
-    # Get existing certificate
-    $certificate = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/certificates/all" -Headers $header) | Where-Object {($_.Name -eq $certificateName) -and ($null -eq $_.Archived)}
-
-    # Check to see if multiple certificates were returned
-    if ($certificate -is [array])
-    {
-        # Throw exception
-        throw "Multiple certificates returned!"        
-    }
-
-    # Create JSON payload
-    $jsonPayload = @{
-        certificateData = $certificateContent
-        password = $certificatePfxPassword
-    }
-
-    # Submit request
-    Invoke-RestMethod -Method Post -Uri "$octopusURL/api/$($space.Id)/certificates/$($certificate.Id)/replace" -Body ($jsonPayload | ConvertTo-Json -Depth 10) -Headers $header
+    # Throw exception
+    throw "Multiple certificates returned!"        
 }
-catch
-{
-    Write-Host $_.Exception.Message
+
+# Create JSON payload
+$jsonPayload = @{
+    certificateData = $certificateContent
+    password = $certificatePfxPassword
 }
+
+# Submit request
+Invoke-RestMethod -Method Post -Uri "$octopusURL/api/$($space.Id)/certificates/$($certificate.Id)/replace" -Body ($jsonPayload | ConvertTo-Json -Depth 10) -Headers $header
