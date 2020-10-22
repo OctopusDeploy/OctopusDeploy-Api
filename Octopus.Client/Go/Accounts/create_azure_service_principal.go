@@ -1,9 +1,7 @@
 package main
 
 import (
-	"github.com/OctopusDeploy/go-octopusdeploy/client"
-	"github.com/OctopusDeploy/go-octopusdeploy/enum"
-	"github.com/OctopusDeploy/go-octopusdeploy/model"
+	"github.com/OctopusDeploy/go-octopusdeploy"
 	uuid "github.com/google/uuid"
 )
 
@@ -12,44 +10,41 @@ var (
 	octopusAPIKey string = "API-YOURAPIKEY"
 
 	// Azure specific details
-	azureSubscriptionID uuid.UUID      = uuid.MustParse("Subscription UUID")
-	azureApplicationID  uuid.UUID      = uuid.MustParse("Client UUID")
-	azureTenantID       uuid.UUID      = uuid.MustParse("Tenant UUID")
+	azureSubscriptionID uuid.UUID      = uuid.MustParse("Subscription-Guid")
+	azureApplicationID  uuid.UUID      = uuid.MustParse("Client-Guid")
+	azureTenantID       uuid.UUID      = uuid.MustParse("Tenant-Guid")
 	azureSecret         SensitiveValue = model.NewSensitiveValue("Secret")
 
 	// Octopus Account details
-	spaceName           string                      = "default"
-	accountName         string                      = "Azure Account"
-	accountDescription  string                      = "My Azure Account"
-	tenantParticipation enum.TenantedDeploymentMode = enum.Untenanted
-	tenantTags          []string                    = nil
-	tenantIDs           []string                    = nil
-	environmentIDs      []string                    = nil
+	accountName         string   = "Azure Account"
+	accountDescription  string   = "My Azure Account"
+	tenantParticipation string   = "Untenanted"
+	tenantTags          []string = nil
+	tenantIDs           []string = nil
+	environmentIDs      []string = nil
+	spaceName           string   = "default"
 )
 
 func main() {
-	client, err := client.NewClient(nil, octopusURL, octopusAPIKey, spaceName)
-
+	client, err := octopusdeploy.NewClient(nil, octopusURL, octopusAPIKey, spaceName)
 	if err != nil {
 		// TODO: handle error
 	}
 
-	azureAccount, err := model.NewAzureServicePrincipalAccount(accountName, azureSubscriptionID, azureTenantID, azureApplicationID, azureSecret)
-
+	azureAccount, err := octopusdeploy.NewAzureServicePrincipalAccount(accountName, azureSubscriptionID, azureTenantID, azureApplicationID, azureSecret)
 	if err != nil {
 		// TODO: handle error
 	}
 
-	// Fill in account details
+	// fill in account details
 	azureAccount.Description = accountDescription
 	azureAccount.TenantedDeploymentParticipation = tenantParticipation
 	azureAccount.TenantTags = tenantTags
 	azureAccount.TenantIDs = tenantIDs
 	azureAccount.EnvironmentIDs = environmentIDs
 
-	// Create account
-	createdAccount, err := client.Accounts.Create(azureAccount)
-
+	// create account
+	createdAccount, err := client.Accounts.Add(azureAccount)
 	if err != nil {
 		// TODO: handle error
 	}
