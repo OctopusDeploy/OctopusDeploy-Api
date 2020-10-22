@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/OctopusDeploy/go-octopusdeploy"
+	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
 	uuid "github.com/google/uuid"
 )
 
