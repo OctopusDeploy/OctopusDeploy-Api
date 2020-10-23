@@ -25,7 +25,7 @@ $tentacleRetentionPolicy = [PSCustomObject]@{
     ShouldKeepForever = $false
 }
 
-# Should we update the Lifecycle retention policies, with the values specified above?
+# Should we update the Lifecycle retention policy, with the values specified above?
 $UpdateLifecycleRetentionPolicy = $True 
 
 # Should we update the retention policy in all phases found in the lifecycle, with the values specified above?
