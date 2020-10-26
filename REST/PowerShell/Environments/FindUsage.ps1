@@ -379,7 +379,7 @@ foreach ($tenant in $tenants.Items)
         {                                                
             if (@($userRoles.TenantIds) -contains $($tenant.Id))
             {
-                $environmentIsUsed = $true
+                $tenantIsUsed = $true
                 Write-Host "         Used in the team $($team.Name)"
             }                                                             
         }
@@ -388,7 +388,7 @@ foreach ($tenant in $tenants.Items)
     $deployments = Invoke-RestMethod -Method Get -Uri "$OctopusUrl/api/$spaceId/deployments?tenants=$($tenant.Id)" -Headers $header
     if ($deployments.Items.Count -gt 0)
     {
-        $environmentIsUsed = $true
+        $tenantIsUsed = $true
         Write-Host "     Used in $($deployments.TotalResults) deployments"
     }
     else
