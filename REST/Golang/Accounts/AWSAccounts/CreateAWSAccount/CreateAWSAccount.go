@@ -59,6 +59,10 @@ func CreateAWSAccount(octopusURL *url.URL, APIKey string, space string, name str
 		log.Println(err)
 	}
 
+	// Test to retrieve account names
+	// apiClient.Accounts.Get()
+	// apiClient.Accounts.GetAll()
+
 	apiClient.Accounts.Add(Account)
 	log.Printf("\nAccount %s: Created", name)
 

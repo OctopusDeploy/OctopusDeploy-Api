@@ -3,15 +3,15 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 
-	"github.com/OctopusDeploy/go-octopusdeploy/client"
-	"github.com/OctopusDeploy/go-octopusdeploy/model"
+	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
-	octopusURL := os.Args[1]
+	octopusURL, _ := url.Parse(os.Args[1])
 	space := os.Args[2]
 	name := os.Args[3]
 	projectID := os.Args[4]
@@ -30,8 +30,8 @@ func main() {
 
 }
 
-func octopusAuth(octopusURL, APIKey, space string) *client.Client {
-	client, err := client.NewClient(nil, octopusURL, APIKey, space)
+func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
+	client, err := octopusdeploy.NewClient(nil, octopusURL, APIKey, space)
 	if err != nil {
 		log.Println(err)
 	}
@@ -39,15 +39,11 @@ func octopusAuth(octopusURL, APIKey, space string) *client.Client {
 	return client
 }
 
-func CreateChannel(octopusURL, APIKey, space, name, projectID string) *model.Channel {
+func CreateChannel(octopusURL *url.URL, APIKey, space, name, projectID string) *octopusdeploy.Channel {
 	client := octopusAuth(octopusURL, APIKey, space)
-	Channel, err := model.NewChannel(name, projectID, "New channel")
+	channel := octopusdeploy.NewChannel(name, projectID, "New channel")
 
-	if err != nil {
-		log.Println(err)
-	}
+	client.Channels.Add(channel)
 
-	client.Channels.Add(Channel)
-
-	return Channel
+	return channel
 }
