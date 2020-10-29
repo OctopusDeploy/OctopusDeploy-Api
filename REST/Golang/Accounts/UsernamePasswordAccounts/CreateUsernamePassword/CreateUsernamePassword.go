@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 
 	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
@@ -10,7 +11,7 @@ import (
 )
 
 func main() {
-	octopusURL := os.Args[1]
+	octopusURL, _ := url.Parse(os.Args[1])
 	space := os.Args[2]
 	name := os.Args[3]
 
@@ -29,17 +30,24 @@ func main() {
 	CreateUsernamePasswordAccount(octopusURL, APIKey, space, name)
 }
 
-func octopusAuth(octopusURL, APIKey, space string) *octopusdeploy.Client {
-	client := octopusdeploy.NewClient(nil, octopusURL, APIKey)
+func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
+	client, err := octopusdeploy.NewClient(nil, octopusURL, APIKey, space)
+	if err != nil {
+		log.Println(err)
+	}
 
 	return client
 }
 
-func CreateUsernamePasswordAccount(octopusURL string, APIKey string, space string, name string) *octopusdeploy.Account {
+func CreateUsernamePasswordAccount(octopusURL *url.URL, APIKey string, space string, name string) *octopusdeploy.UsernamePasswordAccount {
 	client := octopusAuth(octopusURL, APIKey, space)
-	Account := octopusdeploy.NewUsernamePasswordAccount(name)
+	Account, err := octopusdeploy.NewUsernamePasswordAccount(name)
 
-	client.Account.Add(Account)
+	if err != nil {
+		log.Println(err)
+	}
+
+	client.Accounts.Add(Account)
 
 	return Account
 }
