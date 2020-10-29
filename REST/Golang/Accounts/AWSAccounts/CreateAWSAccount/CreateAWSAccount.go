@@ -3,21 +3,21 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 
-	"github.com/OctopusDeploy/go-octopusdeploy/client"
-	"github.com/OctopusDeploy/go-octopusdeploy/model"
+	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
-	octopusURL := os.Args[1]
+	octopusURL, _ := url.Parse(os.Args[1])
 	space := os.Args[2]
 	name := os.Args[3]
 	accessKey := os.Args[4]
 
 	// Pass in the API key securely
-	fmt.Println("Enter Password Securely: ")
+	fmt.Println("Enter API Key Securely: ")
 	apiKey, err := terminal.ReadPassword(0)
 
 	if err != nil {
@@ -33,16 +33,17 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	}
+
 	password := string(clientPassword)
-	awsSecretKey := model.NewSensitiveValue(password)
+	awsSecretKey := octopusdeploy.NewSensitiveValue(password)
 
 	// Call both functions from the main function
 	octopusAuth(octopusURL, APIKey, space)
 	CreateAWSAccount(octopusURL, APIKey, space, name, accessKey, awsSecretKey)
 }
 
-func octopusAuth(octopusURL, APIKey, space string) *client.Client {
-	apiClient, err := client.NewClient(nil, octopusURL, APIKey, space)
+func octopusAuth(octopusURL *url.URL, APIKey string, space string) *octopusdeploy.Client {
+	apiClient, err := octopusdeploy.NewClient(nil, octopusURL, APIKey, space)
 	if err != nil {
 		log.Println(err)
 	}
@@ -50,15 +51,16 @@ func octopusAuth(octopusURL, APIKey, space string) *client.Client {
 	return apiClient
 }
 
-func CreateAWSAccount(octopusURL string, APIKey string, space string, name string, accessKey string, awsSecretKey model.SensitiveValue) *model.Account {
+func CreateAWSAccount(octopusURL *url.URL, APIKey string, space string, name string, accessKey string, awsSecretKey *octopusdeploy.SensitiveValue) *octopusdeploy.AmazonWebServicesAccount {
 	apiClient := octopusAuth(octopusURL, APIKey, space)
-	Account, err := model.NewAwsServicePrincipalAccount(name, accessKey, awsSecretKey)
+	Account, err := octopusdeploy.NewAmazonWebServicesAccount(name, accessKey, awsSecretKey)
 
 	if err != nil {
 		log.Println(err)
 	}
 
 	apiClient.Accounts.Add(Account)
+	log.Printf("\nAccount %s: Created", name)
 
 	return Account
 }
