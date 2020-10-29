@@ -3,15 +3,15 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 
-	"github.com/OctopusDeploy/go-octopusdeploy/client"
-	"github.com/OctopusDeploy/go-octopusdeploy/model"
+	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
 func main() {
-	octopusURL := os.Args[1]
+	octopusURL, _ := url.Parse(os.Args[1])
 	space := os.Args[2]
 	name := os.Args[3]
 
@@ -29,8 +29,8 @@ func main() {
 
 }
 
-func octopusAuth(octopusURL, apiKey, space string) *client.Client {
-	client, err := client.NewClient(nil, octopusURL, apiKey, space)
+func octopusAuth(octopusURL *url.URL, apiKey, space string) *octopusdeploy.Client {
+	client, err := octopusdeploy.NewClient(nil, octopusURL, apiKey, space)
 	if err != nil {
 		log.Println(err)
 	}
@@ -38,13 +38,9 @@ func octopusAuth(octopusURL, apiKey, space string) *client.Client {
 	return client
 }
 
-func CreateLifecycle(octopusURL, APIKey, space, name string) *model.Lifecycle {
+func CreateLifecycle(octopusURL *url.URL, APIKey, space, name string) *octopusdeploy.Lifecycle {
 	client := octopusAuth(octopusURL, APIKey, space)
-	lifecycle, err := model.NewLifecycle(name)
-
-	if err != nil {
-		log.Println(err)
-	}
+	lifecycle := octopusdeploy.NewLifecycle(name)
 
 	client.Lifecycles.Add(lifecycle)
 
