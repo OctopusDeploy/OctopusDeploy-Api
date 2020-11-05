@@ -8,7 +8,13 @@ $spaceName = "Default"
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
 
 # Get machine details
-$machines = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/machines" -Headers $header).Items
+$machines = @()
+$response = $null
+do {
+    $uri = if ($response) { $octopusURL + $response.Links.'Page.Next' } else { "$octopusURL/api/$($space.Id)/machines" }
+    $response = Invoke-RestMethod -Method Get -Uri $uri -Headers $header
+    $machines += $response.Items
+} while ($response.Links.'Page.Next')
 
 foreach ($machine in $machines) {
     $machineTasks = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/machines/$($machine.Id)/tasks" -Headers $header).Items
