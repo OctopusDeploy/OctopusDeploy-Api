@@ -9,17 +9,17 @@ $EnvironmentName = #The name of the environment to redeploy to
 $header = @{ "X-Octopus-ApiKey" = $APIKey }
 
 ##GetProjectId
-$project = (Invoke-WebRequest "$OctopusURL/api/$spaceId/projects?name=$projectName&skip=0&take=1" -Headers $header).content | ConvertFrom-Json
+$project = Invoke-RestMethod "$OctopusURL/api/$spaceId/projects?name=$([System.Web.HTTPUtility]::UrlEncode($projectName))&skip=0&take=1" -Headers $header
 $projectId = $project.Items[0].Id
 
 Write-Host "The projectId for $ProjectName is $projectId"
 
-$stagingEnvironment = (Invoke-WebRequest "$OctopusURL/api/$spaceId/environments?name=$EnvironmentName&skip=0&take=1" -Headers $header).content | ConvertFrom-Json
+$stagingEnvironment = Invoke-RestMethod "$OctopusURL/api/$spaceId/environments?name=$([System.Web.HTTPUtility]::UrlEncode($EnvironmentName))&skip=0&take=1" -Headers $header
 $environmentId = $stagingEnvironment.Items[0].Id
 
 Write-Host "The projectId for $EnvironmentName is $environmentId"
 
-$progressionInformation = (Invoke-WebRequest "$OctopusURL/api/$spaceId/progression/$projectId" -Headers $header).content | ConvertFrom-Json
+$progressionInformation = Invoke-RestMethod "$OctopusURL/api/$spaceId/progression/$projectId" -Headers $header
 $releaseId = ""
 
 foreach($release in $progressionInformation.Releases)
@@ -58,12 +58,12 @@ $bodyRaw = @{
 
 $bodyAsJson = $bodyRaw | ConvertTo-Json
 
-$redeployment = (Invoke-WebRequest "$OctopusURL/api/$SpaceId/deployments" -Headers $header -Method Post -Body $bodyAsJson -ContentType "application/json").content | ConvertFrom-Json
+$redeployment = Invoke-RestMethod "$OctopusURL/api/$SpaceId/deployments" -Headers $header -Method Post -Body $bodyAsJson -ContentType "application/json"
 $taskId = $redeployment.TaskId
 $deploymentIsActive = $true
 
 do {
-    $deploymentStatus = (Invoke-WebRequest "$OctopusURL/api/tasks/$taskId/details?verbose=false" -Headers $header).content | ConvertFrom-Json
+    $deploymentStatus = Invoke-RestMethod "$OctopusURL/api/tasks/$taskId/details?verbose=false" -Headers $header
     $deploymentStatusState = $deploymentStatus.Task.State
 
     if ($deploymentStatusState -eq "Success" -or $deploymentStatusState -eq "Failed"){
