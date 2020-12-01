@@ -9,6 +9,7 @@ $hostName = "MyHost"
 $tentaclePort = "10933"
 $environmentNames = @("Development", "Production")
 $roles = @("MyRole")
+$environmentIds = @()
 
 # Get space
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
