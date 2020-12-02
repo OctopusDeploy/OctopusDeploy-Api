@@ -64,7 +64,7 @@ function AcquireAssemblies() {
 	Param()
 	Write-Host 'Acquiring dependent assemblies'
 	@('Octopus.Client') | % { 
-		& $NugetPath install $_ $nugetSourceArg $NugetSource -ExcludeVersion -PackageSaveMode nuspec -Framework net45 -Verbosity $script:NugetVerbosity -NonInteractive
+		& $NugetPath install $_ -ExcludeVersion -PackageSaveMode nuspec -Framework net45 -Verbosity $script:NugetVerbosity -NonInteractive
 	}
 }
 
@@ -151,7 +151,7 @@ if ($changeMade) {
 	$operation = "Adding variables"
 	if ($PSCmdlet.ShouldProcess($destinationGlobalVariableSetId, $operation)) {
 		Write-Host "$operation to '$destinationGlobalVariableSetId'"
-		Put-OctopusResource "/variables/$destinationGlobalVariableSetId" $destinationGlobalVariableSet
+		Put-OctopusResource "/variables/$destinationGlobalVariableSetId" $DestinationSpaceId $destinationGlobalVariableSet
 	}
 } else {
 	Write-Warning "No variables matching Regex '$VariableNameRegexPattern' were found in '$sourceGlobalVariableSetId'"
