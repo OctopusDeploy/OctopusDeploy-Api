@@ -4,6 +4,7 @@
 $octopusURL = "https://youroctourl"
 $octopusAPIKey = "API-YOURAPIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+$spaceName = "Default"
 $projectName = "MyProject"
 
 # Get space
