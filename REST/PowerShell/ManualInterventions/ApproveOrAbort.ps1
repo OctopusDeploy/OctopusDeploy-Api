@@ -16,7 +16,10 @@ $InterruptionID = "Interruptions-145"
 $header = @{ "X-Octopus-ApiKey" = $OctopusAPIKey }
 
 $body = @{Instructions= $null
-            Notes = "Message" 
+            Notes = "Message"
+            # Set this property to "Abort" to abort the deployment.
+            # Omit the property completely for a failure guidance interruption.
+            Result = "Proceed" 
             # If you wish to Exclude the machine from the deployment (in case of a rolling deploy), uncomment the line below.
             # Guidance = "Exclude" 
         } | ConvertTo-Json
