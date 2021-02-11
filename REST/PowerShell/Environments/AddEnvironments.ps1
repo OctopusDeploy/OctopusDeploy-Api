@@ -19,7 +19,7 @@ foreach ($environment in $environments) {
     $existingEnvironment = $environments.Items | Where-Object { $_.Name -eq $environment }
 
     if($null -ne $existingEnvironment) {
-        Write-Host "Environment $environment' already exists. Nothing to create :)"
+        Write-Host "Environment '$environment' already exists. Nothing to create :)"
     }
     else {
 
