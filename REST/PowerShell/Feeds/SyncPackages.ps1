@@ -23,7 +23,7 @@ param (
     [string] $DestinationApiKey,
 
     [Parameter()]
-    [string] $DestionationSpace = "Default",
+    [string] $DestinationSpace = "Default",
 
     [Parameter()]
     $CutoffDate = $null
@@ -103,7 +103,7 @@ $sourceSpaceName = $sourceSpace
 # Destination Octopus instance details and credentials
 $destinationOctopusURL = $destinationUrl
 $destinationOctopusAPIKey = $destinationApiKey
-$destinationSpaceName = $destionationSpace
+$destinationSpaceName = $destinationSpace
 
 # *****************************************************
 
