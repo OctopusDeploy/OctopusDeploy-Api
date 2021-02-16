@@ -67,7 +67,6 @@ function Skip-Package([string] $filename, $package, $cutoffDate) {
 }
 
 function Get-Packages([string] $packageId, [int] $batch, [int] $skip) {
-    Write-Host "batch: $batch"
     $getPackagesToSyncUrl = "$sourceOctopusURL/api/$sourceSpaceId/packages?nugetPackageId=$($package.Id)&take=$batch&skip=$skip"
     Write-Host "Fetching packages from $getPackagesToSyncUrl"
     $packagesResponse = Invoke-RestMethod -Method Get -Uri "$getPackagesToSyncUrl" -Headers $sourceHeader
