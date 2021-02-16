@@ -51,6 +51,8 @@ function Push-Package([string] $fileName, $package) {
         while (-not $upload.AsyncWaitHandle.WaitOne(10000)) {
         Write-Verbose "Uploading $fileName..."
     }
+
+    $streamContent.Dispose()
 }
 
 function Skip-Package([string] $filename, $package, $cutoffDate) {
