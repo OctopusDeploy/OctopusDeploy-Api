@@ -317,18 +317,25 @@ function Get-QueuedOctopusTasks
     $queuedTasks = Invoke-OctopusApi -octopusUrl $octopusUrl -endPoint "Tasks?states=Queued&skip=0&take=1000" -spaceId $null -apiKey $octopusApiKey -method "GET" -ignoreCache $true
 
     $returnList = @()
-    $currentTime = Get-Date
+    $currentTime = $(Get-Date).ToUniversalTime()
 
     Write-OctopusInformation "Looping through the found items in reverse order because the Queue is FIFO but the return object is ordered by date DESC"
 
     for($i = $queuedTasks.Items.Count - 1; $i -ge 0; $i--)    
     {
         $task = $queuedTasks.Items[$i]
-
-        if ($null -ne $task.QueueTime -and $task.QueueTime -gt $currentTime)
+        
+        if ($null -ne $task.QueueTime)
         {
-            Write-OctopusInformation "The queued task $($task.Id) has a queue time $($task.QueueTime) in the future.  That means this is a scheduled deployment.  Skipping this task."
-            continue
+            $compareTime = [DateTime]::Parse($task.QueueTime)
+            $compareTime = $compareTime.ToUniversalTime()
+
+            Write-OctopusVerbose "Checking to see if $compareTime is ahead of the $currentTime"
+            if ($compareTime -gt $currentTime)
+            {
+                Write-OctopusInformation "The queued task $($task.Id) has a queue time $($task.QueueTime) in the future.  That means this is a scheduled deployment.  Skipping this task."
+                continue
+            }
         }
 
         if ($null -ne $task.StartTime)
