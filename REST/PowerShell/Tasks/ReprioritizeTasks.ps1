@@ -8,6 +8,7 @@ $projectList = "" ## Comma separated list of projects to look for (can be blank)
 $tenantList = "" ## Comma separated list of tenants to look for (can be blank)
 $matchType = "Or" ## How you want to match, OR = Task matches Environment OR Project OR Tenant; AND = task matches Environment AND Project AND Tenant (when supplied)
 $taskType = "Both" ## Look for runbook runs, or deployments or Both.  Options are Both, Deploy, RunbookRun
+$taskIdList = "" ## Comma separated list of task ids to move to the top of the queue
 
 $cachedResults = @{}
 
@@ -394,6 +395,7 @@ Write-OctopusInformation "Project List: $projectList"
 Write-OctopusInformation "Tenant List: $tenantList"
 Write-OctopusInformation "Octopus URL: $octopusUrl"
 Write-OctopusInformation "Match Type: $matchType"
+Write-OctopusInformation "Task Id List: $taskIdList"
 
 $queuedTasks = @(Get-QueuedOctopusTasks -octopusApiKey $octopusApiKey -octopusUrl $octopusUrl)
 
@@ -404,34 +406,51 @@ if ($queuedTasks.Length -eq 0)
 }
 
 $octopusInformation = @{
-    SpaceList = @(Get-OctopusSpaceList -spaceList $spaceList -octopusUrl $octopusUrl -octopusApiKey $octopusApiKey)
+    TaskIdList = @(Get-SplitItemIntoArray -itemToSplit $taskIdList)
 }
 
-$octopusInformation.EnvironmentList = @(Get-OctopusItemList -octopusSpaceList $octopusInformation.SpaceList -itemList $environmentList -itemType "Environment" -endpoint "environments" -octopusApiKey $octopusApiKey -octopusUrl $octopusUrl)
-$octopusInformation.HasEnvironmentFilter = $octopusInformation.EnvironmentList.Count -gt 0
-
-$octopusInformation.ProjectList = @(Get-OctopusItemList -octopusSpaceList $octopusInformation.SpaceList -itemList $projectList -itemType "Project" -endpoint "projects" -octopusApiKey $octopusApiKey -octopusUrl $octopusUrl)
-$octopusInformation.HasProjectFilter = $octopusInformation.ProjectList.Count -gt 0
-
-$octopusInformation.TenantList = @(Get-OctopusItemList -octopusSpaceList $octopusInformation.SpaceList -itemList $tenantList -itemType "Tenant" -endpoint "tenants" -octopusApiKey $octopusApiKey -octopusUrl $octopusUrl)
-$octopusInformation.HasTenantFilter = $octopusInformation.TenantList.Count -gt 0
-
-if ($octopusInformation.EnvironmentList.Count -eq 0 -and $octopusInformation.ProjectList.Count -eq 0 -and $octopusInformation.TenantList.Count -eq 0)
+if ([string]::IsNullOrWhiteSpace($taskIdList))
 {
-    Write-OctopusCritical "No environments OR projects OR tenants provided to filter on.  You must provide at least one environment OR project OR tenant."
-    exit 1
-}
+    $octopusInformation.SpaceList = @(Get-OctopusSpaceList -spaceList $spaceList -octopusUrl $octopusUrl -octopusApiKey $octopusApiKey)
 
-Write-OctopusSuccess "Going to look for any $taskType in the spaces ($(($octopusInformation.SpaceList | Select-Object -ExpandProperty Id) -join ", ")) matching "
-Write-OctopusSuccess "Environments ($(($octopusInformation.EnvironmentList | Select-Object -ExpandProperty Id) -join " OR ")) $matchType"
-Write-OctopusSuccess "Projects ($(($octopusInformation.ProjectList | Select-Object -ExpandProperty Id) -join " OR ")) $matchType"
-Write-OctopusSuccess "Tenants ($(($octopusInformation.TenantList | Select-Object -ExpandProperty Id) -join " OR "))"
+    $octopusInformation.EnvironmentList = @(Get-OctopusItemList -octopusSpaceList $octopusInformation.SpaceList -itemList $environmentList -itemType "Environment" -endpoint "environments" -octopusApiKey $octopusApiKey -octopusUrl $octopusUrl)
+    $octopusInformation.HasEnvironmentFilter = $octopusInformation.EnvironmentList.Count -gt 0
+
+    $octopusInformation.ProjectList = @(Get-OctopusItemList -octopusSpaceList $octopusInformation.SpaceList -itemList $projectList -itemType "Project" -endpoint "projects" -octopusApiKey $octopusApiKey -octopusUrl $octopusUrl)
+    $octopusInformation.HasProjectFilter = $octopusInformation.ProjectList.Count -gt 0
+
+    $octopusInformation.TenantList = @(Get-OctopusItemList -octopusSpaceList $octopusInformation.SpaceList -itemList $tenantList -itemType "Tenant" -endpoint "tenants" -octopusApiKey $octopusApiKey -octopusUrl $octopusUrl)
+    $octopusInformation.HasTenantFilter = $octopusInformation.TenantList.Count -gt 0
+
+    if ($octopusInformation.EnvironmentList.Count -eq 0 -and $octopusInformation.ProjectList.Count -eq 0 -and $octopusInformation.TenantList.Count -eq 0)
+    {
+        Write-OctopusCritical "No environments OR projects OR tenants provided to filter on.  You must provide at least one environment OR project OR tenant."
+        exit 1
+    }
+
+    Write-OctopusSuccess "Going to look for any $taskType in the spaces ($(($octopusInformation.SpaceList | Select-Object -ExpandProperty Id) -join ", ")) matching "
+    Write-OctopusSuccess "Environments ($(($octopusInformation.EnvironmentList | Select-Object -ExpandProperty Id) -join " OR ")) $matchType"
+    Write-OctopusSuccess "Projects ($(($octopusInformation.ProjectList | Select-Object -ExpandProperty Id) -join " OR ")) $matchType"
+    Write-OctopusSuccess "Tenants ($(($octopusInformation.TenantList | Select-Object -ExpandProperty Id) -join " OR "))"
+}
+else
+{
+    Write-OctopusSuccess "Going to look for the tasks ($($octopusInformation.TaskIdList -join ", "))"    
+}
 
 $matchingTasks = @()
 
 Write-OctopusInformation "Attempting to find any matching tasks based on the filtering criteria."
 foreach ($task in $queuedTasks)
 {
+    if ($octopusInformation.TaskIdList -contains $task.Id)
+    {
+        Write-OctopusInformation "The task $($task.Id) was found in the list of task ids.  Adding to list."
+        $matchingTasks += $task
+
+        continue
+    }
+
     if ($task.Name -ne "Deploy" -and $task.Name -ne "RunbookRun")
     {
         Write-Information "The task not a deployment or a runbook run.  It is $($task.Description).  Moving onto next task."
