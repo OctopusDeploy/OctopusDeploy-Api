@@ -22,16 +22,18 @@ $octopusURL = $octopusURL.TrimEnd('/')
 # Get space
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
 
-Write-Host "Looking for usages of variable named $variableToFind in space: '$spaceName'"
+Write-Host "Looking for usages of variable value named '$variableValueToFind' in space: '$spaceName'"
 
+# Get variables from variable sets
 $variableSets = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/libraryvariablesets?contentType=Variables" -Headers $header
 
 foreach ($variableSet in $variableSets)
 {
-    Write-Host "Checking project '$($variableSet.Name)'"
+    Write-Host "Checking variable set '$($variableSet.Items.Name)'"
+    
     $variableSetVariables = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/variables/variableset-$($variableSet.Items.id)" -Headers $header
 
-    $matchingNamedVariables = $variableSetVariables.Variables | Where-Object {$_.Value -eq "$variableValueToFind"}
+    $matchingNamedVariables = $variableSetVariables.Variables | Where-Object {$_.Value -like "*$variableValueToFind*"}
     if($null -ne $matchingNamedVariables){
         foreach($match in $matchingNamedVariables){
             $result = [PSCustomObject]@{
@@ -59,7 +61,7 @@ foreach ($project in $projects)
     $projectVariableSet = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/variables/$($project.VariableSetId)" -Headers $header
 
     # Check to see if variable is named in project variables.
-    $ProjectMatchingNamedVariables = $projectVariableSet.Variables | Where-Object {$_.Value -like "$variableValueToFind"}
+    $ProjectMatchingNamedVariables = $projectVariableSet.Variables | Where-Object {$_.Value -like "*$variableValueToFind*"}
     if($null -ne $ProjectMatchingNamedVariables) {
         foreach($match in $ProjectMatchingNamedVariables) {
             $result = [pscustomobject]@{
@@ -78,8 +80,6 @@ foreach ($project in $projects)
 }
     
 
-#$variableTracking = $variableTracking | Sort-Object
-
 if($variableTracking.Count -gt 0) {
     Write-Host ""
     Write-Host "Found $($variableTracking.Count) results:"
@@ -89,3 +89,4 @@ if($variableTracking.Count -gt 0) {
         $variableTracking | Export-Csv -Path $csvExportPath -NoTypeInformation
     }
 }
+
