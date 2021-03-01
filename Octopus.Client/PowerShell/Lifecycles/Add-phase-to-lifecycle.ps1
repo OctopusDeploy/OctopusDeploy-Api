@@ -1,4 +1,3 @@
-#Add-Type -Path 'C:\MyScripts\Newtonsoft.Json.dll'
 Add-Type -Path 'C:\MyScripts\Octopus.Client.dll' 
 
 $server = "YourServerURL"
