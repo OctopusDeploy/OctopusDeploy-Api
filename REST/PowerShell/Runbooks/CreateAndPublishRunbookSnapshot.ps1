@@ -51,4 +51,12 @@ foreach($package in $runbookSnapshotTemplate.Packages)
 
 $body = $body | ConvertTo-Json -Depth 10
 $runbookPublishedSnapshot = Invoke-RestMethod -Method Post -Uri "$octopusURL/api/$($space.Id)/runbookSnapshots?publish=true" -Body $body -Headers $header 
+
+# Re-get runbook
+$runbook = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/runbooks/$($runbook.Id)" -Headers $header 
+
+# Publish the snapshot
+$runbook.PublishedRunbookSnapshotId = $runbookPublishedSnapshot.Id
+Invoke-RestMethod -Method Put -Uri "$octopusURL/api/$($space.Id)/runbooks/$($runbook.Id)" -Body ($runbook | ConvertTo-Json -Depth 10) -Headers $header
+
 Write-Host "Published runbook snapshot: $($runbookPublishedSnapshot.Id) ($($runbookPublishedSnapshot.Name))"
