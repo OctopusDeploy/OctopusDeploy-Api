@@ -119,9 +119,11 @@ $destinationSpaceId = ((Invoke-RestMethod -Method Get -Uri "$destinationOctopusU
 # Create HTTP clients 
 $sourceHttpClient = New-Object System.Net.Http.HttpClient
 $sourceHttpClient.DefaultRequestHeaders.Add("X-Octopus-ApiKey", $sourceOctopusAPIKey)
+$sourceHttpClient.Timeout = New-TimeSpan -Minutes 60
 
 $destinationHttpClient = New-Object System.Net.Http.HttpClient
 $destinationHttpClient.DefaultRequestHeaders.Add("X-Octopus-ApiKey", $destinationOctopusAPIKey)
+$destinationHttpClient.Timeout = New-TimeSpan -Minutes 60
 
 $totalSyncedPackageCount = 0
 $totalSyncedPackageSize = 0
