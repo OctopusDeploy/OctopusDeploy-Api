@@ -5,7 +5,7 @@ param (
     [string] $VersionSelection = "FileVersions",
 
     [Parameter()]
-    [string] $Path,
+    [string] $PackageListFilePath,
 
     [Parameter(Mandatory)]
     [string] $SourceUrl,
@@ -117,18 +117,21 @@ $destinationHeader = @{ "X-Octopus-ApiKey" = $destinationOctopusAPIKey }
 $destinationSpaceId = ((Invoke-RestMethod -Method Get -Uri "$destinationOctopusURL/api/spaces/all" -Headers $destinationHeader) | Where-Object {$_.Name -eq $destinationSpaceName}).Id
 
 # Create HTTP clients 
+$httpClientTimeoutInMinutes = 60
 $sourceHttpClient = New-Object System.Net.Http.HttpClient
 $sourceHttpClient.DefaultRequestHeaders.Add("X-Octopus-ApiKey", $sourceOctopusAPIKey)
+$sourceHttpClient.Timeout = New-TimeSpan -Minutes $httpClientTimeoutInMinutes
 
 $destinationHttpClient = New-Object System.Net.Http.HttpClient
 $destinationHttpClient.DefaultRequestHeaders.Add("X-Octopus-ApiKey", $destinationOctopusAPIKey)
+$destinationHttpClient.Timeout = New-TimeSpan -Minutes $httpClientTimeoutInMinutes
 
 $totalSyncedPackageCount = 0
 $totalSyncedPackageSize = 0
 
 Write-Host "Syncing packages between $sourceOctopusURL and $destinationOctopusURL"
 
-$packages = Get-Content -Path $path | ConvertFrom-Json
+$packages = Get-Content -Path $PackageListFilePath | ConvertFrom-Json
 
 # Iterate supplied package IDs
 foreach($package in $packages) {
