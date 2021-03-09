@@ -5,7 +5,7 @@ param (
     [string] $VersionSelection = "FileVersions",
 
     [Parameter()]
-    [string] $Path,
+    [string] $PackageListFilePath,
 
     [Parameter(Mandatory)]
     [string] $SourceUrl,
@@ -131,7 +131,7 @@ $totalSyncedPackageSize = 0
 
 Write-Host "Syncing packages between $sourceOctopusURL and $destinationOctopusURL"
 
-$packages = Get-Content -Path $path | ConvertFrom-Json
+$packages = Get-Content -Path $PackageListFilePath | ConvertFrom-Json
 
 # Iterate supplied package IDs
 foreach($package in $packages) {
