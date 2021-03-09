@@ -186,9 +186,9 @@ foreach($package in $packages) {
     }
     elseif ($VersionSelection -eq "FileVersions") {
         $versions = $package.Versions;
-        $packagesResponse = Get-Packages $package.Id $batchSize $skip
         
         do {
+            $packagesResponse = Get-Packages $package.Id $batchSize $skip
             foreach ($pkg in $packagesResponse.Items) {
                 if ($versions.Contains($pkg.Version)) {
                     Write-Host "Processing $($pkg.PackageId).$($pkg.Version)"
