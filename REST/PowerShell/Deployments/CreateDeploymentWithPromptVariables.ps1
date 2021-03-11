@@ -23,7 +23,7 @@ $EnvironmentId = $EnvironmentList.Items[0].Id
 $ReleaseList = Invoke-RestMethod -Uri "$OctopusURL/api/$spaceId/projects/$ProjectId/releases?searchByVersion=$([System.Web.HTTPUtility]::UrlEncode($releaseNumber))&skip=0&take=1" -Headers $Header
 $ReleaseId = $ReleaseList.Items[0].Id
 
-$deploymentPreview = Invoke-RestMethod "$OctopusUrl/api/$spaceId/releases/$releaseId/deployments/preview/$EnvironmentId?includeDisabledSteps=true" -Headers $Header
+$deploymentPreview = Invoke-RestMethod "$OctopusUrl/api/$spaceId/releases/$releaseId/deployments/preview/$($EnvironmentId)?includeDisabledSteps=true" -Headers $Header
 
 $deploymentFormValues = @{}
 $promptedValueList = @(($promptedVariableValue -Split "`n").Trim())
@@ -40,7 +40,7 @@ foreach($element in $deploymentPreview.Form.Elements)
     foreach ($promptedValue in $promptedValueList)
     {
         $splitValue = $promptedValue -Split "::"
-        Write-Host "Comparing $nameToSearchFor with provided prompted variable $($promptedValue[0])"
+        Write-Host "Comparing $nameToSearchFor with provided prompted variable $($promptedValue[$nameToSearchFor])"
         if ($splitValue.Length -gt 1)
         {
             if ($nameToSearchFor -eq $splitValue[0])
@@ -63,7 +63,7 @@ foreach($element in $deploymentPreview.Form.Elements)
 #Creating deployment and setting value to the only prompt variable I have on $p.Form.Elements. You're gonna have to do some digging if you have more variables
 $DeploymentBody = @{ 
             ReleaseID = $releaseId #mandatory
-            EnvironmentID = $ReleaseId #mandatory
+            EnvironmentID = $EnvironmentId #mandatory
             FormValues = $deploymentFormValues
             ForcePackageDownload=$False
             ForcePackageRedeployment=$False
