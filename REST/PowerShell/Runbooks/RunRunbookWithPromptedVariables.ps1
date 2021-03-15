@@ -1,46 +1,64 @@
-$OctopusServerUrl = ""
-$ApiKey = "API-"
-$spaceName = ""
+$ErrorActionPreference = "Stop";
+
+# Define working variables
+$octopusURL = ""
+$octopusAPIKey = "API-YOURAPIKEY"
+$header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+
+$spaceName = "Default"
 $environmentName = ""
 $runbookName = ""
-$runbookSnapshotId = "" #leave blank if you'd like to use the published snapshot
-$variableName = @() #enter multiple comma separated values if you have multiple prompted variables (e.g. @("promptedvar","promptedvar2"))
-$newValue = @() #enter multiple comma separated values if you have multiple prompted variables in the same order as the variable names above (e.g. @("value for promptedvar","value for promptedvar2"))
+$runbookSnapshotId = "" # Leave blank if you'd like to use the published snapshot
+$variableName = @()     # Enter multiple comma separated values if you have multiple prompted variables (e.g. @("promptedvar","promptedvar2"))
+$newValue = @()         # Enter multiple comma separated values if you have multiple prompted variables in the same order as the variable names above (e.g. @("value for promptedvar","value for promptedvar2"))
 
+# Get space
+$spaces = Invoke-RestMethod -Uri "$octopusURL/api/spaces?partialName=$([uri]::EscapeDataString($spaceName))&skip=0&take=100" -Headers $header 
+$space = $spaces.Items | Where-Object { $_.Name -eq $spaceName }
+$spaceId = $space.Id
 
-$spaceId = ((Invoke-RestMethod -Method Get -Uri "$OctopusServerUrl/api/spaces/all" -Headers @{"X-Octopus-ApiKey"="$ApiKey"}) | Where-Object {$_.Name -eq $spaceName}).Id
-$runbookId = ((Invoke-RestMethod -Method Get -Uri "$OctopusServerUrl/api/$($spaceId)/runbooks/all" -Headers @{"X-Octopus-ApiKey"="$ApiKey"}) | Where-Object {$_.Name -eq $runbookName}).Id
-$environmentId = ((Invoke-RestMethod -Method Get -Uri "$OctopusServerUrl/api/$($spaceId)/environments/all" -Headers @{"X-Octopus-ApiKey"="$ApiKey"}) | Where-Object {$_.Name -eq $EnvironmentName}).Id
-if ($runbookSnapshotId -eq ""){
-$runbookSnapshotId = ((Invoke-RestMethod -Method Get -Uri "$OctopusServerUrl/api/$($spaceId)/runbooks/all" -Headers @{"X-Octopus-ApiKey"="$ApiKey"}) | Where-Object {$_.Name -eq $runbookName}).PublishedRunbookSnapshotId
+# Get runbook
+$runbooks = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/runbooks?partialName=$([uri]::EscapeDataString($runbookName))&skip=0&take=100" -Headers $header 
+$runbook = $runbooks.Items | Where-Object { $_.Name -eq $runbookName }
+$runbookId = $runbook.Id
+
+# Get environment
+$environments = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/environments?partialName=$([uri]::EscapeDataString($environmentName))&skip=0&take=100" -Headers $header 
+$environment = $environments.Items | Where-Object { $_.Name -eq $environmentName }
+$environmentId = $environment.Id
+
+# Use published snapshot if no id provided
+if ([string]::IsNullOrEmpty($runbookSnapshotId)) {
+    $runbookSnapshotId = $runbook.PublishedRunbookSnapshotId
 }
 
-#goes and grabs the values of the runbook elements
-$elements = Invoke-WebRequest "$($OctopusServerUrl)/api/$($spaceId)/runbooks/$($runbookId)/runbookRuns/preview/$($EnvironmentId)?includeDisabledSteps=true" -Headers @{"X-Octopus-ApiKey"="$ApiKey"}
-$elements = $elements | convertfrom-Json
+# Get runbook preview for environment
+$runbookPreview = Invoke-RestMethod -Uri "$octopusURL/api/$($spaceId)/runbooks/$($runbookId)/runbookRuns/preview/$($EnvironmentId)?includeDisabledSteps=true" -Headers $header 
 
-#This finds the element ID(s) you need to put into the jsonbody for the runbook
-$elementarray = @() 
+# Finds the element ID(s) you need to provide for the runbook
+$elementItems = @() 
+$formValues = @{ }
 foreach ($name in $variablename){
-    $element = $elements.Form.Elements | Where-Object { $_.Control.Name -eq $name }
-    $elementarray += $element
+    $element = $runbookPreview.Form.Elements | Where-Object { $_.Control.Name -eq $name }
+    if($null -ne $element) {
+        $elementItems += $element
+    }
 }
 
-#Create jsonbody to run the runbook with the values.
-$jsonbody = @{
+# Add the variables to the json.
+For ($i=0; $i -lt $elementItems.Count; $i++) {
+    $runbookPromptedVariableId = $elementItems[$i].Name
+    $runbookPromptedVariableValue = $newvalue[$i]
+    $formValues.Add($runbookPromptedVariableId, $runbookPromptedVariableValue)
+}
+
+# Create runbook Payload
+$runbookBody = (@{
     RunBookId = $runbookId
     RunbookSnapshotId = $runbookSnapshotId
     EnvironmentId = $environmentId
-    FormValues    = @{    }
-} 
+    FormValues    = $formValues
+}) | ConvertTo-Json -Depth 10
 
-#Add the variables to the json.
-For ($i=0; $i -lt $elementarray.count; $i++) {
-    $temp = $elementarray[$i].Name
-    $temp2 = $newvalue[$i]
-    $jsonbody.FormValues.Add("$temp","$temp2")
-    }
-
-#run the runbook
-$jsonbody = $jsonbody |ConvertTo-Json
-Invoke-RestMethod -Method "POST" "$($OctopusServerUrl)/api/$($spaceid)/runbookRuns" -body $jsonbody -Headers @{"X-Octopus-ApiKey"="$ApiKey"} -ContentType "application/json"
+# Run the runbook
+Invoke-RestMethod -Method "POST" "$($octopusURL)/api/$($spaceid)/runbookRuns" -body $runbookBody -Headers $header -ContentType "application/json"
