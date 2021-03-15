@@ -18,12 +18,12 @@ $space = $spaces.Items | Where-Object { $_.Name -eq $spaceName }
 $spaceId = $space.Id
 
 # Get runbook
-$runbooks = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/runbooks?partialName=$([uri]::EscapeDataString($runbookName))&skip=0&take=100" -Headers $header 
+$runbooks = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/runbooks?partialName=$([uri]::EscapeDataString($runbookName))&skip=0&take=100" -Headers $header 
 $runbook = $runbooks.Items | Where-Object { $_.Name -eq $runbookName }
 $runbookId = $runbook.Id
 
 # Get environment
-$environments = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/environments?partialName=$([uri]::EscapeDataString($environmentName))&skip=0&take=100" -Headers $header 
+$environments = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/environments?partialName=$([uri]::EscapeDataString($environmentName))&skip=0&take=100" -Headers $header 
 $environment = $environments.Items | Where-Object { $_.Name -eq $environmentName }
 $environmentId = $environment.Id
 
