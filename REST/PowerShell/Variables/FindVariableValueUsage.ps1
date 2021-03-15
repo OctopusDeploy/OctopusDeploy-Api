@@ -27,18 +27,18 @@ Write-Host "Looking for usages of variable value named '$variableValueToFind' in
 # Get variables from variable sets
 $variableSets = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/libraryvariablesets?contentType=Variables" -Headers $header
 
-foreach ($variableSet in $variableSets)
+foreach ($variableSet in $variableSets.Items)
 {
-    Write-Host "Checking variable set '$($variableSet.Items.Name)'"
+    Write-Host "Checking variable set '$($variableSet.Name)'"
     
-    $variableSetVariables = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/variables/variableset-$($variableSet.Items.id)" -Headers $header
+    $variableSetVariables = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/variables/variableset-$($variableSet.Id)" -Headers $header
 
     $matchingNamedVariables = $variableSetVariables.Variables | Where-Object {$_.Value -like "*$variableValueToFind*"}
     if($null -ne $matchingNamedVariables){
         foreach($match in $matchingNamedVariables){
             $result = [PSCustomObject]@{
                 Project = $null
-                VariableSet = $variableSet.Items.Name
+                VariableSet = $variableSet.Name
                 MatchType = "Value in Library Set"
                 Context = $match.Value
                 Property = $null
@@ -46,7 +46,7 @@ foreach ($variableSet in $variableSets)
             }
             $variableTracking += $result
         }
-        }
+    }
 
 }
 
@@ -73,7 +73,7 @@ foreach ($project in $projects)
                 AdditionalContext = $match.Name
             }
             
-            # Add and de-dupe later
+            # Add to tracking list
             $variableTracking += $result
         }
     }
@@ -89,4 +89,3 @@ if($variableTracking.Count -gt 0) {
         $variableTracking | Export-Csv -Path $csvExportPath -NoTypeInformation
     }
 }
-
