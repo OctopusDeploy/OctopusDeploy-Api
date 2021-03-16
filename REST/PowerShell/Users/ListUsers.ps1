@@ -5,8 +5,12 @@ $octopusURL = "https://your.octopus.app"
 $octopusAPIKey = "API-YOURAPIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 
+# Optional: include user role details?
+$includeUserRoles = $False
+
 # Optional: include non-active users in output
 $includeNonActiveUsers = $False
+
 # Optional: include AD details
 $includeActiveDirectoryDetails = $False
 
@@ -31,7 +35,41 @@ if($includeNonActiveUsers -eq $False) {
     $usersList = $usersList | Where-Object {$_.IsActive -eq $True}
 }
 
+# If we are including user roles, need to get team details
+if($includeUserRoles -eq $True) {
+    $teams = @()
+    $response = $null
+    do {
+        $uri = if ($response) { $octopusURL + $response.Links.'Page.Next' } else { "$octopusURL/api/teams" }
+        $response = Invoke-RestMethod -Method Get -Uri $uri -Headers $header
+        $teams += $response.Items
+    } while ($response.Links.'Page.Next')
+
+    foreach($team in $teams) {
+        $scopedUserRoles = Invoke-RestMethod -Method Get -Uri ("$octopusURL/api/teams/$($team.Id)/scopeduserroles") -Headers $header
+        $team | Add-Member -MemberType NoteProperty -Name "ScopedUserRoles" -Value $scopedUserRoles.Items
+    }
+
+    $allUserRoles = @()
+    $response = $null
+    do {
+        $uri = if ($response) { $octopusURL + $response.Links.'Page.Next' } else { "$octopusURL/api/userroles" }
+        $response = Invoke-RestMethod -Method Get -Uri $uri -Headers $header
+        $allUserRoles += $response.Items
+    } while ($response.Links.'Page.Next')
+
+    $spaces = @()
+    $response = $null
+    do {
+        $uri = if ($response) { $octopusURL + $response.Links.'Page.Next' } else { "$octopusURL/api/spaces" }
+        $response = Invoke-RestMethod -Method Get -Uri $uri -Headers $header
+        $spaces += $response.Items
+    } while ($response.Links.'Page.Next')
+}
+
 foreach($userRecord in $usersList) {
+    $usersRoles = @()
+
     $user = [PSCustomObject]@{
         Id = $userRecord.Id
         Username = $userRecord.Username
@@ -52,11 +90,27 @@ foreach($userRecord in $usersList) {
         $user | Add-Member -MemberType NoteProperty -Name "AAD_Email" -Value $null
     }
 
+    if($includeUserRoles -eq $True) {
+        $usersTeams = $teams | Where-Object {$_.MemberUserIds -icontains $user.Id}
+        foreach($userTeam in $usersTeams) {
+            $roles = $userTeam.ScopedUserRoles
+            foreach($role in $roles) {
+                $userRole = $allUserRoles | Where-Object {$_.Id -eq $role.UserRoleId} | Select-Object -First 1
+                $roleName = "$($userRole.Name)"
+                $roleSpace = $spaces | Where-Object {$_.Id -eq $role.SpaceId} | Select-Object -First 1
+                if (![string]::IsNullOrWhiteSpace($roleSpace)) {
+                    $roleName += " ($($roleSpace.Name))"
+                }
+                $usersRoles+= $roleName
+            }
+        }
+        $user | Add-Member -MemberType NoteProperty -Name "ScopedUserRoles" -Value ($usersRoles | Join-String -Separator "|")
+    }
+
     if($userRecord.Identities.Count -gt 0) {
         if($includeActiveDirectoryDetails -eq $True) 
         {
             $activeDirectoryIdentity = $userRecord.Identities | Where-Object {$_.IdentityProviderName -eq "Active Directory"} | Select-Object -ExpandProperty Claims
-            
             if($null -ne $activeDirectoryIdentity) {
                 $user.AD_Upn = $activeDirectoryIdentity.upn.Value
                 $user.AD_Sam = $activeDirectoryIdentity.sam.Value
