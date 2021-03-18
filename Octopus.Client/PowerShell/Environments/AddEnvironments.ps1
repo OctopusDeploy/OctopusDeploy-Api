@@ -30,7 +30,7 @@ foreach ($environmentName in $environments) {
             Name = $environmentName
         }
         
-        $repositoryForSpace.Environments.Create($environment)
+        $response = $repositoryForSpace.Environments.Create($environment)
         Write-Host "EnvironmentId: $($response.Id)"
     }
 }
