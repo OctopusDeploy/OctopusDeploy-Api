@@ -111,18 +111,18 @@ foreach($userRecord in $usersList) {
         if($includeActiveDirectoryDetails -eq $True) 
         {
             $activeDirectoryIdentity = $userRecord.Identities | Where-Object {$_.IdentityProviderName -eq "Active Directory"} | Select-Object -ExpandProperty Claims
-            if($null -ne $activeDirectoryIdentity) {
-                $user.AD_Upn = $activeDirectoryIdentity.upn.Value
-                $user.AD_Sam = $activeDirectoryIdentity.sam.Value
-                $user.AD_Email = $activeDirectoryIdentity.email.Value
+            if($null -ne $activeDirectoryIdentity) {               
+                $user.AD_Upn = (($activeDirectoryIdentity | ForEach-Object {"$($_.upn.Value)"}) -Join "|")
+                $user.AD_Sam = (($activeDirectoryIdentity | ForEach-Object {"$($_.sam.Value)"}) -Join "|")
+                $user.AD_Email = (($activeDirectoryIdentity | ForEach-Object {"$($_.email.Value)"}) -Join "|")
             }
         }
         if($includeAzureActiveDirectoryDetails -eq $True) 
         {
             $azureAdIdentity = $userRecord.Identities | Where-Object {$_.IdentityProviderName -eq "Azure AD"} | Select-Object -ExpandProperty Claims
             if($null -ne $azureAdIdentity) {
-                $user.AAD_Dn = $azureAdIdentity.dn.Value
-                $user.AAD_Email = $azureAdIdentity.email.Value
+                $user.AAD_Dn = (($azureAdIdentity | ForEach-Object {"$($_.dn.Value)"}) -Join "|")
+                $user.AAD_Email = (($azureAdIdentity | ForEach-Object {"$($_.email.Value)"}) -Join "|")
             }
         }
     }
