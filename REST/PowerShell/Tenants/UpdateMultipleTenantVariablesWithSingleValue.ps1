@@ -9,7 +9,7 @@ $spaceName = "Default" # Name of the Space
 $tenantName = "TenantName" # The tenant name
 $variableTemplateName = "ProjectTemplateName" # Choose the template Name
 $newValue = "NewValue" # Choose a new variable value, assumes same per environment
-$NewValueIsBoundToOctopusVariable=$True # Choose $True if the $newValue is an Octopus variable e.g. #{SomeValue}
+$NewValueIsBoundToOctopusVariable=$False # Choose $True if the $newValue is an Octopus variable e.g. #{SomeValue}
 
 # Get space
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
