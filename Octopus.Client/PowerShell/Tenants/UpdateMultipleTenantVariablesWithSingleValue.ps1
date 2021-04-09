@@ -10,6 +10,7 @@ $spaceName = "Default" # Name of the Space
 $tenantName = "TenantName" # The tenant name
 $variableTemplateName = "ProjectTemplateName" # Choose the template Name
 $newValue = "NewValue" # Choose a new variable value, assumes same per environment
+$NewValueIsBoundToOctopusVariable=$False # Choose $True if the $newValue is an Octopus variable e.g. #{SomeValue}
 
 $endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
@@ -36,29 +37,38 @@ try
         Write-Host "Working on Project: $projectName ($projectKey)"
         
         # Get Project template ID
-        $variableTemplateId = ($project.Templates | Where-Object Name -eq $variableTemplateName | Select-Object -First 1).Id
+        $variableTemplate = ($project.Templates | Where-Object Name -eq $variableTemplateName | Select-Object -First 1)
+        $variableTemplateId = $variableTemplate.Id
+        $variableTemplateIsSensitiveControlType = $variableTemplate.DisplaySettings.{Octopus.ControlType} -eq "Sensitive"
+
         if($null -ne $variableTemplateId) {
 
             Write-Host "Found templateId for Template: $variableTemplateName = $variableTemplateId"
 
             # Loop through each of the connected environments variables
             foreach($envKey in $project.Variables.Keys) {
-            
-                # Find variable which matches the current connected environment
-                $templateEnvVariableObject = ($project.Variables[$envKey].GetEnumerator() | Where-Object Key -eq $variableTemplateId | Select-Object -ExpandProperty Value -First 1)
-            
-                # If null / only default value exists, add new value in 
-                if($null -eq $templateEnvVariableObject ) {
-                    Write-Host "No value found for $variableTemplateName, adding in new Value=$newValue for Environment '$envKey' "
-                    $project.Variables[$envKey][$variableTemplateId] = New-Object Octopus.Client.Model.PropertyValueResource $newValue
+                                        
+                # Set null value in case not set
+                $project.Variables[$envKey][$variableTemplateId] = $null
+
+                # Check sensitive control types differently
+                if($variableTemplateIsSensitiveControlType -eq $True) {
+                    
+                    # If $newValue denotes an octopus variable e.g. #{SomeVar}, treat it as if it were text
+                    if($NewValueIsBoundToOctopusVariable -eq $True) {      
+                        Write-Host "Adding in new text value (treating as octopus variable) in Environment '$envKey' for $variableTemplateName"             
+                        $project.Variables[$envKey][$variableTemplateId] = New-Object Octopus.Client.Model.PropertyValueResource $newValue
+                    }    
+                    else {
+                        Write-Host "Adding in new sensitive value = '********' in Environment '$envKey' for $variableTemplateName"
+                        $sensitiveValue = New-Object Octopus.Client.Model.SensitiveValue 
+                        $sensitiveValue.HasValue = $True
+                        $sensitiveValue.NewValue = $newValue
+                        $project.Variables[$envKey][$variableTemplateId] = $sensitiveValue
+                    }
                 } 
                 else {
-
-                    # Get Current value
-                    $currentValue = $templateEnvVariableObject.Value
-                    Write-Host "Found $variableTemplateName in Environment '$envKey' with Value = $currentValue"
-        
-                    # Set the new value for this connected environment
+                    Write-Host "Adding in new value = $newValue in Environment '$envKey' for $variableTemplateName"
                     $project.Variables[$envKey][$variableTemplateId] = New-Object Octopus.Client.Model.PropertyValueResource $newValue
                 }
             }
@@ -73,5 +83,5 @@ try
 }
 catch
 {
-    Write-Host $_.Exception.Message for
+    Write-Host $_.Exception.Message
 }

@@ -12,6 +12,7 @@ var spaceName = "Default";
 var tenantName = "TenantName";
 var projectVariableTemplateName = "TemplateName";
 var variableNewValue = "NewValue";
+var valueBoundToOctoVariable = true;
 
 // Create repository object
 var endpoint = new OctopusServerEndpoint(octopusURL, octopusAPIKey);
@@ -43,25 +44,33 @@ try
         if (variableTemplateResource != null)
         {
             var variableTemplateId = variableTemplateResource.Id;
+            var variableTemplateIsSensitiveControlType = (variableTemplateResource.DisplaySettings.FirstOrDefault(ds => ds.Key == "Octopus.ControlType")).Value == "Sensitive";
             Console.WriteLine("Found templateid for template: {0} of {1}", projectVariableTemplateName, variableTemplateId);
 
             // Loop through each of the connected environments
             foreach (var envKey in project.Variables.Keys)
             {
-                // Find variable which matches the current connected environment.
-                var templateEnvironmentVariable = project.Variables[envKey].Where(x => x.Key == variableTemplateId).Select(x => x.Value).FirstOrDefault();
-                if (templateEnvironmentVariable == null)
+                // Set null value in case not set
+                project.Variables[envKey][variableTemplateId] = null;
+
+                if (variableTemplateIsSensitiveControlType == true)
                 {
-                    Console.WriteLine("No value found for {0}, adding in new Value={1} for Environment '{2}' ", projectVariableTemplateName, variableNewValue, envKey);
-                    project.Variables[envKey][variableTemplateId] = new PropertyValueResource(variableNewValue);
+                    if (valueBoundToOctoVariable == true)
+                    {
+                        Console.WriteLine("Adding in new text value (treating as octopus variable) in Environment '{0}' for {1}", envKey, projectVariableTemplateName);
+                        project.Variables[envKey][variableTemplateId] = new PropertyValueResource(variableNewValue);
+                    }
+                    else
+                    {
+                        Console.WriteLine("Adding in new sensitive value = '********' in Environment '{0}' for {1}", envKey, projectVariableTemplateName);
+                        var sensitiveValue = new SensitiveValue { HasValue = true, NewValue = variableNewValue };
+                        project.Variables[envKey][variableTemplateId] = new PropertyValueResource(sensitiveValue);
+                    }
                 }
                 else
                 {
-                    // Get current value
-                    var currentValue = templateEnvironmentVariable.Value;
-                    Console.WriteLine("Found {0} in Environment '{1}' with value {2}", projectVariableTemplateName, envKey, currentValue);
-
-                    // Set the new value for this connected environment
+                    //Write-Host "Adding in new value = $newValue in Environment '$envKey' for $variableTemplateName"
+                    Console.WriteLine("Adding in new value = '{0}' in Environment '{1}' for {2}", variableNewValue, envKey, projectVariableTemplateName);
                     project.Variables[envKey][variableTemplateId] = new PropertyValueResource(variableNewValue);
                 }
             }
