@@ -1,3 +1,6 @@
+# You can get this dll from your Octopus Server/Tentacle installation directory or from
+# https://www.nuget.org/packages/Octopus.Client/
+# Load Octopus Client assembly
 Add-Type -Path 'path\to\Octopus.Client.dll' 
 
 # Create endpoint and client
