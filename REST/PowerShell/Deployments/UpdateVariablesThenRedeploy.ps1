@@ -33,7 +33,7 @@ function Invoke-OctopusApi
         if ($null -ne $item)
         {
             $body = $item | ConvertTo-Json -Depth 10
-            Write-Verbose $body
+            Write-Host $body
 
             Write-Host "Invoking $method $url"
             return Invoke-RestMethod -Method $method -Uri $url -Headers @{"X-Octopus-ApiKey" = "$ApiKey" } -Body $body -ContentType 'application/json; charset=utf-8' 
