@@ -109,7 +109,48 @@ Write-Host "The release id for $deploymentId is $releaseId"
 $releaseDetails = Invoke-OctopusApi -octopusUrl $octopusUrl -apiKey $apiKey -method "GET" -spaceId $spaceId -item $null -endPoint "releases/$releaseId"
 Write-Host "The version number of the most recent release is $($releaseDetails.Version)"
 
-Write-Host "I now have the release I am looking for, time to update the variable value"
+Write-Host "Checking to see if the destination environment is supported"
+$channelDetails = Invoke-OctopusApi -octopusUrl $octopusUrl -apiKey $apiKey -method "GET" -spaceId $spaceId -item $null -endPoint "channels/$($releaseDetails.ChannelId)"
+$lifecycleId = $channelDetails.LifecycleId
+if ($null -eq $lifecycleId)
+{
+    $lifecycleId = $project.LifecycleId
+}
+
+$lifecycle = Invoke-OctopusApi -octopusUrl $octopusUrl -apiKey $apiKey -method "GET" -spaceId $spaceId -item $null -endPoint "lifecycles/$lifecycleId/preview"
+$destinationEnvironmentFound = $false
+$canBeDeployedTo = $true
+foreach ($phase in $lifecycle.Phases)
+{
+    if ($phase.AutomaticDeploymentTargets -contains $destinationEnvironmentId)
+    {
+        $destinationEnvironmentFound = $true
+    }
+
+    if ($phase.OptionalDeploymentTargets -contains $destinationEnvironmentId)
+    {
+        $destinationEnvironmentFound = $true
+    }
+
+    if ($destinationEnvironmentFound -eq $false -and $phase.IsOptionalPhase -eq $false)
+    {
+        $canBeDeployedTo = $false
+    }
+}
+
+if ($destinationEnvironmentFound -eq $false)
+{
+    Write-Host "The destination environment specified $destinationEnvironmentName is not part of the lifecycle $($lifecycle.Name).  Exiting."
+    exit 0
+}
+
+if ($canBeDeployedTo -eq $false)
+{
+    Write-Host "The destination environment specified $destinationEnvironmentName is not the first phase in the lifecycle, or all the lifecycles before it are marked as required.  Please select a new destination environment or mark the phases before it as optional. Exit."
+    exit 0
+}
+
+Write-Host "I now have the release I am looking for and the destination environment is assigned to the channel, time to update the variable value"
 
 $variableSetValues = Invoke-OctopusApi -octopusUrl $octopusUrl -apiKey $apiKey -method "GET" -spaceId $spaceId -item $null -endPoint "variables/$($project.VariableSetId)"
 $variableFound = $false
