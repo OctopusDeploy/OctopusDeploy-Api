@@ -21,9 +21,17 @@ runbook_name = 'Your Runbook'
 environment_names = ['Development', 'Test']
 environments = []
 
+# Optional tenant Name
+tenant_name = ''
+tenantId = None
+
 space = get_by_name('{0}/spaces/all'.format(octopus_server_uri), space_name)
 project = get_by_name('{0}/{1}/projects/all'.format(octopus_server_uri, space['Id']), project_name)
 runbook = get_by_name('{0}/{1}/runbooks/all'.format(octopus_server_uri, space['Id']), runbook_name)
+
+if tenant_name: 
+    tenant = get_by_name('{0}/{1}/tenants/all'.format(octopus_server_uri, space['Id']), tenant_name)
+    tenantId = tenant['Id']
 
 environments = get_octopus_resource(
     '{0}/{1}/environments/all'.format(octopus_server_uri, space['Id']))
@@ -36,7 +44,8 @@ for environmentId in environments:
     runbook_run = {
         'RunbookId': runbook['Id'],
         'RunbookSnapshotId': runbook['PublishedRunbookSnapshotId'],
-        'EnvironmentId': environmentId
+        'EnvironmentId': environmentId,
+        'TenantId': tenantId
     }
     response = requests.post(uri, headers=headers, json=runbook_run)
     response.raise_for_status()
