@@ -9,6 +9,10 @@ $projectName = "MyProject"
 $runbookName = "MyRunbook"
 $environmentNames = @("Test", "Production")
 
+# Optional Tenant
+$tenantName = ""
+$tenantId = $null
+
 $endpoint = New-Object Octopus.Client.OctopusServerEndpoint $octopusURL, $octopusAPIKey
 $repository = New-Object Octopus.Client.OctopusRepository $endpoint
 $client = New-Object Octopus.Client.OctopusClient $endpoint
@@ -28,6 +32,12 @@ try
     # Get environments
     $environments = $repositoryForSpace.Environments.GetAll() | Where-Object {$environmentNames -contains $_.Name}
 
+    # Optionally get tenant
+    if (![string]::IsNullOrEmpty($tenantName)) {
+        $tenant = $repositoryForSpace.Tenants.FindByName($tenantName)
+        $tenantId = $tenant.Id
+    }
+
     # Loop through environments
     foreach ($environment in $environments)
     {
@@ -37,6 +47,7 @@ try
         $runbookRun.ProjectId = $project.Id
         $runbookRun.RunbookSnapshotId = $runbook.PublishedRunbookSnapshotId
         $runbookRun.RunbookId = $runbook.Id
+        $runbookRun.TenantId = $tenantId
 
         # Execute runbook
         $repositoryForSpace.RunbookRuns.Create($runbookRun)

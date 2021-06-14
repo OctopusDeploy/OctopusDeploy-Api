@@ -14,6 +14,10 @@ string projectName = "MyProject";
 string runbookName = "MyRunbook";
 string[] environmentNames = { "Development", "Production" };
 
+// Optional tenantName
+string tenantName = "";
+string tenantId = null;
+
 // Create repository object
 var endpoint = new OctopusServerEndpoint(octopusURL, octopusAPIKey);
 var repository = new OctopusRepository(endpoint);
@@ -31,6 +35,13 @@ try
     // Get runbook
     var runbook = repositoryForSpace.Runbooks.FindMany(n => n.Name == runbookName && n.ProjectId == project.Id)[0];
 
+    // Optional - tenant
+    if (!string.IsNullOrWhiteSpace(tenantName))
+    {
+        var tenant = repositoryForSpace.Tenants.FindByName(tenantName);
+        tenantId = tenant.Id;
+    }
+
     // Get environments
     foreach (var environmentName in environmentNames)
     {
@@ -43,7 +54,7 @@ try
         runbookRun.RunbookId = runbook.Id;
         runbookRun.ProjectId = project.Id;
         runbookRun.RunbookSnapshotId = runbook.PublishedRunbookSnapshotId;
-
+        runbookRun.TenantId = tenantId;
         // Execute runbook
         repositoryForSpace.RunbookRuns.Create(runbookRun);
     }
