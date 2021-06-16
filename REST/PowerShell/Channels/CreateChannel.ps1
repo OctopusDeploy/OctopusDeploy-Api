@@ -15,10 +15,11 @@ $space = $spaces.Items | Where-Object { $_.Name -eq $spaceName }
 # Create channel json payload
 $jsonPayload = @{
     ProjectId = $projectId;
-    Name = $channelName
-    Description = ""
-    IsDefault = $False
+    SpaceId = $space.Id;
+    Name = $channelName;
+    Description = "";
+    IsDefault = $False;
 }
 
 # Create channel
-Invoke-RestMethod -Method Post -Uri "$octopusURL/api/$($space.Id)/channels" -Body ($jsonPayload | ConvertTo-Json -Depth 10) -Headers $header
+Invoke-RestMethod -Method Post -Uri "$octopusURL/api/$($space.Id)/channels" -Body ($jsonPayload | ConvertTo-Json -Depth 10) -Headers $header -ContentType "application/json"
