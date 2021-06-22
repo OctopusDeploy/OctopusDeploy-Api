@@ -6,7 +6,6 @@ $APIKey = "YOUR API KEY"
 $projectName = "YOUR PROJECT NAME"
 $releaseVersion = "YOUR RELEASE VERSION"
 $environmentName = "YOUR ENVIRONMENT NAME"
-$spaceName = "YOUR SPACE NAME"
 $filePathToUpload = "PATH OF FILE TO UPLOAD"
 $fileNameForOctopus = "NAME FOR OCTOPUS" ## Must include file extension in name!
 
