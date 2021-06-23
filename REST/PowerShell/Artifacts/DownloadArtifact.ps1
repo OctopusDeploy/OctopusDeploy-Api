@@ -35,7 +35,7 @@ Write-Host "The id of $releaseVersion is $releaseId"
 
 Write-Host "Getting the deployment information"
 $deploymentList = Invoke-RestMethod -Method Get -Uri "$OctopusUrl/api/$spaceId/releases/$releaseId/deployments?skip=0&take=1000" -Headers $header
-$deploymentsToEnivronment = @($deploymentList.Items | Where-Object {$_.EnvironmentId -eq $environmentId})
+$deploymentsToEnvironment = @($deploymentList.Items | Where-Object {$_.EnvironmentId -eq $environmentId})
 $deploymentToUse = $null
 $previousDate = Get-Date
 $previousDate = $previousDate.AddDays(-10000)
