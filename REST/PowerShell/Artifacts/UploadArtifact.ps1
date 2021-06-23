@@ -6,7 +6,6 @@ $APIKey = "YOUR API KEY"
 $projectName = "YOUR PROJECT NAME"
 $releaseVersion = "YOUR RELEASE VERSION"
 $environmentName = "YOUR ENVIRONMENT NAME"
-$spaceName = "YOUR SPACE NAME"
 $filePathToUpload = "PATH OF FILE TO UPLOAD"
 $fileNameForOctopus = "NAME FOR OCTOPUS" ## Must include file extension in name!
 
@@ -39,18 +38,7 @@ Write-Host "The id of $releaseVersion is $releaseId"
 Write-Host "Getting the deployment information"
 $deploymentList = Invoke-RestMethod -Method Get -Uri "$OctopusUrl/api/$spaceId/releases/$releaseId/deployments?skip=0&take=1000" -Headers $header
 $deploymentsToEnivronment = @($deploymentList.Items | Where-Object {$_.EnvironmentId -eq $environmentId})
-$deploymentToUse = $null
-$previousDate = Get-Date
-$previousDate = $previousDate.AddDays(-10000)
-
-foreach ($deployment in $deploymentsToEnivronment)
-{
-    if ($deployment.Created -gt $previousDate)
-    {
-        $previousDate = $deployment.Created
-        $deploymentToUse = $deployment
-    }
-}
+$deploymentToUse = $deploymentsToEnivronment | Sort-Object {[DateTime]$_."Created"} | Select-Object -First 1
 
 $serverTaskId = $deploymentToUse.TaskId
 Write-Host "The server task id of the most recent deployment to $environmentName for release $releaseVersion is $serverTaskId"
