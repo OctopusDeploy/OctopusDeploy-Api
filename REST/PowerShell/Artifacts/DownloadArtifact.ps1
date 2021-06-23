@@ -40,14 +40,7 @@ $deploymentToUse = $null
 $previousDate = Get-Date
 $previousDate = $previousDate.AddDays(-10000)
 
-foreach ($deployment in $deploymentsToEnvironment)
-{
-    if ($deployment.Created -gt $previousDate)
-    {
-        $previousDate = $deployment.Created
-        $deploymentToUse = $deployment
-    }
-}
+$deploymentToUse = $deploymentsToEnivronment | Sort-Object {[DateTime]$_."Created"} | Select-Object -First 1 
 
 $serverTaskId = $deploymentToUse.TaskId
 Write-Host "The server task id of the most recent deployment to $environmentName for release $releaseVersion is $serverTaskId"
@@ -59,3 +52,4 @@ Write-Host "Found $artifactId that matches expected file name $filenameForOctopu
 
 Write-Host "Getting file content"
 Invoke-RestMethod -Method Get -Uri "$OctopusUrl/api/$spaceId/artifacts/$artifactId/content" -Headers $header -OutFile $fileDownloadPath
+Write-Host "File content written to $fileDownloadPath"

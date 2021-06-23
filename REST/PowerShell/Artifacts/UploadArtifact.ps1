@@ -42,14 +42,7 @@ $deploymentToUse = $null
 $previousDate = Get-Date
 $previousDate = $previousDate.AddDays(-10000)
 
-foreach ($deployment in $deploymentsToEnivronment)
-{
-    if ($deployment.Created -gt $previousDate)
-    {
-        $previousDate = $deployment.Created
-        $deploymentToUse = $deployment
-    }
-}
+$deploymentToUse = $deploymentsToEnivronment | Sort-Object {[DateTime]$_."Created"} | Select-Object -First 1
 
 $serverTaskId = $deploymentToUse.TaskId
 Write-Host "The server task id of the most recent deployment to $environmentName for release $releaseVersion is $serverTaskId"
