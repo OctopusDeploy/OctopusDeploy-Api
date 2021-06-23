@@ -36,11 +36,8 @@ Write-Host "The id of $releaseVersion is $releaseId"
 Write-Host "Getting the deployment information"
 $deploymentList = Invoke-RestMethod -Method Get -Uri "$OctopusUrl/api/$spaceId/releases/$releaseId/deployments?skip=0&take=1000" -Headers $header
 $deploymentsToEnvironment = @($deploymentList.Items | Where-Object {$_.EnvironmentId -eq $environmentId})
-$deploymentToUse = $null
-$previousDate = Get-Date
-$previousDate = $previousDate.AddDays(-10000)
 
-$deploymentToUse = $deploymentsToEnivronment | Sort-Object {[DateTime]$_."Created"} | Select-Object -First 1 
+$deploymentToUse = $deploymentsToEnvironment | Sort-Object {[DateTime]$_."Created"} | Select-Object -First 1 
 
 $serverTaskId = $deploymentToUse.TaskId
 Write-Host "The server task id of the most recent deployment to $environmentName for release $releaseVersion is $serverTaskId"
