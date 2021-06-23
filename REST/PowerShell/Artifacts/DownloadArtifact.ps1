@@ -40,7 +40,7 @@ $deploymentToUse = $null
 $previousDate = Get-Date
 $previousDate = $previousDate.AddDays(-10000)
 
-foreach ($deployment in $deploymentsToEnivronment)
+foreach ($deployment in $deploymentsToEnvironment)
 {
     if ($deployment.Created -gt $previousDate)
     {
