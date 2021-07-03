@@ -4,8 +4,8 @@ $octopusURL = "https://your.octopus.app"
 $octopusAPIKey = "API-YOURKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 $spaceName = "Default"
-$projectName = "My Projects"
-$runbookName = "My runbook"
+$projectName = "My Project"
+$runbookName = "My Runbook"
 $environmentName = "Development"
 $fileDownloadPath = "/path/to/download/artifact.txt"
 
