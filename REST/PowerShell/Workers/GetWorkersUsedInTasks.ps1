@@ -56,11 +56,12 @@ function Get-WorkerInfo($activityLogElement){
     }
 }
 
+
 while ($continueTasks -eq $true -and $skip -lt $maxTasksToCheck){
             
-    Write-Host $skip
+    Write-Host "skip: $($skip)"
     # Get tasks
-    $tasks = Invoke-RestMethod -Uri "$octopusURL/api/tasks?skip=0&take=$($take)&spaces=$($spaceId)&includeSystem=false&name=deploy,runbookrun" -Headers $header 
+    $tasks = Invoke-RestMethod -Uri "$octopusURL/api/tasks?skip=$($skip)&take=$($take)&spaces=$($spaceId)&includeSystem=false&name=deploy,runbookrun" -Headers $header 
     $taskItems = $tasks.Items 
 
     if ($taskItems.Count -eq 0){
@@ -68,7 +69,8 @@ while ($continueTasks -eq $true -and $skip -lt $maxTasksToCheck){
     } else {
 
         foreach ($task in $taskItems) {
-            Write-Host $task.Description
+            #Write-Host $task.Id $task.Description
+            
             # Get task detail
             $taskDetail = Invoke-RestMethod -Uri "$octopusURL/api/tasks/$($task.Id)/details?verbose=true" -Headers $header 
 
@@ -93,4 +95,6 @@ while ($continueTasks -eq $true -and $skip -lt $maxTasksToCheck){
     $skip += $take
 
 } 
+
+
 
