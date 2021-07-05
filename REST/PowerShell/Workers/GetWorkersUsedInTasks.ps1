@@ -33,7 +33,7 @@ while ($continueTasks -eq $true -and $skip -lt $maxTasksToCheck){
             
     Write-Host $skip
     # Get tasks
-    $tasks = Invoke-RestMethod -Uri "$octopusURL/api/tasks?skip=0&take=$($take)&spaces=$($spaceId)&includeSystem=false&name=deploy" -Headers $header 
+    $tasks = Invoke-RestMethod -Uri "$octopusURL/api/tasks?skip=0&take=$($take)&spaces=$($spaceId)&includeSystem=false&name=deploy,runbookrun" -Headers $header 
     $taskItems = $tasks.Items 
 
     if ($taskItems.Count -eq 0){
