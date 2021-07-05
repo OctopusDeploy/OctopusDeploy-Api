@@ -6,6 +6,8 @@ Get a list of the worker machines that have been used in tasks.
 Outputs a carat separated file with the following headings: 
 "TaskId","TaskName","TaskDescription","Started","Ended","MessageText","WorkerName","WorkerPool"
 
+NB - assumes worker machine name has no spaces.
+
 #>
 
 # Define working variables
