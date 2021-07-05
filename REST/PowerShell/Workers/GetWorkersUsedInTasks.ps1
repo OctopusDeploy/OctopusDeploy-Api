@@ -29,6 +29,33 @@ $continueTasks = $true;
 $taskProperties = [System.Collections.ArrayList]::new();
 $taskProperties.Add(@("TaskId","TaskName","TaskDescription","Started","Ended","MessageText","WorkerName","WorkerPool"))
 
+function Get-WorkerInfo($activityLogElement){
+    foreach ($logChild1 in $activityLogElement.Children) {
+        foreach ($logElement in $logChild1.LogElements) {
+            if ($logElement.MessageText -clike 'Leased worker*') {
+
+                # Get worker detail from the message
+                $splitMessage = $logElement.MessageText.Split(' ')
+                $workerName = $splitMessage[2]
+                $workerPoolItemSection = $splitMessage.Length - 5
+                $workerPoolAndLease = ($splitMessage | Select-Object -Last $workerPoolItemSection) -join " "
+                $workerPoolName = $workerPoolAndLease.Split('(')[0]
+
+                $taskProperties.Add(@(
+                        $task.Id,
+                        $task.Name,
+                        $task.Description,
+                        $task.StartTime,
+                        $task.CompletedTime,
+                        $logElement.MessageText,
+                        $workerName,
+                        $workerPoolName)
+                )
+            }
+        }
+    }
+}
+
 while ($continueTasks -eq $true -and $skip -lt $maxTasksToCheck){
             
     Write-Host $skip
@@ -41,48 +68,28 @@ while ($continueTasks -eq $true -and $skip -lt $maxTasksToCheck){
     } else {
 
         foreach ($task in $taskItems) {
-            Write-Host $task.Id
+            Write-Host $task.Description
             # Get task detail
             $taskDetail = Invoke-RestMethod -Uri "$octopusURL/api/tasks/$($task.Id)/details?verbose=true" -Headers $header 
 
             foreach ($activityLog in $taskDetail.ActivityLogs) {
                 foreach ($activityLogChild1 in $activityLog.Children) {
-                        foreach ($logElement in $activityLogChild1.LogElements) {
-                            if ($logElement.MessageText -clike 'Leased worker*') {
+                    Get-WorkerInfo $activityLogChild1
 
-                                # Get worker detail from the message
-                                $splitMessage = $logElement.MessageText.Split(' ')
-                                $workerName = $splitMessage[2]
-                                $workerPoolItemSection = $splitMessage.Length - 5
-                                $workerPoolAndLease = ($splitMessage | Select-Object -Last $workerPoolItemSection) -join " "
-                                $workerPoolName = $workerPoolAndLease.Split('(')[0]
-
-                                $taskProperties.Add(@(
-                                    $task.Id,
-                                    $task.Name,
-                                    $task.Description,
-                                    $task.StartTime,
-                                    $task.CompletedTime,
-                                    $logElement.MessageText,
-                                    $workerName,
-                                    $workerPoolName)
-                                    )
-                            }
-                        }
+                    foreach ($activityLogChild2 in $activityLogChild1.Children) {
+                        Get-WorkerInfo $activityLogChild2            
+                    }
+                        
                 }
             }
         }
     }
     
-    # Add data to file
     foreach ($arr in $taskProperties) {
         $arr -join '^' | Add-Content "./OutputWorkers.csv"
     }
 
-    # reset arraylist 
     $taskProperties = [System.Collections.ArrayList]::new();
-    
-    # increment skip
     $skip += $take
 
 } 
