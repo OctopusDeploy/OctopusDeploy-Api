@@ -1,7 +1,8 @@
 $ErrorActionPreference = "Stop";
+
 # Define working variables
-$octopusURL = "http://localhost/"
-$octopusAPIKey = ""
+$octopusURL = "http://your.octopus.app/"
+$octopusAPIKey = "YOUR-APIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 
 # Specify the Space to search in
@@ -10,11 +11,11 @@ $spaceName = ""
 # Library Variable Set
 $libraryVariableSetName = ""
 
-# Variable name to search
-$VariableName = "test"
+# Variable name to search for
+$VariableName = ""
 
-# Variable name to search
-$VariableValue = "wibble"
+# New variable value to set
+$VariableValue = ""
 
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
 
@@ -23,10 +24,9 @@ $LibraryvariableSets = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($s
 $LibraryVariableSet = $LibraryVariableSets.Items | Where-Object { $_.Name -eq $libraryVariableSetName }
 
 if ($null -eq $libraryVariableSet) {
-    Write-Warning "Library variable set not found with name '$$libraryVariableSetName'."
+    Write-Warning "Library variable set not found with name '$libraryVariableSetName'."
     exit
 }
-
 
 $LibraryVariableSetVariables = (Invoke-RestMethod -Method Get -Uri "$OctopusURL/api/$($Space.Id)/variables/$($LibraryVariableSet.VariableSetId)" -Headers $Header) 
 
@@ -40,5 +40,4 @@ for($i=0; $i -lt $LibraryVariableSetVariables.Variables.Length; $i++) {
 
 $existingVariable = $LibraryVariableSetVariables.Variables  | Where-Object {$_.name -eq $VariableName} | Select-Object -First 1 
 
-$UpdatedLibraryVariableSet = Invoke-RestMethod -Method Put -Uri "$OctopusURL/api/$($Space.Id)/variables/$($LibraryVariableSetVariables.Id)" -Headers $Header -Body ($LibraryVariableSetVariables | ConvertTo-Json -Depth 10)   
-
+$UpdatedLibraryVariableSet = Invoke-RestMethod -Method Put -Uri "$OctopusURL/api/$($Space.Id)/variables/$($LibraryVariableSetVariables.Id)" -Headers $Header -Body ($LibraryVariableSetVariables | ConvertTo-Json -Depth 10)
