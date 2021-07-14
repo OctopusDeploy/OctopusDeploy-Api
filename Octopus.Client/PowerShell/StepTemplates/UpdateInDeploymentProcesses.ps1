@@ -85,7 +85,7 @@ Function Update-StepTemplatesOnDeploymentProcesses
                     $process = $repository.DeploymentProcesses.Get($d.DeploymentProcessId)
 
                     #Finding the step that uses the step template
-                    $steps = $process.Steps | ?{$_.actions.properties.values -eq $template.Id}
+                    $steps = $process.Steps | ?{$_.actions.properties.values.value -eq $template.Id}
 
                     try{
 
