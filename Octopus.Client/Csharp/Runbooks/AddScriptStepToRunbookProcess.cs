@@ -55,13 +55,21 @@ try
         Name = stepName
     };
 
+    var runOnServer = false;
+    if(!string.IsNullOrWhiteSpace(role)) {
+        runOnServer = true;
+    }
+
     // Add step action properties
-    stepAction.Properties.Add("Octopus.Actiom.RunOnServer", new Octopus.Client.Model.PropertyValueResource("false"));
+    stepAction.Properties.Add("Octopus.Actiom.RunOnServer", new Octopus.Client.Model.PropertyValueResource(runOnServer.ToString()));
     stepAction.Properties.Add("Octopus.Action.Script.ScriptSource", new Octopus.Client.Model.PropertyValueResource("Inline"));
     stepAction.Properties.Add("Octopus.Action.Script.ScriptBody", new Octopus.Client.Model.PropertyValueResource(scriptToRun));
     stepAction.Properties.Add("Octopus.Action.Script.Syntax", new Octopus.Client.Model.PropertyValueResource("PowerShell"));
 
-    step.Properties.Add("Octopus.Action.TargetRoles", new Octopus.Client.Model.PropertyValueResource(role));
+    // optional target role
+    if(!string.IsNullOrWhiteSpace(role)) {
+        step.Properties.Add("Octopus.Action.TargetRoles", new Octopus.Client.Model.PropertyValueResource(role));
+    }
 
     // Add step to Actions
     step.Actions.Add(stepAction);
