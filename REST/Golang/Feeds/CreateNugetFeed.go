@@ -14,10 +14,14 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	}
-	APIKey := "API-YourAPIKey"
+	APIKey := "API-YourAPI  Key"
 	spaceName := "Default"
-	projectName := "MyProject"
-	channelName := "NewChannel"
+	feedName := "MyNugetFeed"
+	feedUri := "https://api.nuget.org/v3/index.json"
+	downloadAttempts := 5
+	downloadRetryBackoffSeconds := 10
+	feedUsername := ""
+	feedPassword := ""
 
 	// Get space
 	space := GetSpace(apiURL, APIKey, spaceName)
@@ -25,14 +29,16 @@ func main() {
 	// Create client
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
-	// Get project
-	project := GetProject(client, projectName)
-
-	// Create channel resource
-	channel := octopusdeploy.NewChannel(channelName, project.ID)
-	channel.SpaceID = space.ID
-	channel.IsDefault = false
-	client.Channels.Add(channel)
+	// Create feed resource
+	feed := octopusdeploy.NewFeedResource(feedName, octopusdeploy.FeedTypeNuGet)
+	feed.FeedURI = feedUri
+	feed.DownloadAttempts = downloadAttempts
+	feed.DownloadRetryBackoffSeconds = downloadRetryBackoffSeconds
+	feed.Username = feedUsername
+	feed.Password = octopusdeploy.NewSensitiveValue(feedPassword)
+     
+	// Add to space
+	client.Feeds.Add(feed)
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
@@ -57,21 +63,4 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	}
 
 	return space
-}
-
-func GetProject(client *octopusdeploy.Client, projectName string) *octopusdeploy.Project {
-	// Get project
-	project, err := client.Projects.GetByName(projectName)
-
-	if err != nil {
-		log.Println(err)
-	}
-
-	if project != nil {
-		fmt.Println("Retrieved project " + project.Name)
-	} else {
-		fmt.Println("Project " + projectName + " not found!")
-	}
-
-	return project
 }

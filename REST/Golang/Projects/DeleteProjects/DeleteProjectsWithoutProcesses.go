@@ -16,23 +16,38 @@ func main() {
 	}
 	APIKey := "API-YourAPIKey"
 	spaceName := "Default"
-	projectName := "MyProject"
-	channelName := "NewChannel"
 
-	// Get space
+	// Get reference to space
 	space := GetSpace(apiURL, APIKey, spaceName)
 
-	// Create client
+	// Create client object
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
-	// Get project
-	project := GetProject(client, projectName)
+	// Get all projects
+	projects, err := client.Projects.GetAll()
 
-	// Create channel resource
-	channel := octopusdeploy.NewChannel(channelName, project.ID)
-	channel.SpaceID = space.ID
-	channel.IsDefault = false
-	client.Channels.Add(channel)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Loop through projects
+	for i := 0; i < len(projects); i++ {
+		if !projects[i].IsVersionControlled {
+
+			// Get deployment process
+			deploymentProcess := GetDeploymentProcess(client, projects[i])
+
+			// Check for steps
+			if deploymentProcess == nil || deploymentProcess.Steps == nil || len(deploymentProcess.Steps) == 0 {
+				// Delete project
+				fmt.Println("Deleting " + projects[i].Name)
+				client.Projects.DeleteByID(projects[i].ID)
+			}
+		} else {
+			fmt.Println(projects[i].Name + " is using version control, skipping")
+		}
+	}
+
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
@@ -59,19 +74,12 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	return space
 }
 
-func GetProject(client *octopusdeploy.Client, projectName string) *octopusdeploy.Project {
-	// Get project
-	project, err := client.Projects.GetByName(projectName)
+func GetDeploymentProcess(client *octopusdeploy.Client, project *octopusdeploy.Project) *octopusdeploy.DeploymentProcess {
+	deploymentProcess, err := client.DeploymentProcesses.GetByID(project.DeploymentProcessID)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	if project != nil {
-		fmt.Println("Retrieved project " + project.Name)
-	} else {
-		fmt.Println("Project " + projectName + " not found!")
-	}
-
-	return project
+	return deploymentProcess
 }

@@ -3,34 +3,36 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
 
-	"github.com/OctopusDeploy/go-octopusdeploy/client"
-	"github.com/OctopusDeploy/go-octopusdeploy/model"
-	"golang.org/x/crypto/ssh/terminal"
+	"net/url"
+
+	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
 )
 
 func main() {
-	octopusURL := os.Args[1]
-	space := os.Args[2]
-	name := os.Args[3]
 
-	fmt.Println("Enter Password Securely: ")
-	apiKey, err := terminal.ReadPassword(0)
-
+	apiURL, err := url.Parse("https://YourURL")
 	if err != nil {
 		log.Println(err)
 	}
+	APIKey := "API-YourAPIKey"
+	spaceName := "MySpace"
+	lifecycleName := "MyLifecycle"
 
-	APIKey := string(apiKey)
+	// Get reference to space
+	space := GetSpace(apiURL, APIKey, spaceName)
 
-	octopusAuth(octopusURL, APIKey, space)
-	CreateLifecycle(octopusURL, APIKey, space, name)
-
+	// Check to see if the lifecycle already exists
+	if GetLifecycle(apiURL, APIKey, space, lifecycleName) == nil {
+		lifecycle := CreateLifecycle(apiURL, APIKey, space, lifecycleName)
+		fmt.Println(lifecycle.Name + " created successfully")
+	} else {
+		fmt.Println(lifecycleName + " already exists.")
+	}
 }
 
-func octopusAuth(octopusURL, apiKey, space string) *client.Client {
-	client, err := client.NewClient(nil, octopusURL, apiKey, space)
+func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
+	client, err := octopusdeploy.NewClient(nil, octopusURL, APIKey, space)
 	if err != nil {
 		log.Println(err)
 	}
@@ -38,13 +40,42 @@ func octopusAuth(octopusURL, apiKey, space string) *client.Client {
 	return client
 }
 
-func CreateLifecycle(octopusURL, APIKey, space, name string) *model.Lifecycle {
-	client := octopusAuth(octopusURL, APIKey, space)
-	lifecycle, err := model.NewLifecycle(name)
+func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdeploy.Space {
+	client := octopusAuth(octopusURL, APIKey, "")
+
+	// Get specific space object
+	space, err := client.Spaces.GetByName(spaceName)
+
+	if err != nil {
+		log.Println(err)
+	} else {
+		fmt.Println("Retrieved space " + space.Name)
+	}
+
+	return space
+}
+
+func GetLifecycle(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, LifecycleName string) *octopusdeploy.Lifecycle {
+	client := octopusAuth(octopusURL, APIKey, space.ID)
+
+	lifecycles, err := client.Lifecycles.GetByPartialName(LifecycleName)
 
 	if err != nil {
 		log.Println(err)
 	}
+
+	for i := 0; i < len(lifecycles); i++ {
+		if lifecycles[i].Name == LifecycleName {
+			return lifecycles[i]
+		}
+	}
+
+	return nil
+}
+
+func CreateLifecycle(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, name string) *octopusdeploy.Lifecycle {
+	client := octopusAuth(octopusURL, APIKey, space.ID)
+	lifecycle := octopusdeploy.NewLifecycle(name)
 
 	client.Lifecycles.Add(lifecycle)
 

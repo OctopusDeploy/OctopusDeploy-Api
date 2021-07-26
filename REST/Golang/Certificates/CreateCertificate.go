@@ -5,6 +5,9 @@ import (
 	"log"
 	"net/url"
 
+	b64 "encoding/base64"
+	"io/ioutil"
+
 	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
 )
 
@@ -16,8 +19,32 @@ func main() {
 	}
 	APIKey := "API-YourAPIKey"
 	spaceName := "Default"
-	projectName := "MyProject"
-	channelName := "NewChannel"
+	certificateName := "MyCertificate"
+	pathToCertificate := "path:\\To\\PFXFile.pfx"
+	pfxPassword := "YourPassword"
+	rawData, err := ioutil.ReadFile(pathToCertificate)
+
+	if err != nil {
+		log.Println(err)
+	}
+
+    // Convert byte array to base 64 string
+	stringRawData := b64.StdEncoding.EncodeToString([]byte(rawData))
+
+    // Create new certificate sensitive value
+    certificateData := octopusdeploy.SensitiveValue{
+		HasValue: true,
+		NewValue: &stringRawData,
+	}
+
+    // Create PFX Password as sensitive value
+	sensitivePfxPassword := octopusdeploy.SensitiveValue{
+		HasValue: true,
+		NewValue: &pfxPassword,
+	}
+
+	// Create new certificate resource
+	certificate := octopusdeploy.NewCertificateResource(certificateName, &certificateData, &sensitivePfxPassword)
 
 	// Get space
 	space := GetSpace(apiURL, APIKey, spaceName)
@@ -25,14 +52,12 @@ func main() {
 	// Create client
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
-	// Get project
-	project := GetProject(client, projectName)
+	// Create certificate
+	certificate, err = client.Certificates.Add(certificate)
 
-	// Create channel resource
-	channel := octopusdeploy.NewChannel(channelName, project.ID)
-	channel.SpaceID = space.ID
-	channel.IsDefault = false
-	client.Channels.Add(channel)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
@@ -57,21 +82,4 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	}
 
 	return space
-}
-
-func GetProject(client *octopusdeploy.Client, projectName string) *octopusdeploy.Project {
-	// Get project
-	project, err := client.Projects.GetByName(projectName)
-
-	if err != nil {
-		log.Println(err)
-	}
-
-	if project != nil {
-		fmt.Println("Retrieved project " + project.Name)
-	} else {
-		fmt.Println("Project " + projectName + " not found!")
-	}
-
-	return project
 }

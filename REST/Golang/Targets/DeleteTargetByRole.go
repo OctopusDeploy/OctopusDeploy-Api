@@ -16,23 +16,21 @@ func main() {
 	}
 	APIKey := "API-YourAPIKey"
 	spaceName := "Default"
-	projectName := "MyProject"
-	channelName := "NewChannel"
+	roleName := "MyRole"
 
-	// Get space
+	// Get reference to space
 	space := GetSpace(apiURL, APIKey, spaceName)
 
-	// Create client
+	// Create client object
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
-	// Get project
-	project := GetProject(client, projectName)
+	machines := GetMachinesWithRole(client, roleName)
 
-	// Create channel resource
-	channel := octopusdeploy.NewChannel(channelName, project.ID)
-	channel.SpaceID = space.ID
-	channel.IsDefault = false
-	client.Channels.Add(channel)
+	for i := 0; i < len(machines); i++ {
+		// Delete machine
+		fmt.Println("Deleting " + machines[i].Name)
+		client.Machines.DeleteByID(machines[i].ID)
+	}
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
@@ -59,19 +57,32 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	return space
 }
 
-func GetProject(client *octopusdeploy.Client, projectName string) *octopusdeploy.Project {
-	// Get project
-	project, err := client.Projects.GetByName(projectName)
+func GetMachinesWithRole(client *octopusdeploy.Client, roleName string) []*octopusdeploy.DeploymentTarget {
+	// Get machines
+	machines, err := client.Machines.GetAll()
+
+	// New variable for machines
+	machinesWithRole := []*octopusdeploy.DeploymentTarget{}
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	if project != nil {
-		fmt.Println("Retrieved project " + project.Name)
-	} else {
-		fmt.Println("Project " + projectName + " not found!")
+	for i := 0; i < len(machines); i++ {
+		if contains(machines[i].Roles, roleName) {
+			machinesWithRole = append(machinesWithRole, machines[i])
+		}
 	}
 
-	return project
+	return machinesWithRole
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
 }

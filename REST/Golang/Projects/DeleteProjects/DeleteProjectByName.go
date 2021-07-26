@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+
 	"net/url"
 
 	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
@@ -10,29 +11,30 @@ import (
 
 func main() {
 
-	apiURL, err := url.Parse("https://YourURL")
+	apiURL, err := url.Parse("https://YourAPI")
 	if err != nil {
 		log.Println(err)
 	}
 	APIKey := "API-YourAPIKey"
 	spaceName := "Default"
 	projectName := "MyProject"
-	channelName := "NewChannel"
 
-	// Get space
+	// Get reference to space
 	space := GetSpace(apiURL, APIKey, spaceName)
 
-	// Create client
+	// Create client object
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
 	// Get project
 	project := GetProject(client, projectName)
 
-	// Create channel resource
-	channel := octopusdeploy.NewChannel(channelName, project.ID)
-	channel.SpaceID = space.ID
-	channel.IsDefault = false
-	client.Channels.Add(channel)
+	// delete if not nil
+	if nil != project {
+		fmt.Println("Deleting project " + project.Name + " (" + project.ID + ")")
+		client.Projects.DeleteByID(project.ID)
+	} else {
+		fmt.Println("Project " + projectName + " not found!")
+	}
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {

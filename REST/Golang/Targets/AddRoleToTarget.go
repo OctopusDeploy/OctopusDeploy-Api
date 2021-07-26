@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+
 	"net/url"
 
 	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
@@ -16,23 +17,21 @@ func main() {
 	}
 	APIKey := "API-YourAPIKey"
 	spaceName := "Default"
-	projectName := "MyProject"
-	channelName := "NewChannel"
+	targetName := "MyTargetName"
+	roleName := "MyRoleName"
 
-	// Get space
+	// Get reference to space
 	space := GetSpace(apiURL, APIKey, spaceName)
 
-	// Create client
+	// Get deployment target
+	target := GetTarget(apiURL, APIKey, space, targetName)
+
+	// Add role to target
+	target.Roles = append(target.Roles, roleName)
+
+	// Update target
 	client := octopusAuth(apiURL, APIKey, space.ID)
-
-	// Get project
-	project := GetProject(client, projectName)
-
-	// Create channel resource
-	channel := octopusdeploy.NewChannel(channelName, project.ID)
-	channel.SpaceID = space.ID
-	channel.IsDefault = false
-	client.Channels.Add(channel)
+	client.Machines.Update(target)
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
@@ -59,19 +58,23 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	return space
 }
 
-func GetProject(client *octopusdeploy.Client, projectName string) *octopusdeploy.Project {
-	// Get project
-	project, err := client.Projects.GetByName(projectName)
+func GetTarget(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, targetName string) *octopusdeploy.DeploymentTarget {
+	// Create client
+	client := octopusAuth(octopusURL, APIKey, space.ID)
+
+	// Get target
+	deploymentTargets, err := client.Machines.GetByName(targetName)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	if project != nil {
-		fmt.Println("Retrieved project " + project.Name)
-	} else {
-		fmt.Println("Project " + projectName + " not found!")
+	// Loop through returned targets
+	for i := 0; i < len(deploymentTargets); i++ {
+		if deploymentTargets[i].Name == targetName {
+			return deploymentTargets[i]
+		}
 	}
 
-	return project
+	return nil
 }

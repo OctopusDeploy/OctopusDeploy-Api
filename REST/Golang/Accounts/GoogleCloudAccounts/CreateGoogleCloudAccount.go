@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/url"
 
@@ -14,10 +16,10 @@ func main() {
 	if err != nil {
 		log.Println(err)
 	}
-	APIKey := "API-YourAPIKey"
-	spaceName := "Default"
-	projectName := "MyProject"
-	channelName := "NewChannel"
+	APIKey := "API-YourURL"
+	spaceName := "MySpace"
+	googleAccountName := "MyGoogleAccount"
+	pathToFile := "path:\\to\\google\\json\\file.json"
 
 	// Get space
 	space := GetSpace(apiURL, APIKey, spaceName)
@@ -25,14 +27,30 @@ func main() {
 	// Create client
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
-	// Get project
-	project := GetProject(client, projectName)
+	// Read json file
+	jsonRawData, err := ioutil.ReadFile(pathToFile)
 
-	// Create channel resource
-	channel := octopusdeploy.NewChannel(channelName, project.ID)
-	channel.SpaceID = space.ID
-	channel.IsDefault = false
-	client.Channels.Add(channel)
+	if err != nil {
+		log.Println(err)
+	}
+
+	// Convert data to base 64 string
+	jsonString := base64.StdEncoding.EncodeToString(jsonRawData)
+
+	// Create sensitive variable
+	octopusAccountString := octopusdeploy.SensitiveValue{
+		HasValue: true,
+		NewValue: &jsonString,
+	}
+
+	// Create google account
+	googleAccount, err := octopusdeploy.NewGoogleCloudAccount(googleAccountName, &octopusAccountString)
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	client.Accounts.Add(googleAccount)
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
@@ -57,21 +75,4 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	}
 
 	return space
-}
-
-func GetProject(client *octopusdeploy.Client, projectName string) *octopusdeploy.Project {
-	// Get project
-	project, err := client.Projects.GetByName(projectName)
-
-	if err != nil {
-		log.Println(err)
-	}
-
-	if project != nil {
-		fmt.Println("Retrieved project " + project.Name)
-	} else {
-		fmt.Println("Project " + projectName + " not found!")
-	}
-
-	return project
 }

@@ -3,34 +3,40 @@ package main
 import (
 	"fmt"
 	"log"
-	"os"
+	"net/url"
 
-	"github.com/OctopusDeploy/go-octopusdeploy/client"
-	"github.com/OctopusDeploy/go-octopusdeploy/model"
-	"golang.org/x/crypto/ssh/terminal"
+	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
 )
 
 func main() {
-	octopusURL := os.Args[1]
-	space := os.Args[2]
-	name := os.Args[3]
 
-	fmt.Println("Enter Password Securely: ")
-	apiKey, err := terminal.ReadPassword(0)
-
+	apiURL, err := url.Parse("https://YourURL")
 	if err != nil {
 		log.Println(err)
 	}
+	APIKey := "API-YourAPIKey"
+	spaceName := "Default"
+	projectGroupName := "MyProjectGroup"
+	projectGroupDescription := "My description"
 
-	APIKey := string(apiKey)
+	// Get space
+	space := GetSpace(apiURL, APIKey, spaceName)
 
-	octopusAuth(octopusURL, APIKey, space)
-	CreateProjectGroup(octopusURL, APIKey, space, name)
+	// Create client
+	client := octopusAuth(apiURL, APIKey, space.ID)
 
+	// Create project group object
+	projectGroup := octopusdeploy.NewProjectGroup(projectGroupName)
+	projectGroup.Description = projectGroupDescription
+	projectGroup.EnvironmentIDs = nil
+	projectGroup.RetentionPolicyID = octopusdeploy.NewDisplayInfo().Label
+
+	// Create project group
+	client.ProjectGroups.Add(projectGroup)
 }
 
-func octopusAuth(octopusURL, APIKey, space string) *client.Client {
-	client, err := client.NewClient(nil, octopusURL, APIKey, space)
+func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
+	client, err := octopusdeploy.NewClient(nil, octopusURL, APIKey, space)
 	if err != nil {
 		log.Println(err)
 	}
@@ -38,11 +44,17 @@ func octopusAuth(octopusURL, APIKey, space string) *client.Client {
 	return client
 }
 
-func CreateProjectGroup(octopusURL, APIKey, space, name string) *model.ProjectGroup {
-	client := octopusAuth(octopusURL, APIKey, space)
-	ProjectGroup := model.NewProjectGroup(name)
+func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdeploy.Space {
+	client := octopusAuth(octopusURL, APIKey, "")
 
-	client.ProjectGroups.Add(ProjectGroup)
+	// Get specific space object
+	space, err := client.Spaces.GetByName(spaceName)
 
-	return ProjectGroup
+	if err != nil {
+		log.Println(err)
+	} else {
+		fmt.Println("Retrieved space " + space.Name)
+	}
+
+	return space
 }

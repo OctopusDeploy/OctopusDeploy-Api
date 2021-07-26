@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+
 	"net/url"
 
 	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
@@ -16,23 +17,23 @@ func main() {
 	}
 	APIKey := "API-YourAPIKey"
 	spaceName := "Default"
-	projectName := "MyProject"
-	channelName := "NewChannel"
+	feedName := "MyFeed"
 
-	// Get space
+	// Get reference to space
 	space := GetSpace(apiURL, APIKey, spaceName)
 
-	// Create client
+	// Create client object
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
-	// Get project
-	project := GetProject(client, projectName)
+	// Get feed id
+	feedId := GetFeedId(client, feedName)
 
-	// Create channel resource
-	channel := octopusdeploy.NewChannel(channelName, project.ID)
-	channel.SpaceID = space.ID
-	channel.IsDefault = false
-	client.Channels.Add(channel)
+	if feedId != "" {
+		// Delete the feed
+		client.Feeds.DeleteByID(feedId)
+	} else {
+		fmt.Println(feedName + " not found!")
+	}
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
@@ -59,19 +60,23 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	return space
 }
 
-func GetProject(client *octopusdeploy.Client, projectName string) *octopusdeploy.Project {
-	// Get project
-	project, err := client.Projects.GetByName(projectName)
+func GetFeedId(client *octopusdeploy.Client, feedName string) string {
+	// Get the feed
+	feedQuery := octopusdeploy.FeedsQuery{
+		PartialName: feedName,
+	}
+
+	feeds, err := client.Feeds.Get(feedQuery)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	if project != nil {
-		fmt.Println("Retrieved project " + project.Name)
-	} else {
-		fmt.Println("Project " + projectName + " not found!")
+	for i := 0; i < len(feeds.Items); i++ {
+		if feeds.Items[i].GetName() == feedName {
+			return feeds.Items[i].GetID()
+		}
 	}
 
-	return project
+	return ""
 }

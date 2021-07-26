@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+
 	"net/url"
 
 	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
@@ -16,23 +17,33 @@ func main() {
 	}
 	APIKey := "API-YourAPIKey"
 	spaceName := "Default"
-	projectName := "MyProject"
-	channelName := "NewChannel"
 
-	// Get space
+	// Get reference to space
 	space := GetSpace(apiURL, APIKey, spaceName)
 
-	// Create client
 	client := octopusAuth(apiURL, APIKey, space.ID)
+	allTargets, err := client.Machines.GetAll()
+	if err != nil {
+		log.Println(err)
+	}
 
-	// Get project
-	project := GetProject(client, projectName)
+	for i := 0; i < len(allTargets); i++ {
+		fmt.Println("Checking target: " + allTargets[i].Name)
+		fmt.Println("Health Status: " + allTargets[i].HealthStatus)
+		fmt.Println("Status: " + allTargets[i].Status)
+	}
 
-	// Create channel resource
-	channel := octopusdeploy.NewChannel(channelName, project.ID)
-	channel.SpaceID = space.ID
-	channel.IsDefault = false
-	client.Channels.Add(channel)
+	allWorkers, err := client.Workers.GetAll()
+	if err != nil {
+		log.Println(err)
+	}
+
+	for i := 0; i < len(allWorkers); i++ {
+		fmt.Println("Checking target: " + allWorkers[i].Name)
+		fmt.Println("Health Status: " + allWorkers[i].HealthStatus)
+		fmt.Println("Status: " + allWorkers[i].Status)
+	}
+
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
@@ -57,21 +68,4 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	}
 
 	return space
-}
-
-func GetProject(client *octopusdeploy.Client, projectName string) *octopusdeploy.Project {
-	// Get project
-	project, err := client.Projects.GetByName(projectName)
-
-	if err != nil {
-		log.Println(err)
-	}
-
-	if project != nil {
-		fmt.Println("Retrieved project " + project.Name)
-	} else {
-		fmt.Println("Project " + projectName + " not found!")
-	}
-
-	return project
 }

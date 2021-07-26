@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+
 	"net/url"
 
 	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
@@ -17,22 +18,24 @@ func main() {
 	APIKey := "API-YourAPIKey"
 	spaceName := "Default"
 	projectName := "MyProject"
-	channelName := "NewChannel"
+	runbookName := "MyRunbook"
 
-	// Get space
+	// Get reference to space
 	space := GetSpace(apiURL, APIKey, spaceName)
 
-	// Create client
+	// Create client object
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
 	// Get project
 	project := GetProject(client, projectName)
 
-	// Create channel resource
-	channel := octopusdeploy.NewChannel(channelName, project.ID)
-	channel.SpaceID = space.ID
-	channel.IsDefault = false
-	client.Channels.Add(channel)
+	// Create new runbook
+	runbook := octopusdeploy.NewRunbook(runbookName, project.ID)
+	runbook.EnvironmentScope = "All"
+	runbook.RunRetentionPolicy.QuantityToKeep = 100
+	runbook.RunRetentionPolicy.ShouldKeepForever = false
+
+	client.Runbooks.Add(runbook)
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {

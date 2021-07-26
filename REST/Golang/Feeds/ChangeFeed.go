@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+
 	"net/url"
 
 	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
@@ -10,29 +11,20 @@ import (
 
 func main() {
 
-	apiURL, err := url.Parse("https://YourURL")
+	apiURL, err := url.Parse("http://octopusserver1")
 	if err != nil {
 		log.Println(err)
 	}
-	APIKey := "API-YourAPIKey"
+	APIKey := "API-YOUR-KEY"
 	spaceName := "Default"
-	projectName := "MyProject"
-	channelName := "NewChannel"
+	feedName := "TestFeed"
+	newFeedName := "MyNewFeedName"
 
-	// Get space
+	// Get reference to space
 	space := GetSpace(apiURL, APIKey, spaceName)
 
-	// Create client
-	client := octopusAuth(apiURL, APIKey, space.ID)
-
-	// Get project
-	project := GetProject(client, projectName)
-
-	// Create channel resource
-	channel := octopusdeploy.NewChannel(channelName, project.ID)
-	channel.SpaceID = space.ID
-	channel.IsDefault = false
-	client.Channels.Add(channel)
+	// Change the feed name
+	ChangeFeedName(apiURL, APIKey, space, feedName, newFeedName)
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
@@ -59,19 +51,27 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	return space
 }
 
-func GetProject(client *octopusdeploy.Client, projectName string) *octopusdeploy.Project {
-	// Get project
-	project, err := client.Projects.GetByName(projectName)
+func ChangeFeedName(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, FeedName string, NewFeedName string) {
+	// Create client
+	client := octopusAuth(octopusURL, APIKey, space.ID)
+
+	// Get current feed
+	feedsQuery := octopusdeploy.FeedsQuery{
+		PartialName: FeedName,
+	}
+	feeds, err := client.Feeds.Get(feedsQuery)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	if project != nil {
-		fmt.Println("Retrieved project " + project.Name)
-	} else {
-		fmt.Println("Project " + projectName + " not found!")
-	}
+	for i := 0; i < len(feeds.Items); i++ {
+		if feeds.Items[i].GetName() == FeedName {
+			fmt.Println("Updating feed " + FeedName + " to " + NewFeedName)
+			feeds.Items[i].SetName(NewFeedName)
+			client.Feeds.Update(feeds.Items[i])
 
-	return project
+			break
+		}
+	}
 }

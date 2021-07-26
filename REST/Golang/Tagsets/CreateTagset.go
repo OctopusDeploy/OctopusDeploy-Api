@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+
 	"net/url"
 
 	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
@@ -16,23 +17,36 @@ func main() {
 	}
 	APIKey := "API-YourAPIKey"
 	spaceName := "Default"
-	projectName := "MyProject"
-	channelName := "NewChannel"
+	tagsetName := "MyTagset"
 
-	// Get space
+	// Get reference to space
 	space := GetSpace(apiURL, APIKey, spaceName)
 
-	// Create client
+	// Create client object
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
-	// Get project
-	project := GetProject(client, projectName)
+	// Get tagset
+	tagset := GetTagSet(client, tagsetName)
 
-	// Create channel resource
-	channel := octopusdeploy.NewChannel(channelName, project.ID)
-	channel.SpaceID = space.ID
-	channel.IsDefault = false
-	client.Channels.Add(channel)
+	if tagset == nil {
+		// Create new tagset
+		tagset = octopusdeploy.NewTagSet(tagsetName)
+
+		// Create new tag
+		tag := octopusdeploy.Tag{
+			Name:        "MyTag",
+			Color:       "#ECAD3F",
+			Description: "My tag description",
+		}
+
+		// Add to set
+		tagset.Tags = append(tagset.Tags, tag)
+
+		// Add to server
+		client.TagSets.Add(tagset)
+	} else {
+		fmt.Println("Tagset " + tagsetName + " already exists!")
+	}
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
@@ -59,19 +73,13 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	return space
 }
 
-func GetProject(client *octopusdeploy.Client, projectName string) *octopusdeploy.Project {
-	// Get project
-	project, err := client.Projects.GetByName(projectName)
+func GetTagSet(client *octopusdeploy.Client, tagsetName string) *octopusdeploy.TagSet {
+	// Get tagsets
+	tagSet, err := client.TagSets.GetByName(tagsetName)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	if project != nil {
-		fmt.Println("Retrieved project " + project.Name)
-	} else {
-		fmt.Println("Project " + projectName + " not found!")
-	}
-
-	return project
+	return tagSet
 }

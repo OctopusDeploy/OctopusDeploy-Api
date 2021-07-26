@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"github.com/google/uuid"
+
 	"net/url"
 
 	"github.com/OctopusDeploy/go-octopusdeploy/octopusdeploy"
@@ -16,36 +16,21 @@ func main() {
 		log.Println(err)
 	}
 	APIKey := "API-YourAPIKey"
-	accountName := "MyAzureAccount"
-	subscriptionID := "MySubscriptionId"
-	tenantID := "MyTenantId"
-	applicationID := "MyApplicationId"
-	password := "MyPassword"
-	azureClientPassword := octopusdeploy.SensitiveValue{
-		HasValue: true,
-		NewValue: &password,
-	}
-	spaceName := "Default"
+	spaceName := "MySpace"
 
-	// Get space
+	// Get reference to space
 	space := GetSpace(apiURL, APIKey, spaceName)
+	space.TaskQueueStopped = true
 
-	// Create client
-	client := octopusAuth(apiURL, APIKey, space.ID)
+	// Create client object
+	client := octopusAuth(apiURL, APIKey, "")
 
-	// Convert values
-	subscriptionID_UUID, _ := uuid.Parse(subscriptionID)
-	tenantID_UUID, _ := uuid.Parse(tenantID)
-	applicationID_UUID, _ := uuid.Parse(applicationID)
-
-	// Create AWS account object
-	azureAccount, err := octopusdeploy.NewAzureServicePrincipalAccount(accountName, subscriptionID_UUID, tenantID_UUID, applicationID_UUID, &azureClientPassword)
-
-	if err != nil {
-		log.Println(err)
+	client.Spaces.Update(space)
+	deleteErr := client.Spaces.DeleteByID(space.ID)
+	if deleteErr != nil {
+		log.Println(deleteErr)
 	}
 
-	client.Accounts.Add(azureAccount)
 }
 
 func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Client {
