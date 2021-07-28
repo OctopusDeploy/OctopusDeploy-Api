@@ -2,12 +2,15 @@ function Set-OctopusVariable {
     param(
         $octopusURL = "https://xxx.octopus.app/", # Octopus Server URL
         $octopusAPIKey = "API-xxx",               # API key goes here
-        $projectName = "xxx",                     # Replace with your project name
+        $projectName = "my_sql_octopus_poc",      # Replace with your project name
         $spaceName = "Default",                   # Replace with the name of the space you are working in
         $environment = $null,                     # Replace with the name of the environment you want to scope the variables to
         $varName = "",                            # Replace with the name of the variable
         $varValue = ""                            # Replace with the value of the variable
     )
+
+    # The code for this function was mostly copied from: 
+    # https://github.com/OctopusDeploy/OctopusDeploy-Api/blob/master/REST/PowerShell/Variables/ModifyOrAddVariableToProject.ps1
 
     # Defines header for API call
     $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
@@ -37,33 +40,19 @@ function Set-OctopusVariable {
             }
     }
 
-    # Check to see if variable is already present
+    # Check to see if variable is already present. If so, removing old version(s).
     $variablesWithSameName = $projectVariables.Variables | Where-Object {$_.Name -eq $variable.Name}
-
-    if (@($variablesWithSameName.Name).Length -eq 1){
-        # There is one variable with the same name
-        if ($variablesWithSameName.Scope.Environment -like $variable.Scope.Environment){
-            # The existing variable has the same scope: remove the old value
-            $projectVariables.Variables = $projectVariables.Variables | Where-Object { $_.id -notlike $variablesWithSameName.id}
-        }  
-        if ($environmentObj -eq $null){
-            # There is no scope
-            $unscopedVariablesWithSameName = @($variablesWithSameName) | Where-Object { $_.Scope -like $null}
-            $projectVariables.Variables = $projectVariables.Variables | Where-Object { $_.id -notin @($unscopedVariablesWithSameName.id)}
-        } 
-    }
-    if (@($variablesWithSameName.Name).Length -gt 1){
-        # There are multiple variables with the same name
-        if (@($variablesWithSameName.Scope.Environment) -contains $variable.Scope.Environment){
-            # At least one of the existing variables is scoped to this environment, removing all with same scope
-            $variablesWithMatchingNameAndScope = $variablesWithSameName | Where-Object { $_.Scope.Environment -like $variable.Scope.Environment}
-            $projectVariables.Variables = $projectVariables.Variables | Where-Object { $_.id -notin @($variablesWithMatchingNameAndScope.id)}
-        }
-        if ($environmentObj -eq $null){
-            # There is no scope
-            $unscopedVariablesWithSameName = $variablesWithSameName | Where-Object { $_.Scope -like $null}
-            $projectVariables.Variables = $projectVariables.Variables | Where-Object { $_.id -notin @($unscopedVariablesWithSameName.id)}
-        }  
+    
+    if ($environmentObj -eq $null){
+        # The variable is not scoped to an environment
+        $unscopedVariablesWithSameName = $variablesWithSameName | Where-Object { $_.Scope -like $null}
+        $projectVariables.Variables = $projectVariables.Variables | Where-Object { $_.id -notin @($unscopedVariablesWithSameName.id)}
+    } 
+    
+    if (@($variablesWithSameName.Scope.Environment) -contains $variable.Scope.Environment){
+        # At least one of the existing variables with the same name is scoped to the same environment, removing all matches
+        $variablesWithMatchingNameAndScope = $variablesWithSameName | Where-Object { $_.Scope.Environment -like $variable.Scope.Environment}
+        $projectVariables.Variables = $projectVariables.Variables | Where-Object { $_.id -notin @($variablesWithMatchingNameAndScope.id)}
     }
     
     # Adding the new value
