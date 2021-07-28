@@ -41,9 +41,9 @@ function Set-OctopusVariable {
     $variablesWithSameName = $projectVariables.Variables | Where-Object {$_.Name -eq $variable.Name}
 
     if (@($variablesWithSameName.Name).Length -eq 1){
-        # There is only one variable with the same name
+        # There is one variable with the same name
         if ($variablesWithSameName.Scope.Environment -like $variable.Scope.Environment){
-            # The existing variable has the same scope: remove the olkd value
+            # The existing variable has the same scope: remove the old value
             $projectVariables.Variables = $projectVariables.Variables | Where-Object { $_.id -notlike $variablesWithSameName.id}
         }  
         if ($environmentObj -eq $null){
@@ -53,7 +53,6 @@ function Set-OctopusVariable {
         } 
     }
     if (@($variablesWithSameName.Name).Length -gt 1){
-        Write-output "65" 
         # There are multiple variables with the same name
         if (@($variablesWithSameName.Scope.Environment) -contains $variable.Scope.Environment){
             # At least one of the existing variables is scoped to this environment, removing all with same scope
