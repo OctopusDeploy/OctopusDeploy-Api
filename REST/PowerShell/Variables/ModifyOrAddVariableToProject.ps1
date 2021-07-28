@@ -2,7 +2,7 @@ function Set-OctopusVariable {
     param(
         $octopusURL = "https://xxx.octopus.app/", # Octopus Server URL
         $octopusAPIKey = "API-xxx",               # API key goes here
-        $projectName = "my_sql_octopus_poc",      # Replace with your project name
+        $projectName = "",                        # Replace with your project name
         $spaceName = "Default",                   # Replace with the name of the space you are working in
         $environment = $null,                     # Replace with the name of the environment you want to scope the variables to
         $varName = "",                            # Replace with the name of the variable
