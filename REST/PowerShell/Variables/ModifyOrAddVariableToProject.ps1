@@ -9,9 +9,6 @@ function Set-OctopusVariable {
         $varValue = ""                            # Replace with the value of the variable
     )
 
-    # The code for this function was mostly copied from: 
-    # https://github.com/OctopusDeploy/OctopusDeploy-Api/blob/master/REST/PowerShell/Variables/ModifyOrAddVariableToProject.ps1
-
     # Defines header for API call
     $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 
