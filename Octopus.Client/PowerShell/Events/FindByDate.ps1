@@ -4,8 +4,8 @@
 Add-Type -Path "c:\octopus.client\Octopus.Client.dll"
 
 # Octopus variables
-$octopusURL = "http://octotemp"
-$octopusAPIKey = "API-APIKEY"
+$octopusURL = "https://your.octopus.app"
+$octopusAPIKey = "API-YOURKEY"
 $spaceName = "default"
 $eventDate = "9/9/2020"
 
