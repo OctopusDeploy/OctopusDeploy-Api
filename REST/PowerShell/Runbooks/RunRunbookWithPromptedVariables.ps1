@@ -58,6 +58,9 @@ $runbookBody = (@{
     RunbookSnapshotId = $runbookSnapshotId
     EnvironmentId = $environmentId
     FormValues    = $formValues
+    SkipActions = @()
+    SpecificMachineIds = @()
+    ExcludedMachineIds = @()
 }) | ConvertTo-Json -Depth 10
 
 # Run the runbook

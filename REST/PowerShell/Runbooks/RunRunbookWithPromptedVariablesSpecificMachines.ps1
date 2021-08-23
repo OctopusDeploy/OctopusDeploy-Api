@@ -74,6 +74,8 @@ $runbookBody = (@{
     FormValues    = $formValues
     SpecificMachineIds = $machineList
     SpaceId = $spaceId
+    SkipActions = @()
+    ExcludedMachineIds = @()
 }) | ConvertTo-Json -Depth 10
 
 # Run the runbook

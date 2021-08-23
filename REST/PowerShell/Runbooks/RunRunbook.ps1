@@ -47,6 +47,9 @@ foreach ($environmentId in $environmentIds)
         RunbookSnapshotId = $runbook.PublishedRunbookSnapshotId
         EnvironmentId = $environmentId
         TenantId = $tenantId
+        SkipActions = @()
+        SpecificMachineIds = @()
+        ExcludedMachineIds = @()
     }
 
     # Run runbook
