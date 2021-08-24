@@ -25,7 +25,7 @@ func main() {
 	space := GetSpace(apiURL, APIKey, spaceName)
 
 	// Get reference to team
-	team := GetTeam(apiURL, APIKey, space, teamName)
+	team := GetTeam(apiURL, APIKey, space, teamName, 0)
 
 	// Get reference to userrole
 	userRole := GetRole(apiURL, APIKey, space, userRoleName)
@@ -57,45 +57,77 @@ func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Clien
 func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdeploy.Space {
 	client := octopusAuth(octopusURL, APIKey, "")
 
+	spaceQuery := octopusdeploy.SpacesQuery{
+		Name: spaceName,
+	}
+
 	// Get specific space object
-	space, err := client.Spaces.GetByName(spaceName)
+	spaces, err := client.Spaces.Get(spaceQuery)
 
 	if err != nil {
 		log.Println(err)
-	} else {
-		fmt.Println("Retrieved space " + space.Name)
 	}
 
-	return space
+	for _, space := range spaces.Items {
+		if space.Name == spaceName {
+			return space
+		}
+	}
+
+	return nil
 }
 
-func GetEnvironment(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, EnvironmentName string) *octopusdeploy.Environment {
+func GetEnvironment(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, environmentName string) *octopusdeploy.Environment {
+	// Get client for space
 	client := octopusAuth(octopusURL, APIKey, space.ID)
 
-	environment, err := client.Environments.GetByName(EnvironmentName)
-
+	// Get environment
+	environmentsQuery := octopusdeploy.EnvironmentsQuery {
+		Name: environmentName,		
+	}
+	environments, err := client.Environments.Get(environmentsQuery)
 	if err != nil {
 		log.Println(err)
-	} else {
-		fmt.Println("Retrieved environment " + environment[0].Name)
 	}
 
-	return environment[0]
+	// Loop through results
+	for _, environment := range environments.Items {
+		if environment.Name == environmentName {
+			return environment
+		}
+	}
+
+	return nil
 }
 
-func GetTeam(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, TeamName string) *octopusdeploy.Team {
+func GetTeam(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, TeamName string, skip int) *octopusdeploy.Team {
 	client := octopusAuth(octopusURL, APIKey, space.ID)
 
-	teams, err := client.Teams.GetByPartialName(TeamName)
+	// Create query
+	teamsQuery := octopusdeploy.TeamsQuery{
+		PartialName: TeamName,
+		Spaces:      []string{space.ID},
+	}
 
+	// Query for team
+	teams, err := client.Teams.Get(teamsQuery)
 	if err != nil {
 		log.Println(err)
 	}
 
-	for i := 0; i < len(teams); i++ {
-		if teams[i].Name == TeamName {
-			fmt.Println("Retrieved team " + teams[i].Name)
-			return teams[i]
+	if len(teams.Items) == teams.ItemsPerPage {
+		// call again
+		team := GetTeam(client, space, TeamName, (skip + len(teams.Items)))
+
+		if team != nil {
+			return team
+		}
+	} else {
+		// Loop through returned items
+		for _, team := range teams.Items {
+			if team.Name == TeamName {
+				return team
+			}
 		}
 	}
 

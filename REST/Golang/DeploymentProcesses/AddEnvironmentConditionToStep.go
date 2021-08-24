@@ -70,44 +70,69 @@ func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Clien
 func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdeploy.Space {
 	client := octopusAuth(octopusURL, APIKey, "")
 
+	spaceQuery := octopusdeploy.SpacesQuery{
+		Name: spaceName,
+	}
+
 	// Get specific space object
-	space, err := client.Spaces.GetByName(spaceName)
+	spaces, err := client.Spaces.Get(spaceQuery)
 
 	if err != nil {
 		log.Println(err)
-	} else {
-		fmt.Println("Retrieved space " + space.Name)
 	}
 
-	return space
+	for _, space := range spaces.Items {
+		if space.Name == spaceName {
+			return space
+		}
+	}
+
+	return nil
 }
 
 func GetEnvironment(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, EnvironmentName string) *octopusdeploy.Environment {
 	client := octopusAuth(octopusURL, APIKey, space.ID)
 
-	environment, err := client.Environments.GetByName(EnvironmentName)
-
+	// Get environment
+	environmentsQuery := octopusdeploy.EnvironmentsQuery {
+		Name: environmentName,		
+	}
+	environments, err := client.Environments.Get(environmentsQuery)
 	if err != nil {
 		log.Println(err)
-	} else {
-		fmt.Println("Retrieved environment " + environment[0].Name)
 	}
 
-	return environment[0]
+	// Loop through results
+	for _, environment := range environments.Items {
+		if environment.Name == environmentName {
+			return environment
+		}
+	}
+
+	return nil
 }
 
 func GetProject(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, ProjectName string) *octopusdeploy.Project {
 	client := octopusAuth(octopusURL, APIKey, space.ID)
 
-	project, err := client.Projects.GetByName(ProjectName)
+	projectsQuery := octopusdeploy.ProjectsQuery {
+		Name: ProjectName
+	}
 
+	projects, err := client.Projects.Get(projectsQuery)
 	if err != nil {
 		log.Println(err)
 	} else {
 		fmt.Println("Retrieved project " + project.Name)
 	}
 
-	return project
+	for _, project := range projects {
+		if project.Name == ProjectName {
+			return project
+		}
+	}
+
+	return nil
 }
 
 func GetProjectDeploymentProcess(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, project *octopusdeploy.Project) *octopusdeploy.DeploymentProcess {

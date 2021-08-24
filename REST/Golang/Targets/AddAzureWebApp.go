@@ -71,14 +71,24 @@ func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Clien
 func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdeploy.Space {
 	client := octopusAuth(octopusURL, APIKey, "")
 
+	spaceQuery := octopusdeploy.SpacesQuery{
+		Name: spaceName,
+	}
+
 	// Get specific space object
-	space, err := client.Spaces.GetByName(spaceName)
+	spaces, err := client.Spaces.Get(spaceQuery)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	return space
+	for _, space := range spaces.Items {
+		if space.Name == spaceName {
+			return space
+		}
+	}
+
+	return nil
 }
 
 func GetAzureAccount(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, accountName string) *octopusdeploy.AzureServicePrincipalAccount {
@@ -105,12 +115,20 @@ func GetEnvironment(octopusURL *url.URL, APIKey string, space *octopusdeploy.Spa
 	client := octopusAuth(octopusURL, APIKey, space.ID)
 
 	// Get environment
-	environment, err := client.Environments.GetByName(environmentName)
-
+	environmentsQuery := octopusdeploy.EnvironmentsQuery {
+		Name: environmentName,		
+	}
+	environments, err := client.Environments.Get(environmentsQuery)
 	if err != nil {
 		log.Println(err)
 	}
 
-	// return environment
-	return environment[0]
+	// Loop through results
+	for _, environment := range environments.Items {
+		if environment.Name == environmentName {
+			return environment
+		}
+	}
+
+	return nil
 }
