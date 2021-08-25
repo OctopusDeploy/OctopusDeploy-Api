@@ -116,7 +116,7 @@ func GetProject(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, 
 	client := octopusAuth(octopusURL, APIKey, space.ID)
 
 	projectsQuery := octopusdeploy.ProjectsQuery {
-		Name: ProjectName
+		Name: ProjectName,
 	}
 
 	projects, err := client.Projects.Get(projectsQuery)
