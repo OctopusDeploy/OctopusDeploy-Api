@@ -70,17 +70,20 @@ func GetTarget(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, t
 	// Create client
 	client := octopusAuth(octopusURL, APIKey, space.ID)
 
-	// Get target
-	deploymentTargets, err := client.Machines.GetByName(targetName)
+	machinesQuery := octopusdeploy.MachinesQuery{
+		Name: targetName,
+	}
+
+	// Get specific machine object
+	machines, err := client.Machines.Get(machinesQuery)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	// Loop through returned targets
-	for i := 0; i < len(deploymentTargets); i++ {
-		if deploymentTargets[i].Name == targetName {
-			return deploymentTargets[i]
+	for _, machine := range machines.Items {
+		if machine.Name == targetName {
+			return machine
 		}
 	}
 

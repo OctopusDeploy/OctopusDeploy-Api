@@ -27,7 +27,7 @@ func main() {
 	newMachinePolicy := GetMachinePolicy(apiURL, APIKey, space, newMachinePolicyName)
 
 	// Get machine reference
-	machine := GetMachine(apiURL, APIKey, space, machineName)
+	machine := GetTarget(apiURL, APIKey, space, machineName)
 
 	// Update
 	machine.MachinePolicyID = newMachinePolicy.ID
@@ -87,21 +87,24 @@ func GetMachinePolicy(octopusURL *url.URL, APIKey string, space *octopusdeploy.S
 	return nil
 }
 
-func GetMachine(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, MachineName string) *octopusdeploy.DeploymentTarget {
+func GetTarget(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, targetName string) *octopusdeploy.DeploymentTarget {
 	// Create client
 	client := octopusAuth(octopusURL, APIKey, space.ID)
 
-	// Get target
-	deploymentTargets, err := client.Machines.GetByName(MachineName)
+	machinesQuery := octopusdeploy.MachinesQuery{
+		Name: targetName,
+	}
+
+	// Get specific machine object
+	machines, err := client.Machines.Get(machinesQuery)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	// Loop through returned targets
-	for i := 0; i < len(deploymentTargets); i++ {
-		if deploymentTargets[i].Name == MachineName {
-			return deploymentTargets[i]
+	for _, machine := range machines.Items {
+		if machine.Name == targetName {
+			return machine
 		}
 	}
 

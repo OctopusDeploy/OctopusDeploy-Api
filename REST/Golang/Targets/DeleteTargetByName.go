@@ -25,7 +25,7 @@ func main() {
 	// Create client object
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
-	machine := GetMachine(client, machineName)
+	machine := GetTarget(apiURL, APIKey, space, machineName)
 
 	if nil != machine {
 		// Delete machine
@@ -66,17 +66,24 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	return nil
 }
 
-func GetMachine(client *octopusdeploy.Client, machineName string) *octopusdeploy.DeploymentTarget {
-	// Get machines
-	machines, err := client.Machines.GetByName(machineName)
+func GetTarget(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, targetName string) *octopusdeploy.DeploymentTarget {
+	// Create client
+	client := octopusAuth(octopusURL, APIKey, space.ID)
+
+	machinesQuery := octopusdeploy.MachinesQuery{
+		Name: targetName,
+	}
+
+	// Get specific machine object
+	machines, err := client.Machines.Get(machinesQuery)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	for i := 0; i < len(machines); i++ {
-		if machines[i].Name == machineName {
-			return machines[i]
+	for _, machine := range machines.Items {
+		if machine.Name == targetName {
+			return machine
 		}
 	}
 
