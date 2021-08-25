@@ -23,7 +23,7 @@ func main() {
 	space := GetSpace(apiURL, APIKey, spaceName)
 
 	// Check to see if the lifecycle already exists
-	if GetLifecycle(apiURL, APIKey, space, lifecycleName) == nil {
+	if GetLifecycle(apiURL, APIKey, space, lifecycleName, 0) == nil {
 		lifecycle := CreateLifecycle(apiURL, APIKey, space, lifecycleName)
 		fmt.Println(lifecycle.Name + " created successfully")
 	} else {
@@ -63,18 +63,32 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	return nil
 }
 
-func GetLifecycle(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, LifecycleName string) *octopusdeploy.Lifecycle {
+func GetLifecycle(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, LifecycleName string, skip int) *octopusdeploy.Lifecycle {
 	client := octopusAuth(octopusURL, APIKey, space.ID)
 
-	lifecycles, err := client.Lifecycles.GetByPartialName(LifecycleName)
+	lifecycleQuery := octopusdeploy.LifecyclesQuery {
+		PartialName: LifecycleName,
+	}
+
+	lifecycles, err := client.Lifecycles.Get(lifecycleQuery)
 
 	if err != nil {
 		log.Println(err)
 	}
+	
+	if len(lifecycles.Items) == lifecycles.ItemsPerPage {
+		// call again
+		lifecycle := GetLifecycle(octopusURL, APIKey, space, LifecycleName, (skip + len(lifecycles.Items)))
 
-	for i := 0; i < len(lifecycles); i++ {
-		if lifecycles[i].Name == LifecycleName {
-			return lifecycles[i]
+		if lifecycle != nil {
+			return lifecycle
+		}
+	} else {
+		// Loop through returned items
+		for _, lifecycle := range lifecycles.Items {
+			if lifecycle.Name == LifecycleName {
+				return lifecycle
+			}
 		}
 	}
 

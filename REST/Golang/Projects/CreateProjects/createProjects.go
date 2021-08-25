@@ -27,10 +27,10 @@ func main() {
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
 	// Get project group
-	projectGroup := GetProjectGroup(client, projectGroupName)
+	projectGroup := GetProjectGroup(client, projectGroupName, 0)
 
 	// Get lifecycle
-	lifecycle := GetLifecycle(client, lifeCycleName)
+	lifecycle := GetLifecycle(apiURL, APIKey, space, lifeCycleName, 0)
 
 	// Create project
 	project := CreateProject(client, lifecycle, projectGroup, projectName)
@@ -70,34 +70,62 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	return nil
 }
 
-func GetProjectGroup(client *octopusdeploy.Client, projectGroupName string) *octopusdeploy.ProjectGroup {
-	// Get matching project groups
-	projectGroups, err := client.ProjectGroups.GetByPartialName(projectGroupName)
+func GetProjectGroup(client *octopusdeploy.Client, projectGroupName string, skip int) *octopusdeploy.ProjectGroup {
+    projectGroupsQuery := octopusdeploy.ProjectGroupsQuery {
+		PartialName: projectGroupName,
+	}
+
+	projectGroups, err := client.ProjectGroups.Get(projectGroupsQuery)
 
 	if err != nil {
 		log.Println(err)
 	}
+	
+	if len(projectGroups.Items) == projectGroups.ItemsPerPage {
+		// call again
+		projectGroup := GetProjectGroup(client, projectGroupName, (skip + len(projectGroups.Items)))
 
-	for i := 0; i < len(projectGroups); i++ {
-		if projectGroups[i].Name == projectGroupName {
-			return projectGroups[i]
+		if projectGroup != nil {
+			return projectGroup
+		}
+	} else {
+		// Loop through returned items
+		for _, projectGroup := range projectGroups.Items {
+			if projectGroup.Name == projectGroupName {
+				return projectGroup
+			}
 		}
 	}
 
 	return nil
 }
 
-func GetLifecycle(client *octopusdeploy.Client, lifecycleName string) *octopusdeploy.Lifecycle {
-	// Get lifecycle
-	lifecycles, err := client.Lifecycles.GetByPartialName(lifecycleName)
+func GetLifecycle(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, LifecycleName string, skip int) *octopusdeploy.Lifecycle {
+	client := octopusAuth(octopusURL, APIKey, space.ID)
+
+	lifecycleQuery := octopusdeploy.LifecyclesQuery {
+		PartialName: LifecycleName,
+	}
+
+	lifecycles, err := client.Lifecycles.Get(lifecycleQuery)
 
 	if err != nil {
 		log.Println(err)
 	}
+	
+	if len(lifecycles.Items) == lifecycles.ItemsPerPage {
+		// call again
+		lifecycle := GetLifecycle(octopusURL, APIKey, space, LifecycleName, (skip + len(lifecycles.Items)))
 
-	for i := 0; i < len(lifecycles); i++ {
-		if lifecycles[i].Name == lifecycleName {
-			return lifecycles[i]
+		if lifecycle != nil {
+			return lifecycle
+		}
+	} else {
+		// Loop through returned items
+		for _, lifecycle := range lifecycles.Items {
+			if lifecycle.Name == LifecycleName {
+				return lifecycle
+			}
 		}
 	}
 

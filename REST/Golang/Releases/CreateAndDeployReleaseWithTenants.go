@@ -304,16 +304,13 @@ func GetTenants(client *octopusdeploy.Client, TenantNames []string) []*octopusde
 
 	// Loop through tenant names
 	for i := 0; i < len(TenantNames); i++ {
-		// Get tenant
-		tenantResults, err := client.Tenants.GetByPartialName(TenantNames[i])
+		
+		// Get tenant by partial name
+		tenant := GetTenantByPartialName(client, TenantNames[i], 0)
 
-		if err != nil {
-			log.Println(err)
-		}
-
-		for j := 0; j < len(tenantResults); j++ {
-			if tenantResults[j].Name == TenantNames[i] {
-				tenants = append(tenants, tenantResults[j])
+		if tenant != nil {
+			if tenant.Name == TenantNames[i] {
+				tenants = append(tenants, tenant)
 				break
 			}
 		}
@@ -321,4 +318,35 @@ func GetTenants(client *octopusdeploy.Client, TenantNames []string) []*octopusde
 
 	// Return tenants
 	return tenants
+}
+
+func GetTenantByPartialName(client *octopusdeploy.Client, TenantName string, skip int) *octopusdeploy.Tenant {
+
+	tenantQuery := octopusdeploy.TenantsQuery {
+		PartialName: TenantName,
+	}
+
+	tenants, err := client.Tenants.Get(tenantQuery)
+
+	if err != nil {
+		log.Println(err)
+	}
+	
+	if len(tenants.Items) == tenants.ItemsPerPage {
+		// call again
+		tenant := GetTenantByPartialName(client, TenantName, (skip + len(tenants.Items)))
+
+		if tenant != nil {
+			return tenant
+		}
+	} else {
+		// Loop through returned items
+		for _, tenant := range tenants.Items {
+			if tenant.Name == TenantName {
+				return tenant
+			}
+		}
+	}
+
+	return nil
 }

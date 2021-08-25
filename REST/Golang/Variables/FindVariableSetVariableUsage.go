@@ -47,7 +47,7 @@ func main() {
 	variableTracking := []VariableResult{}
 
 	// Get variableset
-	librarySet := GetLibraryVariableSet(client, variableSetVariableUsagesToFind)
+	librarySet := GetLibrarySet(apiURL, APIKey, space, variableSetVariableUsagesToFind, 0)
 
 	// Get the variables
 	variableSet, err := client.Variables.GetAll(librarySet.ID)
@@ -247,17 +247,32 @@ func GetRunbooks(client *octopusdeploy.Client, project *octopusdeploy.Project) [
 	return projectRunbooks
 }
 
-func GetLibraryVariableSet(client *octopusdeploy.Client, librarySetName string) *octopusdeploy.LibraryVariableSet {
-	librarySets, err := client.LibraryVariableSets.GetByPartialName(librarySetName)
+func GetLibrarySet(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, librarySetName string, skip int) *octopusdeploy.LibraryVariableSet {
+	// Create client
+	client := octopusAuth(octopusURL, APIKey, space.ID)
 
+	librarySetsQuery := octopusdeploy.LibraryVariablesQuery {
+		Name: librarySetName,
+	}
+
+	librarySets, err := client.LibraryVariableSets.Get(librarySetsQuery)
 	if err != nil {
 		log.Println(err)
 	}
+	
+	if len(librarySets.Items) == librarySets.ItemsPerPage {
+		// call again
+		librarySet := GetLibrarySet(octopusURL, APIKey, space, librarySetName, (skip + len(librarySets.Items)))
 
-	// Loop through sets
-	for _, librarySet := range librarySets {
-		if librarySet.Name == librarySetName {
+		if librarySet != nil {
 			return librarySet
+		}
+	} else {
+		// Loop through returned items
+		for _, librarySet := range librarySets.Items {
+			if librarySet.Name == LifecycleName {
+				return librarySet
+			}
 		}
 	}
 

@@ -27,7 +27,7 @@ func main() {
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
 	// Get team
-	team := GetTeam(client, teamName, space)
+	team := GetTeam(client, space, teamName, 0)
 
 	// Get project
 	project := GetProject(apiURL, APIKey, space, projectName)
@@ -82,16 +82,33 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	return nil
 }
 
-func GetTeam(client *octopusdeploy.Client, teamName string, space *octopusdeploy.Space) *octopusdeploy.Team {
-	// Get list of teams
-	teams, err := client.Teams.GetByPartialName(teamName)
+func GetTeam(client *octopusdeploy.Client, space *octopusdeploy.Space, teamName string, skip int) *octopusdeploy.Team {
+
+	// Create query
+	teamsQuery := octopusdeploy.TeamsQuery{
+		PartialName: teamName,
+		Spaces:      []string{space.ID},
+	}
+
+	// Query for team
+	teams, err := client.Teams.Get(teamsQuery)
 	if err != nil {
 		log.Println(err)
 	}
 
-	for _, team := range teams {
-		if team.SpaceID == space.ID && team.Name == teamName {
+	if len(teams.Items) == teams.ItemsPerPage {
+		// call again
+		team := GetTeam(client, space, teamName, (skip + len(teams.Items)))
+
+		if team != nil {
 			return team
+		}
+	} else {
+		// Loop through returned items
+		for _, team := range teams.Items {
+			if team.Name == teamName {
+				return team
+			}
 		}
 	}
 

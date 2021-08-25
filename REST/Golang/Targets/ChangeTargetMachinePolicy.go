@@ -24,7 +24,7 @@ func main() {
 	space := GetSpace(apiURL, APIKey, spaceName)
 
 	// Get machine policies
-	newMachinePolicy := GetMachinePolicy(apiURL, APIKey, space, newMachinePolicyName)
+	newMachinePolicy := GetMachinePolicy(apiURL, APIKey, space, newMachinePolicyName, 0)
 
 	// Get machine reference
 	machine := GetTarget(apiURL, APIKey, space, machineName)
@@ -67,23 +67,36 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	return nil
 }
 
-func GetMachinePolicy(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, MachinePolicyName string) *octopusdeploy.MachinePolicy {
+func GetMachinePolicy(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, MachinePolicyName string, skip int) *octopusdeploy.MachinePolicy {
 	// Create client
 	client := octopusAuth(octopusURL, APIKey, space.ID)
 
-	// Get the machine policy
-	machinePolicies, err := client.MachinePolicies.GetByPartialName(MachinePolicyName)
+    machinePolicyQuery := octopusdeploy.MachinePoliciesQuery {
+		PartialName: MachinePolicyName,
+	}
+
+	machinePolicies, err := client.MachinePolicies.Get(machinePolicyQuery)
 
 	if err != nil {
 		log.Println(err)
 	}
+	
+	if len(machinePolicies.Items) == machinePolicies.ItemsPerPage {
+		// call again
+		machinePolicy := GetMachinePolicy(octopusURL, APIKey, space, MachinePolicyName, (skip + len(machinePolicies.Items)))
 
-	for i := 0; i < len(machinePolicies); i++ {
-		if machinePolicies[i].Name == MachinePolicyName {
-			return machinePolicies[i]
+		if machinePolicy != nil {
+			return machinePolicy
+		}
+	} else {
+		// Loop through returned items
+		for _, machinePolicy := range machinePolicies.Items {
+			if machinePolicy.Name == MachinePolicyName {
+				return machinePolicy
+			}
 		}
 	}
-
+    
 	return nil
 }
 
