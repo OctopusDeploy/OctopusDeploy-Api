@@ -85,12 +85,20 @@ func GetEnvironmentIds(client *octopusdeploy.Client, environmentNames []string) 
 	environmentIds := []string{}
 
 	for _, environmentName := range environmentNames {
-		environment, err := client.Environments.GetByName(environmentName)
-		if err != nil {
-			log.Println(err)
-		}
+		environmentsQuery := octopusdeploy.EnvironmentsQuery {
+		    Name: environmentName,		
+	    }  
+		environments, err := client.Environments.Get(environmentsQuery)
+        if err != nil {
+            log.Println(err)
+        }
 
-		environmentIds = append(environmentIds, environment[0].ID)
+        // Loop through results
+        for _, environment := range environments.Items {
+            if environment.Name == environmentName {
+                environmentIds = append(environmentIds, environment.ID)
+            }
+        }
 	}
 
 	return environmentIds

@@ -41,7 +41,7 @@ func main() {
 	template := GetDeploymentProcessTemplate(apiURL, APIKey, space, project, channel)
 
 	// Get environment
-	environment := GetEnvironment(client, environmentName)
+	environment := GetEnvironment(apiURL, APIKey, space, environmentName)
 
     releaseVersion := ""
 
@@ -162,16 +162,23 @@ func GetProject(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, 
 	return nil
 }
 
-func GetEnvironment(client *octopusdeploy.Client, EnvironmentName string) *octopusdeploy.Environment {
-	environments, err := client.Environments.GetByName(EnvironmentName)
+func GetEnvironment(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, environmentName string) *octopusdeploy.Environment {
+	// Get client for space
+	client := octopusAuth(octopusURL, APIKey, space.ID)
 
+	// Get environment
+	environmentsQuery := octopusdeploy.EnvironmentsQuery {
+		Name: environmentName,		
+	}
+	environments, err := client.Environments.Get(environmentsQuery)
 	if err != nil {
 		log.Println(err)
 	}
 
-	for i := 0; i < len(environments); i++ {
-		if environments[i].Name == EnvironmentName {
-			return environments[i]
+	// Loop through results
+	for _, environment := range environments.Items {
+		if environment.Name == environmentName {
+			return environment
 		}
 	}
 
