@@ -89,20 +89,24 @@ func GetProject(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, 
 	// Create client
 	client := octopusAuth(octopusURL, APIKey, space.ID)
 
-	// Get project
-	project, err := client.Projects.GetByName(projectName)
+	projectsQuery := octopusdeploy.ProjectsQuery {
+		Name: projectName,
+	}
+
+	// Get specific project object
+	projects, err := client.Projects.Get(projectsQuery)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	if project != nil {
-		fmt.Println("Retrieved project " + project.Name)
-	} else {
-		fmt.Println("Project " + projectName + " not found!")
+	for _, project := range projects.Items {
+		if project.Name == projectName {
+			return project
+		}
 	}
 
-	return project
+	return nil
 }
 
 func GetProjectVariables(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, project *octopusdeploy.Project) octopusdeploy.VariableSet {

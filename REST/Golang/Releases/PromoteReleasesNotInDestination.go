@@ -35,10 +35,7 @@ func main() {
 	// Loop through projects
 	for _, projectName := range projectNames {
 		// Get the project
-		project, err := client.Projects.GetByName(projectName)
-		if err != nil {
-			log.Println(err)
-		}
+		project := GetProject(apiURL, APIKey, space, projectName)
 
 		fmt.Printf("The project Id for project name %[1]s is %[2]s \n", project.Name, project.ID)
 		fmt.Printf("I have all the Ids I need, I am going to find the most recent successful deployment to %[1]s \n", sourceEnvironment.Name)
@@ -173,6 +170,30 @@ func GetEnvironmentByName(client *octopusdeploy.Client, environmentName string) 
 	for _, environment := range environments {
 		if environment.Name == environmentName {
 			return environment
+		}
+	}
+
+	return nil
+}
+
+func GetProject(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, projectName string) *octopusdeploy.Project {
+	// Create client
+	client := octopusAuth(octopusURL, APIKey, space.ID)
+
+	projectsQuery := octopusdeploy.ProjectsQuery {
+		Name: projectName,
+	}
+
+	// Get specific project object
+	projects, err := client.Projects.Get(projectsQuery)
+
+	if err != nil {
+		log.Println(err)
+	}
+
+	for _, project := range projects.Items {
+		if project.Name == projectName {
+			return project
 		}
 	}
 
