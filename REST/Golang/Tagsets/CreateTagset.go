@@ -26,7 +26,7 @@ func main() {
 	client := octopusAuth(apiURL, APIKey, space.ID)
 
 	// Get tagset
-	tagset := GetTagSet(client, tagsetName)
+	tagset := GetTagSet(apiURL, APIKey, space, tagsetName, 0)
 
 	if tagset == nil {
 		// Create new tagset
@@ -81,13 +81,35 @@ func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdepl
 	return nil
 }
 
-func GetTagSet(client *octopusdeploy.Client, tagsetName string) *octopusdeploy.TagSet {
-	// Get tagsets
-	tagSet, err := client.TagSets.GetByName(tagsetName)
+func GetTagSet(octopusURL *url.URL, APIKey string, space *octopusdeploy.Space, tagsetName string, skip int) *octopusdeploy.TagSet {
+	// Get client for space
+	client := octopusAuth(octopusURL, APIKey, space.ID)
 
+	// Get tagsets
+	tagsetQuery := octopusdeploy.TagSetsQuery {
+		PartialName: tagsetName,
+	}
+
+	tagsets, err := client.TagSets.Get(tagsetQuery)
 	if err != nil {
 		log.Println(err)
 	}
 
-	return tagSet
+	if len(tagsets.Items) == tagsets.ItemsPerPage {
+		// call again
+		tagset := GetTagSet(octopusURL, APIKey, space, tagsetName, (skip + len(tagsets.Items)))
+
+		if tagset != nil {
+			return tagset
+		}
+	} else {
+		// Loop through returned items
+		for _, tagset := range tagsets.Items {
+			if tagset.Name == tagsetName {
+				return tagset
+			}
+		}
+	}
+
+	return nil
 }
