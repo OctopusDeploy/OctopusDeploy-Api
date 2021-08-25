@@ -45,14 +45,24 @@ func octopusAuth(octopusURL *url.URL, APIKey, space string) *octopusdeploy.Clien
 func GetSpace(octopusURL *url.URL, APIKey string, spaceName string) *octopusdeploy.Space {
 	client := octopusAuth(octopusURL, APIKey, "")
 
+	spaceQuery := octopusdeploy.SpacesQuery{
+		Name: spaceName,
+	}
+
 	// Get specific space object
-	space, err := client.Spaces.GetByName(spaceName)
+	spaces, err := client.Spaces.Get(spaceQuery)
 
 	if err != nil {
 		log.Println(err)
 	}
 
-	return space
+	for _, space := range spaces.Items {
+		if space.Name == spaceName {
+			return space
+		}
+	}
+
+	return nil
 }
 
 func UploadPackage(filePath string, url string, APIKey string) {
