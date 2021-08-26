@@ -102,7 +102,7 @@ func GetLibrarySet(octopusURL *url.URL, APIKey string, space *octopusdeploy.Spac
 	client := octopusAuth(octopusURL, APIKey, space.ID)
 
 	librarySetsQuery := octopusdeploy.LibraryVariablesQuery {
-		Name: librarySetName,
+		PartialName: librarySetName,
 	}
 
 	librarySets, err := client.LibraryVariableSets.Get(librarySetsQuery)
