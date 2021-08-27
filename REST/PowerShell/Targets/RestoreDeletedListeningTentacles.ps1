@@ -1,5 +1,5 @@
 $octopusUrl = "https://local.octopusdemos.app"
-$octopusApiKey = "YOUR API KEY"
+$octopusApiKey = "API-DJQXMRUN5C42CBURUVGAS00XKYELGCEA"
 $spaceId = "Spaces-1" 
 $startDate = "2021-07-28"
 $endDate = "2021-08-31"
@@ -145,7 +145,7 @@ foreach ($auditEvent in $recentDeletedTargets.Items)
 
     $oldMachineInformation = $eventDetails.ChangeDetails.DocumentContext
 
-    if ($oldMachineInformation.EndPoint.CommunicationStyle -ne "TentaclePassive")
+    if ($oldMachineInformation.EndPoint.DeploymentTargetType -ne "TentaclePassive")
     {
         Write-OctopusInformation "The target $($oldMachineInformation.Name) is not a listening tentacle, moving onto the next one"
         continue
