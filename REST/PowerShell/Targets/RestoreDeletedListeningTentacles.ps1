@@ -1,5 +1,5 @@
 $octopusUrl = "https://local.octopusdemos.app"
-$octopusApiKey = "API-DJQXMRUN5C42CBURUVGAS00XKYELGCEA"
+$octopusApiKey = "YOUR API KEY"
 $spaceId = "Spaces-1" 
 $startDate = "2021-07-28"
 $endDate = "2021-08-31"
