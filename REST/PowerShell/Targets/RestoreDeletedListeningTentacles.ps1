@@ -150,6 +150,23 @@ foreach ($auditEvent in $recentDeletedTargets.Items)
         Write-OctopusInformation "The target $($oldMachineInformation.Name) is not a listening tentacle, moving onto the next one"
         continue
     }
+
+    $newTenantTag = @()
+
+    foreach ($tenantTag in $oldMachineInformation.TenantTags)
+    {
+        $tenantTagSplit = $tenantTag -split "/"
+        $tagSetId = $tenantTagSplit[0]        
+
+        $tagSet = Invoke-OctopusApi  -octopusUrl $octopusUrl -apiKey $octopusApiKey -endPoint "tagsets/$tagSetId" -method "GET" -item $null -spaceId $oldMachineInformation.SpaceId:
+
+        $matchingTag = $tagSet.Tags | Where-Object { $_.Id -eq $tenantTag }
+
+        if ($null -ne $matchingTag)
+        {
+            $newTenantTag += $matchingTag.CanonicalTagName
+        }
+    }
     
     $newMachineRegistration = @{
         Id = $null        
@@ -172,7 +189,7 @@ foreach ($auditEvent in $recentDeletedTargets.Items)
         Roles = $oldMachineInformation.Roles
         EnvironmentIds = $oldMachineInformation.EnvironmentIds
         TenantIds = $oldMachineInformation.TenantIds
-        TenantTags = $oldMachineInformation.TenantTags
+        TenantTags = $newTenantTag
         TenantedDeploymentParticipation = $oldMachineInformation.TenantedDeploymentParticipation
     }
     
@@ -199,5 +216,3 @@ foreach ($auditEvent in $recentDeletedTargets.Items)
         Write-OctopusInformation "The machine $($oldMachineInformation.Name) already exists.  Skipping."    
     }
 }
-
-
