@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop";
 
 # Define working variables
-$octopusURL = "https://youroctourl/api"
+$octopusURL = "https://youroctourl"
 $octopusAPIKey = "API-YOURAPIKEY"
 $headers = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 
