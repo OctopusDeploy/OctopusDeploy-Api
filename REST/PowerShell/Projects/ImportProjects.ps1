@@ -25,7 +25,7 @@ $importTaskCancelInSeconds=300
 
 $octopusURL = $octopusURL.TrimEnd('/')
 
-# Get Destination Space
+# Get Source Space
 $spaces = Invoke-RestMethod -Uri "$octopusURL/api/spaces?partialName=$([uri]::EscapeDataString($sourceSpaceName))&skip=0&take=100" -Headers $header 
 $space = $spaces.Items | Where-Object { $_.Name -eq $sourceSpaceName }
 $exportTaskSpaceId = $space.Id
