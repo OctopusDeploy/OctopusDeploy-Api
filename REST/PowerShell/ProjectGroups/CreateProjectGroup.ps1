@@ -79,4 +79,4 @@ $projectGroupJson = @{
 }
 
 # Create project group
-Invoke-RestMethod -Method Post -Uri "$octopusURL/api/projectgroups" -Body ($projectGroupJson | ConvertTo-Json -Depth 10) -Headers $header
+Invoke-RestMethod -Method Post -Uri "$octopusURL/api/$($space.Id)/projectgroups" -Body ($projectGroupJson | ConvertTo-Json -Depth 10) -Headers $header
