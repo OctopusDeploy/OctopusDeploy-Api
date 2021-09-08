@@ -48,7 +48,7 @@ function Push-Package([string] $fileName, $package) {
 
     # Upload package
     $upload = $destinationHttpClient.PostAsync("$destinationOctopusURL/api/$destinationSpaceId/packages/raw?replace=false", $content)
-        while (-not $upload.AsyncWaitHandle.WaitOne(10000)) {
+    while (-not $upload.AsyncWaitHandle.WaitOne(10000)) {
         Write-Verbose "Uploading $fileName..."
     }
 
@@ -78,13 +78,27 @@ function Get-Packages([string] $packageId, [int] $batch, [int] $skip) {
 function Get-PackageExists([string] $filename, $package) {
     Write-Host "Checking if $fileName exists in destination..."
     $checkForExistingPackageURL = "$destinationOctopusURL/api/$destinationSpaceId/packages/packages-$($package.Id).$($pkg.Version)" 
-    $checkForExistingPackageResponse =  Invoke-WebRequest -Method Get -Uri $checkForExistingPackageURL -Headers $destinationHeader -SkipHttpErrorCheck 
-    if ($checkForExistingPackageResponse.StatusCode -ne 404) {
-        if ($checkForExistingPackageResponse.StatusCode -eq 200) {
+    $statusCode = 500
+
+    try {
+        if ($PSVersionTable.PSVersion.Major -lt 6) {
+            $checkForExistingPackageResponse = Invoke-WebRequest -Method Get -Uri $checkForExistingPackageURL -Headers $destinationHeader -ErrorAction Stop
+        }
+        else {
+            $checkForExistingPackageResponse = Invoke-WebRequest -Method Get -Uri $checkForExistingPackageURL -Headers $destinationHeader -SkipHttpErrorCheck
+        }
+        $statusCode = [int]$checkForExistingPackageResponse.BaseResponse.StatusCode
+    }
+    catch [System.Net.WebException] { 
+        $statusCode = [int]$_.Exception.Response.StatusCode
+    }
+    if ($statusCode -ne 404) {
+        if ($statusCode -eq 200) {
             Write-Verbose "Package $fileName already exists on the destination. Skipping."
             return $true;
-        } else {
-            Write-Error "Unexpected status code $($checkForExistingPackageResponse.StatusCode) returned from $checkForExistingPackageURL"
+        }
+        else {
+            Write-Error "Unexpected status code $($statusCode) returned from $checkForExistingPackageURL"
         }
     } 
     return $false;
@@ -111,10 +125,10 @@ $destinationSpaceName = $destinationSpace
 
 # Get spaces
 $sourceHeader = @{ "X-Octopus-ApiKey" = $sourceOctopusAPIKey }
-$sourceSpaceId = ((Invoke-RestMethod -Method Get -Uri "$sourceOctopusURL/api/spaces/all" -Headers $sourceHeader) | Where-Object {$_.Name -eq $sourceSpaceName}).Id
+$sourceSpaceId = ((Invoke-RestMethod -Method Get -Uri "$sourceOctopusURL/api/spaces/all" -Headers $sourceHeader) | Where-Object { $_.Name -eq $sourceSpaceName }).Id
 
 $destinationHeader = @{ "X-Octopus-ApiKey" = $destinationOctopusAPIKey }
-$destinationSpaceId = ((Invoke-RestMethod -Method Get -Uri "$destinationOctopusURL/api/spaces/all" -Headers $destinationHeader) | Where-Object {$_.Name -eq $destinationSpaceName}).Id
+$destinationSpaceId = ((Invoke-RestMethod -Method Get -Uri "$destinationOctopusURL/api/spaces/all" -Headers $destinationHeader) | Where-Object { $_.Name -eq $destinationSpaceName }).Id
 
 # Create HTTP clients 
 $httpClientTimeoutInMinutes = 60
@@ -134,16 +148,16 @@ Write-Host "Syncing packages between $sourceOctopusURL and $destinationOctopusUR
 $packages = Get-Content -Path $PackageListFilePath | ConvertFrom-Json
 
 # Iterate supplied package IDs
-foreach($package in $packages) {
+foreach ($package in $packages) {
     Write-Host "Syncing $($package.Id) packages (published after $cutoffDate)"
     $processedPackageCount = 0
-    $skip=0;
+    $skip = 0;
     $batchSize = 100;
     
     if ($VersionSelection -eq 'AllVersions') {
         do {
             $packagesResponse = Get-Packages $package.Id $batchSize $skip
-            foreach($pkg in $packagesResponse.Items) {
+            foreach ($pkg in $packagesResponse.Items) {
                 Write-Host "Processing $($pkg.PackageId).$($pkg.Version)"
                 $fileName = "$($pkg.PackageId).$($pkg.Version)$($pkg.FileExtension)"
                 
@@ -151,7 +165,8 @@ foreach($package in $packages) {
                     if (Get-PackageExists $fileName $package) {
                         $processedPackageCount++
                         continue;
-                    } else {
+                    }
+                    else {
                         Push-Package $fileName $pkg
                         $processedPackageCount++ 
                         $totalSyncedPackageCount++ 
@@ -175,7 +190,8 @@ foreach($package in $packages) {
                 if (Get-PackageExists $fileName $package) {
                     $processedPackageCount++
                     continue;
-                } else {
+                }
+                else {
                     Push-Package $fileName $pkg
                     $processedPackageCount++ 
                     $totalSyncedPackageCount++ 
@@ -198,7 +214,8 @@ foreach($package in $packages) {
                         if (Get-PackageExists $fileName $package) {
                             $processedPackageCount++
                             continue;
-                        } else {
+                        }
+                        else {
                             Push-Package $fileName $pkg
                             $processedPackageCount++ 
                             $totalSyncedPackageCount++ 
