@@ -4,7 +4,7 @@ param (
     [ValidateSet("FileVersions", "LatestVersion", "AllVersions")]
     [string] $VersionSelection = "FileVersions",
 
-    [Parameter()]
+    [Parameter(Mandatory)]
     [string] $PackageListFilePath,
 
     [Parameter(Mandatory)]
