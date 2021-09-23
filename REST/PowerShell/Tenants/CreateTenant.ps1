@@ -49,4 +49,4 @@ $jsonPayload = @{
 }
 
 # Create tenant
-Invoke-RestMethod -Method Post -Uri "$octopusURL/api/$($space.Id)/tenants" -Body $jsonPayload -Headers $header -ContentType "application/json"
+Invoke-RestMethod -Method Post -Uri "$octopusURL/api/$($space.Id)/tenants" -Body ($jsonPayload | ConvertTo-Json -Depth 10) -Headers $header -ContentType "application/json"
