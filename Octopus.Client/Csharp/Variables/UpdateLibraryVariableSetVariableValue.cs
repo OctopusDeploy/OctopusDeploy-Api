@@ -29,7 +29,7 @@ if (null == librarySet)
 }
 
 // Get the variable set
-var variableSet = repository.VariableSets.Get(librarySet.VariableSetId);
+var variableSet = repositoryForSpace.VariableSets.Get(librarySet.VariableSetId);
 
 // Update the variable
 variableSet.Variables.FirstOrDefault(v => v.Name == variableName).Value = variableValue;
