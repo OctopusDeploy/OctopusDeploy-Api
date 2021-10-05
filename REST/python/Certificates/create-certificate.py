@@ -48,7 +48,7 @@ certificate = {
         'HasValue': True,
         'NewValue': certificate_base64
     },
-    'Password': {
+    'password': {
         'HasValue': True,
         'NewValue': certificate_file_password
     },

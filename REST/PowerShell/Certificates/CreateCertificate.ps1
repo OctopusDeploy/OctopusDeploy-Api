@@ -31,7 +31,7 @@ $jsonPayload = @{
         HasValue = $true
         NewValue = $certificateContent
     }
-    Password = @{
+    password = @{
         HasValue = $true
         NewValue = $certificatePfxPassword
     }
