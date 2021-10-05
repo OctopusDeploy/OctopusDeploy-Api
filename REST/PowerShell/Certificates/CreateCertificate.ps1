@@ -27,7 +27,7 @@ $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Heade
 $jsonPayload = @{
     Name = $certificateName
     Notes = $certificateNotes
-    CertificateData = @{
+    certificateData = @{
         HasValue = $true
         NewValue = $certificateContent
     }

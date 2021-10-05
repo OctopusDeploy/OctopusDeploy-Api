@@ -61,7 +61,7 @@ test = certificate_base64.decode()
 
 # Create json for upload
 replacement_certificate = {
-    'CertificateData':  certificate_base64.decode().strip(),
+    'certificateData':  certificate_base64.decode().strip(),
     'Password': certificate_file_password
 }
 

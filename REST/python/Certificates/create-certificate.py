@@ -44,7 +44,7 @@ tenant_ids = [tenant['Id'] for tenant in tenants if tenant['Name'] in certificat
 certificate = {
     'Name': certificate_name,
     'Notes': certificate_notes,
-    'CertificateData': {
+    'certificateData': {
         'HasValue': True,
         'NewValue': certificate_base64
     },
