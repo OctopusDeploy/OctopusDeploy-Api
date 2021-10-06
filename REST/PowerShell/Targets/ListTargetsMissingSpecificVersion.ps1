@@ -19,6 +19,7 @@ $returnMachineTasks = 100       #Number of machine tasks to return
 # Add key to header object for api call
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 
+
 # Get environment list, grab environment id for named environment
 $allEnvironments = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/environments" -Headers $header)
 $environmentItem = $allEnvironments.Items | where-object { $_.Name -eq $targetEnvironment }
@@ -38,52 +39,75 @@ $release = $items | Where-Object { $_.Version -EQ $releaseVersion }
 $deploymentDetails = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($Release.SpaceId)/releases/$($Release.Id)/deployments/preview/$($environmentId)?includeDisabledSteps=true" -Headers $header)
 $deploymentStepsInRole = $deploymentDetails.StepsToExecute  | Where-Object { $_.Roles -Contains $role }
 
-# Instantiate object to hold iterative machine list
-$targetMachines = New-Object System.Collections.Generic.List[System.Object]
-
-# Extract machines from steps
+# Populate hash with list of initial target machines
+$targetMachines = @{}
 Foreach ($step in $deploymentStepsInRole) {
-    $targetMachines.Add($step.Machines.Id)
+    $machineList = $Step.machines
+    foreach ($mach in $machineList) {
+        if ($targetMachines.contains($mach.Id)) {
+            continue
+        }
+        else {
+            $targetMachines.Add($mach.Id, $mach.Name)
+        }
+    }
 }
 
-# Deduplicate list
-$targetMachines = $targetMachines | select-object -Unique
+Write-Output "Initial targets: $($targetMachines.Count)"
 
 # Get task ID's for each deployment to check completion status
 $releaseDeployments = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/releases/$($Release.Id)/deployments?skip=0&take=100" -Headers $header)
 $releaseDeployment = $releaseDeployments.Items | where-object { $_.EnvironmentId -eq $environmentId }
 
 # Create server task list object of successful deployments. Use as base for machine task comparison
+
 $serverTaskIds = New-Object System.Collections.Generic.List[System.Object]
 
 # Query task endpoint for success - for each success get task Id and add to server task list
 ForEach ($deployment in $releaseDeployment) {
+        
     $taskId = $deployment.TaskId
     $serverTaskDetail = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/tasks/$taskId" -Headers $header) 
+    #$serverTaskDetail 
     If ($serverTaskDetail.State -eq "Success") {
         $serverTaskIds.add($serverTaskDetail.Id)
     }
 }
 
-# List objects for comparison and result
+$startTime = Get-Date
 $machineTaskIds = New-Object System.Collections.Generic.List[System.Object]
-$missedTargets = New-Object System.Collections.Generic.List[System.Object]
+$missedTargets = @{}
+$receivedTargets = @{}
+$returnMachineTasks = 100  
 # Machine specific tasks
-Foreach ($machine in $targetMachines) {
-    $machineTasks = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/machines/$machine/tasks?skip=0&take=$returnMachineTasks" -Headers $header).Items
+Foreach ($machine in $targetMachines.GetEnumerator()) {
+    Write-Output "Processing tasks for $($machine.Value)"
+    #$machineTaskIds = New-Object System.Collections.Generic.List[System.Object]
+    $machineTasks = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/machines/$($machine.name)/tasks?skip=0&take=$returnMachineTasks" -Headers $header).Items
     Foreach ($task in $machinetasks) {
         $machineTaskIds.Add($task.Id)
     }
-     
+    
+
     # Use server task Id list (smaller) to poll machine task ids
     Foreach ($serverTask in $serverTaskIds) {
         $taskComparison = Compare-Object $machineTaskIds $serverTask -IncludeEqual | Where-Object { $_.SideIndicator -eq '=>' }
         If ($null -ne $taskComparison) {
-            $missedTargets.Add($machine)
+            $missedTargets.set_item($machine.Name, $machine.Value)
+        }
+        else {
+            $receivedTargets.set_item($machine.Name, $machine.Value)            
         }
     }
-    $machineTaskIds.Clear()   
-} 
+    $machineTaskIds.Clear()
+        
+}
+$endTime = Get-Date  
+$processTime = New-TimeSpan -Start $startTime -End $endTime
 
-# Output contents of result object
-$missedTargets
+Write-Output "Processing Time: $processTime"
+
+# Output contents of result objects
+Write-output "Missed Targets: " $missedTargets.count $missedTargets
+Write-output "------------------------------------"
+Write-output "Received Targets: " $receivedTargets.count $receivedTargets
