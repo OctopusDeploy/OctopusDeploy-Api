@@ -1,3 +1,9 @@
+# This script demonstrates how to programmatically swap an Octopus user's Active Directory login record for a matching LDAP one.
+# This can be useful when you are migrating from the Active Directory authentication provider to the LDAP provider.
+#
+# NOTE: The script won't work if the LDAP server and the AD Server domains are different
+#       e.g. from "domain-one.local" to "domain-two.local"
+
 $ErrorActionPreference = "Stop"
 
 $octopusURL = "https://your.octopus.app" # Replace with your instance URL
@@ -12,6 +18,10 @@ $AD_Domain = "your-ad-domain.com"
 
 # Provide the domain for LDAP. Typically this is the same as the AD_Domain value.
 $LDAP_Domain = "your-ldap-domain.com"
+
+# If set to $True  -> the script will search for a matching user in LDAP using the format: username@$LDAP_Domain
+# If set to $False -> the script will search for a matching user in LDAP using the format: username
+$LDAP_UsernameLookup_IncludeDomain = $True
 
 # Set this to $False if you want the Script to perform the update on Octopus Users.
 $WhatIf = $True
@@ -97,7 +107,12 @@ while ($True) {
                 elseif ($userRecordToUpdate.Username -like "*`\*") {
                     $userNameToLookUp = ($userRecordToUpdate.Username -Split "\\")[1]
                 }
-                $expectedMatch = "$($userNameToLookUp)@$LDAP_Domain"
+
+                $expectedMatch = "$userNameToLookUp"
+                If ($LDAP_UsernameLookup_IncludeDomain -eq $True) {
+                    $expectedMatch = "$($userNameToLookUp)@$($LDAP_Domain)"
+                }
+
                 $ldapMatchFound = $False
 
                 Write-Host "Looking up the LDAP account $userNameToLookup in Octopus Deploy"
@@ -193,5 +208,4 @@ while ($True) {
         Write-Error "An error occurred with user: $($user.Username) - $($_.Exception.ToString())"
         break;
     }
-    
 }
