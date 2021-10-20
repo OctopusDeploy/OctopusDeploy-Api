@@ -8,13 +8,13 @@ $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 $maxRecordsToUpdate = 1
 
 # Provide the domain. This is needed to find the user AD identity (to potentially remove)
-$AD_Domain = "domain.local"
+$AD_Domain = "your-ad-domain.com"
 
 # Provide the domain for LDAP. Typically this is the same as the AD_Domain value.
-$LDAP_Domain = "domain.local"
+$LDAP_Domain = "your-ldap-domain.com"
 
 # Set this to $False if you want the Script to perform the update on Octopus Users.
-$WhatIf = $False
+$WhatIf = $True
 
 # Set this to $True if you want the Script to remove old Active Directory records once the LDAP user has been found and added.
 $RemoveActiveDirectoryRecords = $False
