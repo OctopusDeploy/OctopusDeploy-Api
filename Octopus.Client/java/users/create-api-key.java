@@ -1,18 +1,18 @@
 import com.octopus.sdk.Repository;
-import com.octopus.sdk.domain.ProjectGroup;
-import com.octopus.sdk.domain.Space;
+import com.octopus.sdk.api.ApiKeyApi;
+import com.octopus.sdk.domain.User;
 import com.octopus.sdk.http.ConnectData;
 import com.octopus.sdk.http.OctopusClient;
 import com.octopus.sdk.http.OctopusClientFactory;
-import com.octopus.sdk.model.projectgroup.ProjectGroupResource;
+import com.octopus.sdk.model.apikey.ApiKeyCreatedResource;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
-import java.util.Optional;
+import java.time.OffsetDateTime;
 
-public class CreateProjectGroup {
+public class CreateApiKey {
 
   static final String octopusServerUrl = "http://localhost:8065";
   // as read from your profile in your Octopus Deploy server
@@ -20,18 +20,16 @@ public class CreateProjectGroup {
 
   public static void main(final String... args) throws IOException {
     final OctopusClient client = createClient();
-
     final Repository repo = new Repository(client);
-    final Optional<Space> space = repo.spaces().getByName("TheSpaceName");
 
-    if (!space.isPresent()) {
-      System.out.println("No space named 'TheSpaceName' exists on server");
-      return;
-    }
-    final ProjectGroupResource projectGroupResource =
-        new ProjectGroupResource("TheProjectGroupName");
-    final ProjectGroup createdProjectGroup =
-        space.get().projectGroups().create(projectGroupResource);
+    final User theUser = repo.users().getCurrentUser();
+
+    final ApiKeyApi apiKeyApi = ApiKeyApi.create(client, theUser.getProperties());
+    final ApiKeyCreatedResource apiKey =
+        apiKeyApi.addApiKey("For Use In testing", OffsetDateTime.now().plus(Duration.ofDays(365)));
+
+    // Api keys should not be logged to output in production systems
+    System.out.println("The Key is " + apiKey.getApiKey());
   }
 
   // Create an authenticated connection to your Octopus Deploy Server
