@@ -1,11 +1,10 @@
-$OctopusURL = "YOUR INSTANCE URL" #example: https://samples.octopus.app
-$SpaceName = "YOUR SPACE NAME" 
-$APIKey = "YOUR API KEY"
-$projectName = "YOUR PROJECT NAME"
-$releaseVersion = "YOUR RELEASE VERSION"
-$environmentName = "YOUR ENVIRONMENT NAME"
-$fileDownloadPath = "LOCATION FOR DOWNLOADED ARTIFACT"
-$fileNameForOctopus = "NAME FOR OCTOPUS" ## Must include file extension in name!
+$OctopusURL = "https://your.octopus.app" #example: https://samples.octopus.app
+$SpaceName = "Default" 
+$APIKey = "API-YOUR-KEY"
+$projectName = "Project Name"
+$releaseVersion = "0.0.1"
+$environmentName = "Development"
+$fileNameForOctopus = "FileNameAsStoredInOctopus.txt" ## Must include file extension in name!
 
 $header = @{ "X-Octopus-ApiKey" = $APIKey }
 
@@ -43,10 +42,13 @@ $serverTaskId = $deploymentToUse.TaskId
 Write-Host "The server task id of the most recent deployment to $environmentName for release $releaseVersion is $serverTaskId"
 
 $artifactList = Invoke-RestMethod -Method Get -Uri "$OctopusUrl/api/$spaceId/artifacts?regarding=$serverTaskId" -Headers $header
-$artifact = $artifactList.Items | Where-Object {$_.Filename -eq $fileNameForOctopus}
+$artifacts = @($artifactList.Items | Where-Object {$_.Filename -eq $fileNameForOctopus})
+if($artifacts.Length -gt 1) {
+    Write-Warning "More than one file found that matched filename: $fileNameForOctopus. Only the first match will be deleted."
+}
+$artifact = $artifacts | Select-Object -First 1
 $artifactId = $artifact.Id
 Write-Host "Found $artifactId that matches expected file name $filenameForOctopus"
 
-Write-Host "Getting file content"
-Invoke-RestMethod -Method Get -Uri "$OctopusUrl/api/$spaceId/artifacts/$artifactId/content" -Headers $header -OutFile $fileDownloadPath
-Write-Host "File content written to $fileDownloadPath"
+Write-Host "Invoking delete"
+Invoke-RestMethod -Method Delete -Uri "$OctopusUrl/api/$spaceId/artifacts/$artifactId" -Headers $header | Out-Null

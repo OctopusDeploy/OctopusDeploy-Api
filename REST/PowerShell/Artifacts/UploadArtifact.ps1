@@ -1,6 +1,6 @@
 ﻿Add-Type -AssemblyName System.Net.Http
 
-$OctopusURL = "YOUR INSTANCE URL" #example: https://octopus.samples.app
+$OctopusURL = "YOUR INSTANCE URL" #example: https://samples.octopus.app
 $SpaceName = "YOUR SPACE NAME" 
 $APIKey = "YOUR API KEY"
 $projectName = "YOUR PROJECT NAME"
