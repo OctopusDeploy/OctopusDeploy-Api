@@ -185,7 +185,7 @@ Function Modify-Scope {
         #If the role passed was an array, add them all
         if ($VariableRoleScope -is [array]){
             foreach ($role in $VariableRoleScope){
-                $obj.scope.role += $VariableRoleScope
+                $obj.scope.role += $role
             }
         }
         #If it's not an array, just add the one.
