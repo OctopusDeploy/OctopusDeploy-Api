@@ -215,8 +215,8 @@ Function Modify-Scope {
         $temprolelist = @()
         $tempenvlist = @()
         $tempExistList = @()
-        $envMatchBool = $null
-        $roleMatchBool = $null
+        $envDiffs = $null
+        $roleDiffs= $null
         #create list of environments based on IDs
         foreach($env in $ExistingEnvScope){
             $tempId = $VariableSet.ScopeValues.Environments | Where { $_.Name -eq $env } | Select -First 1
@@ -232,9 +232,9 @@ Function Modify-Scope {
         $tempExistList = $tempExistList | sort
         #test compare
         if ($null -ne $tempenvlist -and $null -ne $tempExistList){
-        $envMatchBool = Compare-Object -ReferenceObject $tempenvlist -DifferenceObject $tempExistList -PassThru
+        $envDiffs = Compare-Object -ReferenceObject $tempenvlist -DifferenceObject $tempExistList -PassThru
         }
-        if ($null -eq $envMatchBool){
+        if ($null -eq $envDiffs){
             $envmatch = $true
         }
         else{
@@ -248,10 +248,10 @@ Function Modify-Scope {
         $ExistingRoleScope = $ExistingRoleScope | sort
 
         if (!$null -eq $temprolelist -and !$null -eq $ExistingRoleScope){
-            $roleMatchBool = Compare-Object -ReferenceObject $temprolelist -DifferenceObject $ExistingRoleScope -PassThru
+            $roleDiffs = Compare-Object -ReferenceObject $temprolelist -DifferenceObject $ExistingRoleScope -PassThru
             }
 
-        if ($null -eq $roleMatchBool){
+        if ($null -eq $roleDiffs){
             $rolematch = $true
         }
         else{
