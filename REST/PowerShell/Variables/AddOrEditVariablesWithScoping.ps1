@@ -231,7 +231,7 @@ Function Modify-Scope {
         $tempenvlist = $tempenvlist | sort
         $tempExistList = $tempExistList | sort
         #test compare
-        if (!$null -eq $tempenvlist -and !$null -eq $tempExistList){
+        if ($null -ne $tempenvlist -and $null -ne $tempExistList){
         $envMatchBool = Compare-Object -ReferenceObject $tempenvlist -DifferenceObject $tempExistList -PassThru
         }
         if ($null -eq $envMatchBool){
