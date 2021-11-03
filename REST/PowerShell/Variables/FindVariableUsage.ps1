@@ -59,7 +59,7 @@ foreach ($project in $projects)
     }
 
     # Check to see if variable is referenced in other project variable values.
-    $matchingValueVariables = $projectVariableSet.Variables | Where-Object {$_.Value -like "*$variableToFind*"}
+    $matchingValueVariables = $projectVariableSet.Variables | Where-Object {$_.Value -like "*#{$variableToFind}*"}
     if($null -ne $matchingValueVariables) {
         foreach($match in $matchingValueVariables) {
             $result = [pscustomobject]@{
