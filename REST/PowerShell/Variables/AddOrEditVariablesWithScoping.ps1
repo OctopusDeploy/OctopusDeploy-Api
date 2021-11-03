@@ -32,7 +32,7 @@ Function Get-SpaceId {
     )
     $spaceName = $Space
     $spaceList = Invoke-RestMethod "$OctopusServerUrl/api/spaces?Name=$spaceName" -Headers @{"X-Octopus-ApiKey" = $ApiKey }
-    $spaceFilter = @($spaceList.Items | Where { $_.Name -eq $spaceName })
+    $spaceFilter = @($spaceList.Items | Where-Object { $_.Name -eq $spaceName })
     $spaceId = $spaceFilter[0].Id
     return $spaceId
 }
@@ -44,7 +44,7 @@ Function Get-EnvironmentId {
         $SpaceId
     )
     $environmentList = Invoke-RestMethod "$OctopusServerUrl/api/$spaceId/environments?skip=0&take=1000&name=$environmentName" -Headers @{"X-Octopus-ApiKey" = $ApiKey }
-    $environmentFilter = @($environmentList.Items | Where { $_.Name -eq $environmentName })
+    $environmentFilter = @($environmentList.Items | Where-Object { $_.Name -eq $environmentName })
     $environmentId = $environmentFilter[0].Id
     return $environmentId
 }
@@ -99,42 +99,42 @@ Function Add-Variable {
     )
     #Create the variable object    
     $obj = New-Object -Type PSObject -Property @{
-        'Name'   = $($VariableName)
-        'Value' = $($VariableValue)
-        'Type' = 'String'
+        'Name'        = $($VariableName)
+        'Value'       = $($VariableValue)
+        'Type'        = 'String'
         'IsSensitive' = $IsSensitive
-        'Scope' = @{
-          'Environment' =@()
-          'Role' =@()
+        'Scope'       = @{
+            'Environment' = @()
+            'Role'        = @()
         }
     }
 
     #Check to see if an environment was passed, add it to the object if it was
-    if ($VariableEnvScope){
+    if ($VariableEnvScope) {
         #If the environment passed was an array, add them all
-        if ($VariableEnvScope -is [array]){
-            foreach ($environment in $variableenvscope){
-                $environmentObj = $VariableSet.ScopeValues.Environments | Where { $_.Name -eq $environment } | Select -First 1
+        if ($VariableEnvScope -is [array]) {
+            foreach ($environment in $variableenvscope) {
+                $environmentObj = $VariableSet.ScopeValues.Environments | Where-Object { $_.Name -eq $environment } | Select-Object -First 1
                 $obj.scope.Environment += $environmentObj.Id
             }
         }
         #If it's not an array, just add the one.
-        else{
-            $environmentObj = $VariableSet.ScopeValues.Environments | Where { $_.Name -eq $VariableEnvScope } | Select -First 1
+        else {
+            $environmentObj = $VariableSet.ScopeValues.Environments | Where-Object { $_.Name -eq $VariableEnvScope } | Select-Object -First 1
             $obj.scope.environment += $environmentObj.Id
         }
     }
 
     #Check to see if a role was passed, add it to the object if it was
-    if ($VariableRoleScope){
+    if ($VariableRoleScope) {
         #If the role passed was an array, add them all
-        if ($VariableRoleScope -is [array]){
-            foreach ($role in $VariableRoleScope){
+        if ($VariableRoleScope -is [array]) {
+            foreach ($role in $VariableRoleScope) {
                 $obj.scope.role += $VariableRoleScope
             }
         }
         #If it's not an array, just add the one.
-        else{
+        else {
             $obj.scope.role += $VariableRoleScope
         }
     }
@@ -150,8 +150,8 @@ Function Remove-Variable {
 
     $tempVars = @()
  
-    foreach ($variable in $VariableSet.Variables){
-        if ($variable.Name -ne $VariableName){
+    foreach ($variable in $VariableSet.Variables) {
+        if ($variable.Name -ne $VariableName) {
             $tempVars += $variable
         }
     }
@@ -171,113 +171,108 @@ Function Modify-Scope {
     $tempVars = @()
     #Create the variable object    
     $obj = New-Object -Type PSObject -Property @{
-        'Name'   = $($VariableName)
-        'Value' = $($VariableValue)
-        'Type' = 'String'
+        'Name'        = $($VariableName)
+        'Value'       = $($VariableValue)
+        'Type'        = 'String'
         'IsSensitive' = $IsSensitive
-        'Scope' = @{
-          'Environment' =@()
-          'Role' =@()
+        'Scope'       = @{
+            'Environment' = @()
+            'Role'        = @()
         }
     }
 
-    if ($VariableRoleScope){
+    if ($VariableRoleScope) {
         #If the role passed was an array, add them all
-        if ($VariableRoleScope -is [array]){
-            foreach ($role in $VariableRoleScope){
+        if ($VariableRoleScope -is [array]) {
+            foreach ($role in $VariableRoleScope) {
                 $obj.scope.role += $role
             }
         }
         #If it's not an array, just add the one.
-        else{
+        else {
             $obj.scope.role += $VariableRoleScope
         }
     }
 
-    if ($VariableEnvScope){
+    if ($VariableEnvScope) {
         #If the environment passed was an array, add them all
-        if ($VariableEnvScope -is [array]){
-            foreach ($environment in $variableenvscope){
-                $environmentObj = $VariableSet.ScopeValues.Environments | Where { $_.Name -eq $environment } | Select -First 1
+        if ($VariableEnvScope -is [array]) {
+            foreach ($environment in $variableenvscope) {
+                $environmentObj = $VariableSet.ScopeValues.Environments | Where-Object { $_.Name -eq $environment } | Select-Object -First 1
                 $obj.scope.Environment += $environmentObj.Id
             }
         }
         #If it's not an array, just add the one.
-        else{
-            $environmentObj = $VariableSet.ScopeValues.Environments | Where { $_.Name -eq $VariableEnvScope } | Select -First 1
+        else {
+            $environmentObj = $VariableSet.ScopeValues.Environments | Where-Object { $_.Name -eq $VariableEnvScope } | Select-Object -First 1
             $obj.scope.environment += $environmentObj.Id
         }
     }
     #iterate each variable to match on the one we want to modify
-    foreach ($variable in $VariableSet.Variables){
+    foreach ($variable in $VariableSet.Variables) {
         $envmatch = $null
         $rolematch = $null
         $temprolelist = @()
         $tempenvlist = @()
         $tempExistList = @()
         $envDiffs = $null
-        $roleDiffs= $null
+        $roleDiffs = $null
         #create list of environments based on IDs
-        foreach($env in $ExistingEnvScope){
-            $tempId = $VariableSet.ScopeValues.Environments | Where { $_.Name -eq $env } | Select -First 1
+        foreach ($env in $ExistingEnvScope) {
+            $tempId = $VariableSet.ScopeValues.Environments | Where-Object { $_.Name -eq $env } | Select-Object -First 1
             $tempExistList += $tempId.Id
         }
 
         #put the scopes in a format we can compare
-        foreach ($env in $variable.Scope.Environment){
+        foreach ($env in $variable.Scope.Environment) {
             $tempenvlist += $env
         }
         #sort to compare
         $tempenvlist = $tempenvlist | sort
         $tempExistList = $tempExistList | sort
         #test compare
-        if ($null -ne $tempenvlist -and $null -ne $tempExistList){
-        $envDiffs = Compare-Object -ReferenceObject $tempenvlist -DifferenceObject $tempExistList -PassThru
+        if ($null -ne $tempenvlist -and $null -ne $tempExistList) {
+            $envDiffs = Compare-Object -ReferenceObject $tempenvlist -DifferenceObject $tempExistList -PassThru
         }
-        if ($null -eq $envDiffs){
-            $envmatch = $true
-        }
-        else{
-            $envmatch = $false
-        }
-        #same as above but for roles
-        foreach ($role in $variable.Scope.Role){
+        
+        $envmatch  =($null -eq $envDiffs)
+        
+        # Same as above but for roles
+        foreach ($role in $variable.Scope.Role) {
             $temprolelist += $role
         }
         $temprolelist = $temprolelist | sort
         $ExistingRoleScope = $ExistingRoleScope | sort
 
-        if (!$null -eq $temprolelist -and !$null -eq $ExistingRoleScope){
+        if (!$null -eq $temprolelist -and !$null -eq $ExistingRoleScope) {
             $roleDiffs = Compare-Object -ReferenceObject $temprolelist -DifferenceObject $ExistingRoleScope -PassThru
-            }
+        }
 
-        if ($null -eq $roleDiffs){
-            $rolematch = $true
-        }
-        else{
-            $rolematch = $false
-        }
-        #if everything matches, add the value from the matched variable and add the dummy variable to the set
-        if (($variable.Name -eq $VariableName) -and ($rolematch) -and ($envmatch)){
+        $rolematch = ($null -eq $roleDiffs)
+
+        # If everything matches, add the value from the matched variable and add the dummy variable to the set
+        if (($variable.Name -eq $VariableName) -and ($rolematch) -and ($envmatch)) {
             $obj.Value = $variable.Value
-            if ($variable.Scope.Machine){
+            
+            # Keep original Machine/Action/Channel/ProcessOwner scopes
+            if ($variable.Scope.Machine) {
                 $obj.Scope.Machine = $variable.Scope.Machine
             }
-            if ($variable.Scope.Action){
+            if ($variable.Scope.Action) {
                 $obj.Scope.Action = $variable.Scope.Action
             }
-            if ($variable.Scope.Channel){
+            if ($variable.Scope.Channel) {
                 $obj.Scope.Channel = $variable.Scope.Channel
             }
-            if ($variable.Scope.ProcessOwner){
+            if ($variable.Scope.ProcessOwner) {
                 $obj.Scope.ProcessOwner = $variable.Scope.ProcessOwner
             }
             $tempVars += $obj
-            }
+        }
         #otherwise add the variable without modifying
         else {
-                $tempVars += $variable
-            }
+            $tempVars += $variable
+        }
     }
 
     $variableset.Variables = $tempVars
@@ -366,7 +361,7 @@ try {
     $jsonBody = $octopusProjectVariables | ConvertTo-Json -Depth 10
     #Write-Host $jsonBody
     # Save the variables to the variable set
-    Invoke-RestMethod -Method "put" -Uri "$OctopusServerUrl/api/$spaceId/variables/$($octopusProjectVariables.Id)" -Body $jsonBody -Headers @{"X-Octopus-ApiKey"=$ApiKey}
+    Invoke-RestMethod -Method "put" -Uri "$OctopusServerUrl/api/$spaceId/variables/$($octopusProjectVariables.Id)" -Body $jsonBody -Headers @{"X-Octopus-ApiKey" = $ApiKey }
     
 
 }
