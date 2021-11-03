@@ -260,8 +260,19 @@ Function Modify-Scope {
         #if everything matches, add the value from the matched variable and add the dummy variable to the set
         if (($variable.Name -eq $VariableName) -and ($rolematch) -and ($envmatch)){
             $obj.Value = $variable.Value
+            if ($variable.Scope.Machine){
+                $obj.Scope.Machine = $variable.Scope.Machine
+            }
+            if ($variable.Scope.Action){
+                $obj.Scope.Action = $variable.Scope.Action
+            }
+            if ($variable.Scope.Channel){
+                $obj.Scope.Channel = $variable.Scope.Channel
+            }
+            if ($variable.Scope.ProcessOwner){
+                $obj.Scope.ProcessOwner = $variable.Scope.ProcessOwner
+            }
             $tempVars += $obj
-            
             }
         #otherwise add the variable without modifying
         else {
