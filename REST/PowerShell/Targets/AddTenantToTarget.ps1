@@ -14,16 +14,23 @@ $tenantNames = @("")
 # Get space
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object { $_.Name -eq $spaceName }
 
-foreach ($machineName in $machineNames) {
-    # Get machine
-    $machine = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/machines/all" -Headers $header) | Where-Object { $_.Name -eq $machineName }
+# Get machines
+$allMachines = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/machines/all" -Headers $header)
 
-    # Add target role
+# Get tenants
+$allTenants = (Invoke-RestMethod -Method Get -Uri "$octopusUrl/api/$($space.Id)/tenants/all" -Headers $header)
+
+foreach ($machineName in $machineNames) {
+    
+    # Get machine
+    $machine = $allMachines | Where-Object { $_.Name -eq $machineName }
+
+    # Update tenanted deployment participation
     $machine.TenantedDeploymentParticipation = $tenantedDeploymentParticipation
 
     foreach ($tenantName in $tenantNames) {
         # Exchange tenant name for tenant ID
-        $tenant = (Invoke-RestMethod -Method Get -Uri "$octopusUrl/api/$($space.Id)/tenants/all" -Headers $header) | Where-Object { $_.name -eq $tenantName }
+        $tenant = $allTenants | Where-Object { $_.name -eq $tenantName }
 
         # Associate tenant ID to deployment target
         $machine.TenantIds += ($tenant.Id)
