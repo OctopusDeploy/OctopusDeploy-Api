@@ -3,7 +3,7 @@ $SpaceName = "YOUR SPACE NAME"
 $APIKey = "YOUR API KEY"
 $header = @{ "X-Octopus-ApiKey" = $APIKey }
 
-$spaceResults = Invoke-RestMethod -Method Get -Uri "$OctopusUrl/api/spaces?partialName=Default" -Headers $header
+$spaceResults = Invoke-RestMethod -Method Get -Uri "$OctopusUrl/api/spaces" -Headers $header
 $spaceToUse = $null
 
 foreach ($space in $spaceResults.Items)
