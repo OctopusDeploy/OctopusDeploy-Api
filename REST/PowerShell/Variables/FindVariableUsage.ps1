@@ -18,6 +18,9 @@ $searchDeploymentProcesses = $True
 # Search through Project's Runbook Processes?
 $searchRunbooksProcesses = $True
 
+# Search through Variable Set values?
+$searchVariableSets = $False
+
 # Optional: set a path to export to csv
 $csvExportPath = ""
 
@@ -139,26 +142,30 @@ foreach ($project in $projects) {
     }
 }
 
-$VariableSets = (Invoke-RestMethod -Method Get "$OctopusURL/api/libraryvariablesets?contentType=Variables" -Headers $header).items
+if ($searchVariableSets -eq $True) { 
 
-foreach ($VariableSet in $VariableSets) {
-    Write-Host "Checking Variable Set: $($VariableSet.Name)"
-    $variables = (Invoke-RestMethod -Method Get "$OctopusURL/$($VariableSet.Links.Variables)" -Headers $header).Variables | Where-Object { $_.Value -like "*#{$variableToFind}*" }
-    $link = ($VariableSet.Links.Self -replace "/api", "app#") -replace "/libraryvariablesets/", "/library/variables/"
-    foreach ($variable in $variables) {
-        $result = [pscustomobject]@{
-            Project           = $null
-            VariableSet       = $VariableSet.Name
-            MatchType         = "Variable Set"
-            Context           = $variable.Name
-            Property          = $null
-            AdditionalContext = $variable.Value
-            Link              = "$octopusURL$($link)"
+    $VariableSets = (Invoke-RestMethod -Method Get "$OctopusURL/api/libraryvariablesets?contentType=Variables" -Headers $header).items
+
+    foreach ($VariableSet in $VariableSets) {
+        Write-Host "Checking Variable Set: $($VariableSet.Name)"
+        $variables = (Invoke-RestMethod -Method Get "$OctopusURL/$($VariableSet.Links.Variables)" -Headers $header).Variables | Where-Object { $_.Value -like "*#{$variableToFind}*" }
+        $link = ($VariableSet.Links.Self -replace "/api", "app#") -replace "/libraryvariablesets/", "/library/variables/"
+        foreach ($variable in $variables) {
+            $result = [pscustomobject]@{
+                Project           = $null
+                VariableSet       = $VariableSet.Name
+                MatchType         = "Variable Set"
+                Context           = $variable.Name
+                Property          = $null
+                AdditionalContext = $variable.Value
+                Link              = "$octopusURL$($link)"
+            }
+
+            # Add and de-dupe later
+            $variableTracking += $result
         }
-
-        # Add and de-dupe later
-        $variableTracking += $result
     }
+
 }
 
 # De-dupe
