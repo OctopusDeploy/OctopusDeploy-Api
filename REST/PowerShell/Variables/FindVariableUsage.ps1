@@ -42,7 +42,7 @@ foreach ($project in $projects) {
     $projectVariableSet = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/variables/$($project.VariableSetId)" -Headers $header
 
     # Check to see if variable is named in project variables.
-    $matchingNamedVariables = $projectVariableSet.Variables | Where-Object { $_.Name -eq "$variableToFind" }
+    $matchingNamedVariables = $projectVariableSet.Variables | Where-Object { $_.Name -ieq "$variableToFind" }
     if ($null -ne $matchingNamedVariables) {
         foreach ($match in $matchingNamedVariables) {
             $result = [pscustomobject]@{
@@ -143,8 +143,7 @@ foreach ($project in $projects) {
 }
 
 if ($searchVariableSets -eq $True) { 
-
-    $VariableSets = (Invoke-RestMethod -Method Get "$OctopusURL/api/libraryvariablesets?contentType=Variables" -Headers $header).items
+    $VariableSets = (Invoke-RestMethod -Method Get "$OctopusURL/api/libraryvariablesets?contentType=Variables" -Headers $header).Items
 
     foreach ($VariableSet in $VariableSets) {
         Write-Host "Checking Variable Set: $($VariableSet.Name)"
@@ -165,7 +164,6 @@ if ($searchVariableSets -eq $True) {
             $variableTracking += $result
         }
     }
-
 }
 
 # De-dupe
