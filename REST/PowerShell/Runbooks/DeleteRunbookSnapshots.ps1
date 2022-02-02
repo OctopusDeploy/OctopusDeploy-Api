@@ -4,18 +4,21 @@ $ErrorActionPreference = "Stop";
 $octopusURL = "https://youroctourl"
 $octopusAPIKey = "API-YOURAPIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
-$spaceName = "default"
+$spaceName = "Default"
 $projectName = "Project_Name"
-$runbookname = "Runbook_Name"
+$runbookName = "Runbook_Name"
 
 # Get space
-$space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
+$spaces = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces?partialName=$([uri]::EscapeDataString($spaceName))&skip=0&take=100" -Headers $header 
+$space = $spaces.Items | Where-Object { $_.Name -eq $spaceName }
 
 # Get project
-$project = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/all" -Headers $header) | Where-Object {$_.Name -eq $projectName}
+$projects = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects?partialName=$([uri]::EscapeDataString($projectName))&skip=0&take=100" -Headers $header 
+$project = $projects.Items | Where-Object { $_.Name -eq $projectName }
 
 # Get runbook
-$runbook = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/runbooks/all" -Headers $header) | Where-Object {($_.Name -eq $runbookname) -and ($_.ProjectId -eq $($project.Id))}
+$runbooks = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/runbooks?partialName=$([uri]::EscapeDataString($runbookName))&skip=0&take=100" -Headers $header 
+$runbook = $runbooks.Items | Where-Object { $_.Name -eq $runbookName }
 
 # Get snapshots for runbook (if not all snapshots are deleted for a particular runbook, increase take=value or run the script again)
 $snapshots = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/runbooks/$($runbook.Id)/runbookSnapshots?take=10000" -Headers $header
