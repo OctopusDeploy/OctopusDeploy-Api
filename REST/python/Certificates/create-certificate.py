@@ -32,6 +32,7 @@ certificate_tenanted_deployment = 'Tenanted'
 
 certificate_data = open(certificate_file_path, 'rb').read()
 certificate_base64 = base64.b64encode(certificate_data)
+certificate_base64 = str(certificate_base64, 'utf-8')
 
 space = get_by_name('{0}/spaces/all'.format(octopus_server_uri), space_name)
 
