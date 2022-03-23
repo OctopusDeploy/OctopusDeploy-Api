@@ -39,7 +39,7 @@ try
         # Get Project template ID
         $variableTemplate = ($project.Templates | Where-Object Name -eq $variableTemplateName | Select-Object -First 1)
         $variableTemplateId = $variableTemplate.Id
-        $variableTemplateIsSensitiveControlType = $variableTemplate.DisplaySettings.{Octopus.ControlType} -eq "Sensitive"
+        $variableTemplateIsSensitiveControlType = $variableTemplate.DisplaySettings["Octopus.ControlType"] -eq "Sensitive"
 
         if($null -ne $variableTemplateId) {
 
