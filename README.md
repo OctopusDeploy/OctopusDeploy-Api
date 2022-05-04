@@ -1,7 +1,13 @@
-## Octopus Deploy API Documentation
+## Octopus Deploy API Examples
 
-_Applies to Octopus Deploy 2.x and above_
+[Octopus Deploy](https://octopus.com/) is a user-friendly automated deployment tool for developers. This GitHub repository exists to provide code snippet samples for various operations in the Octopus REST API. 
 
-[Octopus Deploy](http://octopus.com/) is a user-friendly automated deployment tool for developers. This GitHub repository exists to provide documentation for the **Octopus Deploy** HTTP API. 
+You'll find examples written in a number of languages including:
 
-[Go to the Wiki to learn more.](https://github.com/OctopusDeploy/OctopusDeploy-Api/wiki) 
+- Go
+- Java
+- .NET (C#)
+- PowerShell
+- Python
+
+[Find out more about the Octopus REST API in our documentation](https://octopus.com/docs/octopus-rest-api).
