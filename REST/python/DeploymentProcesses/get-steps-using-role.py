@@ -1,6 +1,6 @@
 import json
 import requests
-octopus_server_uri = 'https://your.octopus.app/api'
+octopus_server_uri = 'https://your.octopus.app/'
 octopus_api_key = 'API-YOURAPIKEY'
 headers = {'X-Octopus-ApiKey': octopus_api_key}
 def get_octopus_resource(uri):
@@ -9,11 +9,15 @@ def get_octopus_resource(uri):
     return json.loads(response.content.decode('utf-8'))
 space_name = 'Default'
 role_name = 'My target role'
-spaces = get_octopus_resource('{0}/spaces/all'.format(octopus_server_uri))
+spaces = get_octopus_resource('{0}/api/spaces/all'.format(octopus_server_uri))
 space = next((x for x in spaces if x['Name'] == space_name), None)
-projects = get_octopus_resource('{0}/{1}/projects/all'.format(octopus_server_uri, space['Id']))
+projects = get_octopus_resource('{0}/api/{1}/projects/all'.format(octopus_server_uri, space['Id']))
 for project in projects:
-    uri = '{0}/{1}/deploymentprocesses/{2}'.format(octopus_server_uri, space['Id'], project['DeploymentProcessId'])
+    deploymentprocess_link = project['Links']['DeploymentProcess']
+    if project['IsVersionControlled'] == True:
+        default_branch = project['PersistenceSettings']['DefaultBranch']
+        deploymentprocess_link = deploymentprocess_link.replace('{gitRef}', default_branch)
+    uri = '{0}{1}'.format(octopus_server_uri, deploymentprocess_link)
     process = get_octopus_resource(uri)
     for step in process['Steps']:
         properties = step['Properties']

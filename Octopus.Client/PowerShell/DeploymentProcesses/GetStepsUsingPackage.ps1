@@ -18,19 +18,16 @@ $projectList = $repositoryForSpace.Projects.GetAll()
 
 "Looking for steps with the package $($packageId) in them..."
 
-foreach($project in $projectList)
-{
-    # Get deployment process    
-    $deploymentProcess = $repositoryForSpace.DeploymentProcesses.Get($project.DeploymentProcessId)
+foreach ($project in $projectList) {
+    
+    $deploymentProcess = $repositoryForSpace.DeploymentProcesses.Get($project)
 
     # Loop through steps
-    foreach ($step in $deploymentProcess.Steps)
-    {
+    foreach ($step in $deploymentProcess.Steps) {
         $packages = $step.Actions.Packages
-        if ($null -ne $packages)
-        {
-            $packageIds = $packages | Where-Object {$_.PackageId -eq $packageId}
-            if($packageIds.Count -gt 0) {
+        if ($null -ne $packages) {
+            $packageIds = $packages | Where-Object { $_.PackageId -eq $packageId }
+            if ($packageIds.Count -gt 0) {
                 Write-Host "Step: $($step.Name) of project: $($project.Name) is using package '$packageId'."
             }
         }

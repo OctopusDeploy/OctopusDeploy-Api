@@ -16,8 +16,16 @@ $projectList = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/
 # Loop through projects
 foreach ($project in $projectList)
 {
-    # Get project deployment process
-    $deploymentProcess = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/deploymentprocesses/$($project.DeploymentProcessId)" -Headers $header
+    $deploymentProcessLink = $project.Links.DeploymentProcess
+    
+    # Check if project is Config-as-Code
+    if ($project.IsVersionControlled) {
+        # Get default Git branch for Config-as-Code project
+        $defaultBranch = $project.PersistenceSettings.DefaultBranch
+        $deploymentProcessLink = $deploymentProcessLink -Replace "{gitRef}", $defaultBranch
+    }
+
+    $deploymentProcess = Invoke-RestMethod -Method Get -Uri "$octopusURL$deploymentProcessLink" -Headers $header
 
     # Get steps
     foreach ($step in $deploymentProcess.Steps)

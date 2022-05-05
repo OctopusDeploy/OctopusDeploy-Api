@@ -30,7 +30,7 @@ try
     foreach (var project in projectList)
     {
         // Get the deployment process
-        var deploymentProcess = repositoryForSpace.DeploymentProcesses.Get(project.DeploymentProcessId);
+        var deploymentProcess = repositoryForSpace.DeploymentProcesses.Get(project);
 
         // Loop through steps
         foreach (var step in deploymentProcess.Steps)

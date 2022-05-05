@@ -23,7 +23,7 @@ $projectList = $repositoryForSpace.Projects.GetAll()
 foreach($project in $projectList)
 {
     # Get deployment process    
-    $deploymentProcess = $repositoryForSpace.DeploymentProcesses.Get($project.DeploymentProcessId)
+    $deploymentProcess = $repositoryForSpace.DeploymentProcesses.Get($project)
 
     # Loop through steps
     foreach ($step in $deploymentProcess.Steps)
