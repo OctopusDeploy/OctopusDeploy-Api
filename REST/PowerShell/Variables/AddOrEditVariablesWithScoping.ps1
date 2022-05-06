@@ -31,7 +31,7 @@ Function Get-SpaceId {
         $Space
     )
     $spaceName = $Space
-    $spaceList = Invoke-RestMethod "$OctopusServerUrl/api/spaces?Name=$spaceName" -Headers @{"X-Octopus-ApiKey" = $ApiKey }
+    $spaceList = Invoke-RestMethod "$OctopusServerUrl/api/spaces?partialName=$([uri]::EscapeDataString($spaceName))&skip=0&take=100" -Headers @{"X-Octopus-ApiKey" = $ApiKey }
     $spaceFilter = @($spaceList.Items | Where-Object { $_.Name -eq $spaceName })
     $spaceId = $spaceFilter[0].Id
     return $spaceId
