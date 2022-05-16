@@ -8,7 +8,7 @@ using Octopus.Client.Model;
 
 // Declare working varibles
 var octopusURL = "http://octotemp";
-var octopusAPIKey = "API-DY8544IVQCQX8JXCGNH4URENNY";
+var octopusAPIKey = "API-KEY";
 string spaceName = "default";
 string[] environmentNames = { "Development", "Production" };
 string[] roles = { "MyRole" };
