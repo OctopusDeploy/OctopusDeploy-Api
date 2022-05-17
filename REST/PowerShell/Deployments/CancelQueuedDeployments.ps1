@@ -9,12 +9,19 @@ $spaceName = "default"
 # Get space
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
 
-# Get tasks
-$tasks = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/tasks" -Headers $header).Items | Where-Object {$_.State -eq "Queued" -and $_.HasBeenPickedUpByProcessor -eq $false -and $_.Name -eq "Deploy"}
+$canContinue = $true
 
-# Loop through tasks
-foreach ($task in $tasks)
+while ($canContinue -eq $true)
 {
-    # Cancel task
-    Invoke-RestMethod -Method Post -Uri "$octopusURL/api/$($space.Id)/tasks/$($task.Id)/cancel" -Headers $header
+    # Get tasks
+    $tasks = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/tasks?States=Queued&Name=Deploy" -Headers $header
+
+    # Loop through tasks
+    foreach ($task in $tasks.Items)
+    {
+        # Cancel task
+        Invoke-RestMethod -Method Post -Uri "$octopusURL/api/$($space.Id)/tasks/$($task.Id)/cancel" -Headers $header
+    }
+
+    $canContinue = $tasks.NumberOfPages -gt 1
 }
