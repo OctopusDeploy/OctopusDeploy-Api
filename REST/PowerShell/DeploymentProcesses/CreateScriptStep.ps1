@@ -46,7 +46,6 @@ $steps += @{
             'Octopus.Action.EnabledFeatures' = ""
             'Octopus.Action.Script.ScriptSource' = "Inline"
             'Octopus.Action.Script.Syntax' = "PowerShell"
-            'Octopus.Action.Script.ScriptFilename' = $null
             'Octopus.Action.Script.ScriptBody' = $scriptBody
         }
         Packages = @()
