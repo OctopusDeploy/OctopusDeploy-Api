@@ -8,6 +8,9 @@ $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 # Optional: include user role details?
 $includeUserRoles = $False
 
+# Optional: include user team details?
+$includeUserTeams = $False
+
 # Optional: include non-active users in output
 $includeNonActiveUsers = $False
 
@@ -35,8 +38,8 @@ if($includeNonActiveUsers -eq $False) {
     $usersList = $usersList | Where-Object {$_.IsActive -eq $True}
 }
 
-# If we are including user roles, need to get team details
-if($includeUserRoles -eq $True) {
+# If we are including user roles or teams, need to get team details
+if ($includeUserRoles -eq $True -or $includeUserTeams -eq $True) {
     $teams = @()
     $response = $null
     do {
@@ -89,9 +92,20 @@ foreach($userRecord in $usersList) {
         $user | Add-Member -MemberType NoteProperty -Name "AAD_DN" -Value $null
         $user | Add-Member -MemberType NoteProperty -Name "AAD_Email" -Value $null
     }
+    
+    $usersTeams = $teams | Where-Object { $_.MemberUserIds -icontains $user.Id }
+
+    if ($includeUserTeams -eq $True) {
+        foreach ($userTeam in $usersTeams) {
+            $associatedTeams += "$($userTeam.Name)"
+
+            if($userTeam -ne ($usersTeams | Select-Object -Last 1)) { $associatedTeams += "|" }
+        }
+        $user | Add-Member -MemberType NoteProperty -Name "UserTeams" -Value ($associatedTeams -Join "|")
+        $associatedTeams = ""
+    }
 
     if($includeUserRoles -eq $True) {
-        $usersTeams = $teams | Where-Object {$_.MemberUserIds -icontains $user.Id}
         foreach($userTeam in $usersTeams) {
             $roles = $userTeam.ScopedUserRoles
             foreach($role in $roles) {
