@@ -1,12 +1,7 @@
-### PowerShell script to get a new user invite using Octopus session cookies.
-
-### Session cookie information (identification and CSRF) can be pulled from the browser by right-clicking an Octopus request in Web Inspector and copying with "Copy as PowerShell".
+### PowerShell script to get a new user invite.
 
 [String]$OctopusDomain="example.octopus.app"
-[String]$OctopusIdentificationTokenName="OctopusIdentificationToken_xxx"
-[String]$OctopusIdentificationTokenValue="OCTOPUS_IDENTIFICATION_TOKEN_VALUE"
-[String]$OctopusCSRFTokenName="Octopus-Csrf-Token_xxx"
-[String]$OctopusCSRFTokenValue="OCTOPUS_CSRF_TOKEN_VALUE"
+[String]$octopusAPIKey = "API-KEY"
 
 $session = New-Object Microsoft.PowerShell.Commands.WebRequestSession
 $session.Cookies.Add((New-Object System.Net.Cookie($OctopusIdentificationTokenName, $OctopusIdentificationTokenValue, "/", $OctopusDomain)))
@@ -19,7 +14,7 @@ Invoke-WebRequest -UseBasicParsing -Uri "https://$OctopusDomain/api/users/invita
   "path"="/api/users/invitations"
   "scheme"="https"
   "accept"="application/json"
-  "x-octopus-csrf-token"="$OctopusCSRFTokenValue"
+  "X-Octopus-ApiKey" = $octopusAPIKey
 } `
 -ContentType "application/json" `
 -Body "{`"AddToTeamIds`":[],`"SpaceId`":null}"
