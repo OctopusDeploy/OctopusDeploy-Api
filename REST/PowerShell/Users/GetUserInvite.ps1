@@ -5,7 +5,6 @@
 
 Invoke-WebRequest -UseBasicParsing -Uri "https://$OctopusDomain/api/users/invitations" `
 -Method "POST" `
--WebSession $session `
 -Headers @{
   "method"="POST"
   "path"="/api/users/invitations"
