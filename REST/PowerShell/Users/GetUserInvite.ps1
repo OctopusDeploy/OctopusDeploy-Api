@@ -1,4 +1,4 @@
-### PowerShell script to get a new user invite.
+### PowerShell script to get a new user invite when using user/pass auth.
 
 [String]$OctopusDomain="example.octopus.app"
 [String]$octopusAPIKey = "API-KEY"
