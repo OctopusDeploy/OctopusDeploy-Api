@@ -7,8 +7,6 @@ Invoke-WebRequest -UseBasicParsing -Uri "$OctopusURL/api/users/invitations" `
 -Method "POST" `
 -Headers @{
   "method"="POST"
-  "path"="/api/users/invitations"
-  "scheme"="https"
   "accept"="application/json"
   "X-Octopus-ApiKey" = $octopusAPIKey
 } `
