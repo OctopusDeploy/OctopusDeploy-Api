@@ -1,9 +1,9 @@
 ### PowerShell script to get a new user invite when using user/pass auth.
 
-[String]$OctopusDomain="example.octopus.app"
+[String]$OctopusURL="https://example.octopus.app"
 [String]$octopusAPIKey = "API-KEY"
 
-Invoke-WebRequest -UseBasicParsing -Uri "https://$OctopusDomain/api/users/invitations" `
+Invoke-WebRequest -UseBasicParsing -Uri "$OctopusURL/api/users/invitations" `
 -Method "POST" `
 -Headers @{
   "method"="POST"
