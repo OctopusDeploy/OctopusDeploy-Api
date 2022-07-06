@@ -17,4 +17,4 @@ SEND_INVITE="true"
 curl "https://octopus.com/invitation" \
   -H "content-type: application/x-www-form-urlencoded" \
   -H "cookie: $COOKIE" \
-  --data-raw "OrganizationId=$OCTOPUS_ORG&LicenseId=$LICENSE_KEY&Email=$NEW_USER_EMAIL&FullName=$NEW_USER_FULLNAME&TargetSystemTeam=$OCTOPUS_TEAM&SendInvite=$SEND_INVITE&__RequestVerificationToken=$RV_TOKEN&SendInvite=false" 
+  --data-raw "OrganizationId=$OCTOPUS_ORG&LicenseId=$LICENSE_KEY&Email=$NEW_USER_EMAIL&FullName=$NEW_USER_FULLNAME&TargetSystemTeam=$OCTOPUS_TEAM&SendInvite=$SEND_INVITE&__RequestVerificationToken=$RV_TOKEN"
