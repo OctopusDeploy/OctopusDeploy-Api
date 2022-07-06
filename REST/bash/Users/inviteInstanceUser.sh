@@ -2,7 +2,8 @@
 
 ## Bash script to programatically invite a new instance user via Octopus.com
 
-# Cookie and token variables can be acquired by inspecting a user invite web request from Octopus.com and copying as a curl request.
+# LICENSE_KEY, OCTOPUS_ORG, COOKIE, and RV_TOKEN variables can be acquired by inspecting a user invite web request from Octopus.com and copying as a curl request.
+# OCTOPUS_TEAM variable can be set to any existing Octopus team.
 
 LICENSE_KEY="licensekeys-xxx"
 OCTOPUS_TEAM="Everyone"
