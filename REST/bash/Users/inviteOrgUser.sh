@@ -2,7 +2,7 @@
 
 ## Bash script to programatically invite a new organization user via Octopus.com
 
-# Cookie and token variables can be acquired by inspecting a user invite web request from Octopus.com and copying as a curl request.
+# OCTOPUS_ORG, COOKIE, and RV_TOKEN variables can be acquired by inspecting a user invite web request from Octopus.com and copying as a curl request.
 
 # User roles: 0 = Billing, 1 = Tech, 2 = Administrator
 
