@@ -20,56 +20,46 @@ $runbooks = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/projects/$($pro
 
 $runbooksNeedingNewSnapshot = @()
 
-foreach($runbook in $runbooks.Items)
-{
+foreach ($runbook in $runbooks.Items) {
     Write-Host "Working on runbook: $($runbook.Name)"
-    if($null -ne $runbook.PublishedRunbookSnapshotId) 
-    {
+    if ($null -ne $runbook.PublishedRunbookSnapshotId) {
         # Get the runbook snapshot
         $runbookSnapshot = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/runbookSnapshots/$($runbook.PublishedRunbookSnapshotId)" -Headers $header)
         
-        if($runbookSnapshot.SelectedPackages.Count -gt 0) 
-        {
+        if ($runbookSnapshot.SelectedPackages.Count -gt 0) {
             # Get Snapshot template to link packages to action/step
             $runbookSnapshotTemplate = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/runbookProcesses/$($runbook.RunbookProcessId)/runbookSnapshotTemplate?runbookSnapshotId=$($runbookSnapshot.Id)" -Headers $header 
-            foreach($package in $runbookSnapshot.SelectedPackages) 
-            {
+            foreach ($package in $runbookSnapshot.SelectedPackages) {
                 # Get packageId from snapshot template
                 $snapshotTemplatePackage = $runbookSnapshotTemplate.Packages | Where-Object { $_.StepName -eq $package.StepName -and $_.ActionName -eq $package.ActionName -and $_.PackageReferenceName -eq $package.PackageReferenceName } | Select-Object -First 1
                 
-                # If package sourced from Built-in repository
-                if($snapshotTemplatePackage.FeedId -eq "feeds-builtin") 
-                {
-                    $snapshotPackageVersion = $package.Version
+                $snapshotPackageVersion = $package.Version
                 
-                    # Get latest package version from built-in feed.
-                    $packages = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/feeds/feeds-builtin/packages/versions?packageId=$($snapshotTemplatePackage.PackageId)&take=1" -Headers $header 
-                    $latestPackage = $packages.Items | Select-Object -First 1
+                # Get latest package version from built-in feed.
+                $packages = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/feeds/$($snapshotTemplatePackage.FeedId)/packages/versions?packageId=$($snapshotTemplatePackage.PackageId)&take=1" -Headers $header 
+                $latestPackage = $packages.Items | Select-Object -First 1
                     
-                    if($latestPackage.Version -ne $snapshotPackageVersion) {
-                        Write-Host "Found package difference for $($snapshotTemplatePackage.PackageId) in runbook snapshot $($runbookSnapshot.Name)"
-                        Write-Host "Snapshot version: $($snapshotPackageVersion), Latest package version: $($latestPackage.Version)"
-                        $runbookDetails = @{
-                            ProjectId = $project.Id
-                            RunbookId = $runbook.Id
-                            RunbookProcessId = $runbook.RunbookProcessId
-                            RunbookSnapshotId = $runbookSnapshot.Id
-                            RunbookName = $runbook.Name
-                        }
-                        $runbooksNeedingNewSnapshot += $runbookDetails
-                        break
+                if ($latestPackage.Version -ne $snapshotPackageVersion) {
+                    Write-Host "Found package difference for $($snapshotTemplatePackage.PackageId) in runbook snapshot $($runbookSnapshot.Name)"
+                    Write-Host "Snapshot version: $($snapshotPackageVersion), Latest package version: $($latestPackage.Version)"
+                    $runbookDetails = @{
+                        ProjectId         = $project.Id
+                        RunbookId         = $runbook.Id
+                        RunbookProcessId  = $runbook.RunbookProcessId
+                        RunbookSnapshotId = $runbookSnapshot.Id
+                        RunbookName       = $runbook.Name
                     }
+                    $runbooksNeedingNewSnapshot += $runbookDetails
+                    break
                 }
             }
         }
     }
 }
 
-if($runbooksNeedingNewSnapshot.Count -gt 0) 
-{
+if ($runbooksNeedingNewSnapshot.Count -gt 0) {
     Write-Host "Found runbooks which need new snapshots"
-    foreach($runbookItem in $runbooksNeedingNewSnapshot) 
-    {
+    foreach ($runbookItem in $runbooksNeedingNewSnapshot) {
         Write-Host "Creating new snapshot for runbook: $($runbookItem.RunbookName)"
 
         # Get a new runbook snapshot template
@@ -77,23 +67,22 @@ if($runbooksNeedingNewSnapshot.Count -gt 0)
 
         # Create a new runbook snapshot
         $body = @{
-            ProjectId = $runbookItem.ProjectId
-            RunbookId = $runbookItem.RunbookId
-            Name = $runbookSnapshotTemplate.NextNameIncrement
-            Notes = $null
+            ProjectId        = $runbookItem.ProjectId
+            RunbookId        = $runbookItem.RunbookId
+            Name             = $runbookSnapshotTemplate.NextNameIncrement
+            Notes            = $null
             SelectedPackages = @()
         }
 
         # Include latest built-in feed packages
-        foreach($package in $runbookSnapshotTemplate.Packages)
-        {
-            if($package.FeedId -eq "feeds-builtin") {
+        foreach ($package in $runbookSnapshotTemplate.Packages) {
+            if ($package.FeedId -eq "feeds-builtin") {
                 # Get latest package version
                 $packages = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/feeds/feeds-builtin/packages/versions?packageId=$($package.PackageId)&take=1" -Headers $header 
                 $latestPackage = $packages.Items | Select-Object -First 1
                 $package = @{
-                    ActionName = $package.ActionName
-                    Version = $latestPackage.Version
+                    ActionName           = $package.ActionName
+                    Version              = $latestPackage.Version
                     PackageReferenceName = $package.PackageReferenceName
                 }
                 
