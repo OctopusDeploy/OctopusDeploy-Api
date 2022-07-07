@@ -25,28 +25,25 @@ $runbookSnapshotTemplate = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/
 
 # Create a runbook snapshot
 $body = @{
-    ProjectId = $project.Id
-    RunbookId = $runbook.Id
-    Name = $runbookSnapshotTemplate.NextNameIncrement
-    Notes = $null
+    ProjectId        = $project.Id
+    RunbookId        = $runbook.Id
+    Name             = $runbookSnapshotTemplate.NextNameIncrement
+    Notes            = $null
     SelectedPackages = @()
 }
 
 # Include latest built-in feed packages
-foreach($package in $runbookSnapshotTemplate.Packages)
-{
-    if($package.FeedId -eq "feeds-builtin") {
-        # Get latest package version
-        $packages = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/feeds/feeds-builtin/packages/versions?packageId=$($package.PackageId)&take=1" -Headers $header 
-        $latestPackage = $packages.Items | Select-Object -First 1
-        $package = @{
-            ActionName = $package.ActionName
-            Version = $latestPackage.Version
-            PackageReferenceName = $package.PackageReferenceName
-        }
-        
-        $body.SelectedPackages += $package
+foreach ($package in $runbookSnapshotTemplate.Packages) {
+    # Get latest package version
+    $packages = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/feeds/$($package.FeedId)/packages/versions?packageId=$($package.PackageId)&take=1" -Headers $header 
+    $latestPackage = $packages.Items | Select-Object -First 1
+    $package = @{
+        ActionName           = $package.ActionName
+        Version              = $latestPackage.Version
+        PackageReferenceName = $package.PackageReferenceName
     }
+        
+    $body.SelectedPackages += $package
 }
 
 $body = $body | ConvertTo-Json -Depth 10
