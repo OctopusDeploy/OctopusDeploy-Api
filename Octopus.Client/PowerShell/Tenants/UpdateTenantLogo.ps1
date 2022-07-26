@@ -97,7 +97,7 @@ function Invoke-OctopusLogoUpload
 Add-Type -Path 'path\to\Octopus.Client.dll'
 
 # Octopus variables
-$yourOctopusUri = "https://your.octopus.url"
+$octopusUri = "https://your.octopus.url"
 # API Key
 $apiKey = "API-AKEY"
 # Enter tenant name
@@ -120,5 +120,5 @@ $repositoryForSpace = [Octopus.Client.OctopusRepositoryExtensions]::ForSpace($re
 # Get tenant Id
 $tenant = $repositoryForSpace.Tenants.FindByName($tenantName)
 
-$uri = "$($yourOctopusUri)/api/$($space.Id)/tenants/$($tenant.Id)/logo"
+$uri = "$($octopusUri)/api/$($space.Id)/tenants/$($tenant.Id)/logo"
 Invoke-OctopusLogoUpload -Uri $uri -InFile $imageFilePath -ApiKey $apiKey
