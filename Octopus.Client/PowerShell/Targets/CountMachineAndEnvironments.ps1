@@ -2,7 +2,7 @@ $apikey = 'XXXXXX' # Get this from your profile
 $OctopusUrl = 'https://OctopusURL/' # Your Octopus Server address
 $spaceName = "Default" # Name of the Space
 ​
-# You can get this dll from your Octopus Server/Tentacle installation directory or from
+# You can get this dll from NuGet
 # https://www.nuget.org/packages/Octopus.Client/
 ​
 Add-Type -Path 'Octopus.Client.dll'
