@@ -1,7 +1,7 @@
 # Note: This script will only work with Octopus 2021.2 and higher.
 # It also requires version 11.3.3355 or higher of the Octopus.Client library
 
-# You can get this dll from your Octopus Server/Tentacle installation directory or from
+# You can get this dll from NuGet
 # https://www.nuget.org/packages/Octopus.Client/
 Add-Type -Path 'path\to\Octopus.Client.dll'
 $octopusURL = "https://your.octopus.app"

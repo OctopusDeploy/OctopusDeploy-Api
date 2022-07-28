@@ -3,7 +3,7 @@ Set-StrictMode -Version Latest;
 
 # Data fix for: http://help.octopusdeploy.com/discussions/problems/51848-variable-with-no-scope
 
-# You can get this dll from your Octopus Server/Tentacle installation directory or from
+# You can get this dll from NuGet
 # https://www.nuget.org/packages/Octopus.Client/
 Add-Type -Path "C:\Program Files\Octopus Deploy\Tentacle\Octopus.Client.dll"
 

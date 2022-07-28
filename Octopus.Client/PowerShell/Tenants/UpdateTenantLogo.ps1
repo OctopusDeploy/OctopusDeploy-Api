@@ -92,7 +92,7 @@ function Invoke-OctopusLogoUpload
     END { }
 }
 
-# You can get this dll from your Octopus Server/Tentacle installation directory or from
+# You can get this dll from NuGet
 # https://www.nuget.org/packages/Octopus.Client/
 Add-Type -Path 'path\to\Octopus.Client.dll'
 
