@@ -47,6 +47,8 @@ var newRunbook = spaceRepo.Runbooks.Create(new RunbookResource()
 	ProjectId = destinationProject.Id,
 	Name = newRunbookName,
 	Description = newRunbookDescription,
+	EnvironmentScope = runbookToClone.EnvironmentScope,
+	RunRetentionPolicy = runbookToClone.RunRetentionPolicy,
 });
 
 
