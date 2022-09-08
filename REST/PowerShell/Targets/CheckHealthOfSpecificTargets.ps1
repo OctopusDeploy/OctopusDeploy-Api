@@ -1,24 +1,16 @@
-﻿Add-Type -Path "" # Path to Newtonsoft.Json.dll 
-Add-Type -Path "" # Path to Octopus.Client.dll 
+#NOTE: This script does not RUN a health check, it only checks the current status of a machine from the latest health check.
 
-$OctopusURL = "" 
-$OctopusAPIKey = "" 
-$MachineName = "" #Machine Display Name 
+# Define working variables
+$OctopusURL = "https://"
+$OctopusAPIKey = "API-"
+$Header = @{ "X-Octopus-ApiKey" = $OctopusAPIKey }
+$SpaceName = ""
+$MachineIDs = @("Machines-501","Machines-991")   #comma separated list of machine ID's that you'd like to check the latest health status of.
 
-$endpoint = new-object Octopus.Client.OctopusServerEndpoint $OctopusURL,$OctopusAPIKey 
-$repository = new-object Octopus.Client.OctopusRepository $endpoint 
-$findmachine = $repository.Machines.FindByName("$MachineName") 
-$machineid = $findmachine.id
+$Space = (Invoke-RestMethod -Method Get -Uri "$OctopusURL/api/spaces/all" -Headers $Header) | Where-Object { $_.Name -eq $SpaceName }
 
-$header = @{ "X-Octopus-ApiKey" = $OctopusAPIKey }
-
-$body = @{ 
-    Name = "Health" 
-    Description = "Checking health of $MachineName" 
-    Arguments = @{ 
-        Timeout= "00:05:00" 
-        MachineIds = @($machineId) #$MachinID could contain an array of machines too
-    } 
-} | ConvertTo-Json
-
-Invoke-RestMethod $OctopusURL/api/tasks -Method Post -Body $body -Headers $header
+Write-Host "`r`n"
+foreach ($machineID in $MachineIDs){
+    $Machine = (Invoke-RestMethod -Method Get -Uri "$OctopusURL/api/$($Space.id)/machines/$($machineID)" -Headers $Header)
+    Write-Host "Machine: $($machine.Name)($($machineID)) `r`n| Disabled: $($machine.IsDisabled) `r`n| Health Status: $($machine.HealthStatus) `r`n| Status Summary: $($machine.StatusSummary)`r`n`r`n"
+}
