@@ -27,8 +27,7 @@ foreach ($machine in $machines.Items) {
         else {
             $machinesToCheck += $machine.Name
         }
-    }
-    
+    }   
 }
 
 Write-Host "Modified machines list: " $modifiedMachines
