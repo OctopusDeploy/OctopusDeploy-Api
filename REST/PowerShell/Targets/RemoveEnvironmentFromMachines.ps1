@@ -26,6 +26,7 @@ foreach ($machine in $machines.Items) {
             Invoke-RestMethod -Method PUT "$OctopusUrl/api/machines/$($machine.Id)" -Headers $header -Body ($machine | ConvertTo-Json -Depth 10)
         }
         else {
+            # Add machine to list of machines with only 1 environment so it can be manually inspected
             $machinesToCheck += $machine.Name
         }
     }   
