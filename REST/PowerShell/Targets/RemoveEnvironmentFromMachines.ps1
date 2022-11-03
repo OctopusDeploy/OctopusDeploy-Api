@@ -13,6 +13,7 @@ $modifiedMachines = @()
 foreach ($machine in $machines.Items) {
     $environmentIds = @()
     if ($machine.EnvironmentIds -contains $environmentIdToRemove) {
+        # Check that > 1 environment is associated with the machine before removing the specific environment or this will fail out
         if (($machine.EnvironmentIds).Count -gt 1) {
             foreach ($environment in $machine.EnvironmentIds) {
                 if ($environment -ne $environmentIdToRemove) {
