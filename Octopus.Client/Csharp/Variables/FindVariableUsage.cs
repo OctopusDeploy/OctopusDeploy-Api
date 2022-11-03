@@ -205,41 +205,36 @@ Console.WriteLine(string.Format("Found {0} results", variableTracking.Count.ToSt
 
 if (variableTracking.Count > 0)
 {
-    if (!string.IsNullOrWhiteSpace(csvExportPath))
-    {
-
-    }
-    
     foreach (var result in variableTracking)
     {
+        System.Collections.Generic.List<string> header = new System.Collections.Generic.List<string>();
         System.Collections.Generic.List<string> row = new System.Collections.Generic.List<string>();
-        bool isFirstRow = false;
-        if (variableTracking.IndexOf(result) == 0)
-        {
-            isFirstRow = true;
-        }
 
-        foreach (var property in result.GetType().GetProperties())
+        var isFirstRow = variableTracking.IndexOf(result) == 0;
+        var properties = result.GetType().GetProperties();
+
+        foreach (var property in properties)
         {
             Console.WriteLine(string.Format("{0}: {1}", property.Name, property.GetValue(result)));
             if (isFirstRow)
             {
-                row.Add(property.Name);
+                header.Add(property.Name);
             }
-            else
-            {
-                row.Add((property.GetValue(result) == null ? string.Empty : property.GetValue(result).ToString()));
-            }
+            row.Add((property.GetValue(result) == null ? string.Empty : property.GetValue(result).ToString()));
         }
 
         if (!string.IsNullOrWhiteSpace(csvExportPath))
         {
             using (System.IO.StreamWriter csvFile = new System.IO.StreamWriter(csvExportPath, true))
             {
-                // Write header
+                if (isFirstRow)
+                {
+                    // Write header
+                    csvFile.WriteLine(string.Join(",", header.ToArray()));
+                }
+                // Write result
                 csvFile.WriteLine(string.Join(",", row.ToArray()));
             }
         }
-
     }
 }
