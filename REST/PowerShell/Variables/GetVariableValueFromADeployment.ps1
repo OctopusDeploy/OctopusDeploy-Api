@@ -8,6 +8,6 @@ $VariableName = "" #Variable name
 ##PROCESS##
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 
-$variable = ((invoke-webrequest $OctopusURL/api/variables/variableset-$DeploymentID -Headers $header).content | ConvertFrom-Json).variables | ?{$_.name -eq $VariableName}
+$variable = (Invoke-RestMethod -Method GET -Uri "$OctopusURL/api/variables/variableset-$DeploymentID" -Headers $header).variables | Where-Object { $_.name -eq $VariableName }
 
 $variable.value
