@@ -4,7 +4,7 @@
 Add-Type -Path "path\to\Octopus.Client.dll"
 
 # Octopus variables
-$octopusURL = "https://youroctourl/api"
+$octopusURL = "https://your.octopus.app"
 $octopusAPIKey = "API-YOURAPIKEY"
 $spaceName = "default"
 $role = "MyRole"

@@ -7,7 +7,7 @@ using Octopus.Client;
 using Octopus.Client.Model;
 
 // Declare working varibles
-var octopusURL = "https://youroctourl";
+var octopusURL = "https://your.octopus.app";
 var octopusAPIKey = "API-YOURAPIKEY";
 string spaceName = "default";
 string role = "MyRole";
