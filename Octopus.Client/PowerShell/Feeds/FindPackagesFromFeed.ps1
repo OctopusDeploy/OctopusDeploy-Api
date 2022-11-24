@@ -41,7 +41,10 @@ try
     $results = $method.Invoke($client, $parameters)
     
     # Print results
-    $results
+    foreach($result in $results.Items)
+    {
+        Write-Host "Package: $($result.PackageId) with version: $($result.Version)"
+    }
 }
 catch
 {
