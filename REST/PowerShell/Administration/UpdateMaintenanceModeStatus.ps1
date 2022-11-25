@@ -8,5 +8,5 @@ $jsonPayload = @{
 
 ##PROCESS##
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
-$MaintenanceConfig = Invoke-WebRequest $OctopusURL/api/maintenanceconfiguration -Method PUT -Body ($jsonPayload | ConvertTo-Json -Depth 10) -Headers $header
+$MaintenanceConfig = Invoke-RestMethod $OctopusURL/api/maintenanceconfiguration -Method PUT -Body ($jsonPayload | ConvertTo-Json -Depth 10) -Headers $header
 Write-host $MaintenanceConfig
