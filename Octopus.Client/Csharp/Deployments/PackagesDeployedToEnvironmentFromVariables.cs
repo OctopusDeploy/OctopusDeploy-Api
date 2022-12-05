@@ -148,7 +148,7 @@ try
             }
             if (!foundPackages)
             {
-                Console.WriteLine($"WARNING: no variables found for package install path for release'{release.Version}'.");
+                Console.WriteLine($"WARNING: no variables found for package install path for release '{release.Version}'.");
             }
         }
     }
