@@ -411,16 +411,16 @@ if ($hasLicenseSummary -eq $true)
 foreach ($spaceId in $spaceIdList)
 {    
     Write-Host "Getting project counts for $spaceId"
-    $projectCount = Get-OctopusObjectCount -endPoint "projects" -spaceId $spaceId -octopusUrl $OctopusDeployUrl -apiKey $OctopusDeployApiKey
+    $activeProjectCount = Get-OctopusObjectCount -endPoint "projects" -spaceId $spaceId -octopusUrl $OctopusDeployUrl -apiKey $OctopusDeployApiKey
 
-    Write-Host "$spaceId has $projectCount active projects."
-    $ObjectCounts.ProjectCount += $projectCountActive
+    Write-Host "$spaceId has $activeProjectCount active projects."
+    $ObjectCounts.ProjectCount += $activeProjectCount
 
     Write-Host "Getting tenant counts for $spaceId"
-    $tenantCount = Get-OctopusObjectCount -endPoint "tenants" -spaceId $spaceId -octopusUrl $OctopusDeployUrl -apiKey $OctopusDeployApiKey
+    $activeTenantCount = Get-OctopusObjectCount -endPoint "tenants" -spaceId $spaceId -octopusUrl $OctopusDeployUrl -apiKey $OctopusDeployApiKey
 
-    Write-Host "$spaceId has $tenantCount tenants."
-    $ObjectCounts.TenantCount += $tenantCount
+    Write-Host "$spaceId has $activeTenantCount tenants."
+    $ObjectCounts.TenantCount += $activeTenantCount
 
     Write-Host "Getting Infrastructure Summary for $spaceId"
     $infrastructureSummary = Get-OctopusDeploymentTargetsCount -spaceId $spaceId -octopusUrl $OctopusDeployUrl -apiKey $OctopusDeployApiKey
