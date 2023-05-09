@@ -1,10 +1,15 @@
+#
+# This script is designed to be used in conjunction with an export created using the Project Export/Import feature within Octopus.
+# - See https://octopus.com/docs/projects/export-import for details on the feature usage
+# - See https://octopus.com/docs/octopus-rest-api/examples/feeds/synchronize-packages for example usages
+#
 [CmdletBinding()]
 param (
     [Parameter()]
     [ValidateSet("FileVersions", "LatestVersion", "AllVersions")]
     [string] $VersionSelection = "FileVersions",
 
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, HelpMessage="See https://octopus.com/docs/octopus-rest-api/examples/feeds/synchronize-packages#usage for example file list structure.")]
     [string] $PackageListFilePath,
 
     [Parameter(Mandatory)]
@@ -25,7 +30,7 @@ param (
     [Parameter()]
     [string] $DestinationSpace = "Default",
 
-    [Parameter()]
+    [Parameter(HelpMessage="Optional cut-off date for a package's published date to be included in the synchronization. Expected data-type is a Date object e.g. 2020-12-16T19:31:25.650+00:00")]
     $CutoffDate = $null
 )
 
