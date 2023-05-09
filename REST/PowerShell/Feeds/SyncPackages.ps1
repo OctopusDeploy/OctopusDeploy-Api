@@ -9,7 +9,7 @@ param (
     [ValidateSet("FileVersions", "LatestVersion", "AllVersions")]
     [string] $VersionSelection = "FileVersions",
 
-    [Parameter(Mandatory)]
+    [Parameter(Mandatory, HelpMessage="See https://octopus.com/docs/octopus-rest-api/examples/feeds/synchronize-packages#usage for example file list structure.")]
     [string] $PackageListFilePath,
 
     [Parameter(Mandatory)]
