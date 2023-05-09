@@ -1,3 +1,8 @@
+#
+# This script is designed to be used in conjunction with an export created using the Project Export/Import feature within Octopus.
+# - See https://octopus.com/docs/projects/export-import for details on the feature usage
+# - See https://octopus.com/docs/octopus-rest-api/examples/feeds/synchronize-packages for example usages
+#
 [CmdletBinding()]
 param (
     [Parameter()]
