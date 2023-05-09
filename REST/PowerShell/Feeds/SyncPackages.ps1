@@ -30,7 +30,7 @@ param (
     [Parameter()]
     [string] $DestinationSpace = "Default",
 
-    [Parameter()]
+    [Parameter(HelpMessage="Optional cut-off date for a package's published date to be included in the synchronization. Expected data-type is a Date object e.g. 2020-12-16T19:31:25.650+00:00")]
     $CutoffDate = $null
 )
 
