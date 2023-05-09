@@ -57,7 +57,7 @@ $CurrentEnv = "" #PUT ENVIRONMENT NAME HERE
 try {
     $headers = @{ "X-Octopus-ApiKey" = $ApiKey }
     $spaceList = Invoke-RestMethod "$OctopusServerUrl/api/spaces/all" -Headers $headers
-    $space = $spaceList.Items | Where-Object { $_.Name -eq $SpaceName }
+    $space = $spaceList | Where-Object { $_.Name -eq $SpaceName }
 
     $url = "$OctopusServerUrl/api/$($space.Id)"
     $headers = @{ "X-Octopus-ApiKey" = $ApiKey }
