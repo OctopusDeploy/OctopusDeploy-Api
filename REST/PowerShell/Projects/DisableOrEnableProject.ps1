@@ -9,7 +9,7 @@ $BypassPrompts = $false # Set to $true if you wish to predefine your parameters
 
 
 # ====== PARAMETERS ======
-If ($BypassPrompts -eq $true) {
+If ($BypassPrompts) {
 	
 	# === Predefined Parameters (Optional) ===
     $OctopusURL = "http://YOUR_OCTOPUS_URL.bla"
@@ -19,7 +19,7 @@ If ($BypassPrompts -eq $true) {
     $ProjectEnabled = $false
 }
 
-If ($BypassPrompts -eq $false) {
+If (!$BypassPrompts) {
 	
 	# === Prompted Parameters ===
 	$OctopusAPIKey = (Read-Host "Enter your Octopus API key (example: `"API-XXXXXXXXXXXXXXXXXX`")").trim('"')
