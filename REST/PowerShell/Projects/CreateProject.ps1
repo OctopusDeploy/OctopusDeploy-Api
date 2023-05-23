@@ -40,7 +40,7 @@ $Header = @{ "X-Octopus-ApiKey" = $OctopusAPIKey }
 # ====== SCRIPT BODY ======
 # Try to GET the ProjectGroupId for $ProjectGroupName
 Try {
-    $ProjectGroup = (Invoke-RestMethod -Method Get "$($OctopusURL)/api/$($SpaceId)/ProjectGroups/all" -Headers $Header) | Where-Object {$_.Name -eq $ProjectGroupName}
+    $ProjectGroup = (Invoke-RestMethod -Method GET "$($OctopusURL)/api/$($SpaceId)/ProjectGroups/all" -Headers $Header) | Where-Object {$_.Name -eq $ProjectGroupName}
     If (!$ProjectGroup) {throw}
 }
 Catch {
@@ -51,7 +51,7 @@ Catch {
 
 # Try to GET the LifecycleId for $LifecycleName
 Try {
-	$Lifecycle = (Invoke-RestMethod -Method Get "$($OctopusURL)/api/$($SpaceId)/Lifecycles/all" -Headers $Header) | Where-Object {$_.Name -eq $LifecycleName}
+	$Lifecycle = (Invoke-RestMethod -Method GET "$($OctopusURL)/api/$($SpaceId)/Lifecycles/all" -Headers $Header) | Where-Object {$_.Name -eq $LifecycleName}
     If (!$Lifecycle) {throw}
 }
 Catch {
@@ -70,10 +70,10 @@ $JsonPayload = @{
 
 # Create Project using $JsonPayload
 Try {
-    $CheckProjName = (Invoke-RestMethod -Method Get -Uri "$($OctopusURL)/api/$($SpaceId)/projects/all"  -Headers $Header) | Where-Object {$_.Name -eq $ProjectName}
+    $CheckProjName = (Invoke-RestMethod -Method GET -Uri "$($OctopusURL)/api/$($SpaceId)/projects/all"  -Headers $Header) | Where-Object {$_.Name -eq $ProjectName}
     If ($CheckProjName) {throw}
     Else {
-        $NewProject = Invoke-RestMethod -Method Post -Uri "$($OctopusURL)/api/$($SpaceId)/projects" -Body ($JsonPayload | ConvertTo-Json -Depth 10) -Headers $Header
+        $NewProject = Invoke-RestMethod -Method POST -Uri "$($OctopusURL)/api/$($SpaceId)/projects" -Body ($JsonPayload | ConvertTo-Json -Depth 10) -Headers $Header
         Write-Host "You may view your new Project at: $($OctopusURL)$($NewProject.Links.Self)"
     }
 }
