@@ -12,11 +12,11 @@ $BypassPrompts = $false # Set to $true if you wish to predefine your parameters
 If ($BypassPrompts) {
 	
 	# === Predefined Parameters (Optional) ===
-    $OctopusURL = "http://YOUR_OCTOPUS_URL.bla"
-    $OctopusAPIKey = "API-XXXXXXXXXXXXXXXXXX"
-    $SpaceId = "Spaces-XX"
-    $ProjectName = "My Project"
-    $NewProjectName = "My New Project Name"
+	$OctopusURL = "http://YOUR_OCTOPUS_URL.bla"
+	$OctopusAPIKey = "API-XXXXXXXXXXXXXXXXXX"
+	$SpaceId = "Spaces-XX"
+	$ProjectName = "My Project"
+	$NewProjectName = "My New Project Name"
 	$ChangeProjectSlug = $true
 }
 
