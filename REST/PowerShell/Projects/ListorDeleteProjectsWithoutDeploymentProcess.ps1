@@ -24,7 +24,6 @@ If ($BypassPrompts) {
     # (4) Delete all Projects with no Deployment Process, ignore any Projects that contain Releases with Deployments
     # (5) Delete all Projects with no Deployment Process, ignore any Projects with Runbooks or that contain Releases with Deployments
     # (6) Create a text file containing the list of Projects
-   	
 }
 
 If (!$BypassPrompts) {
@@ -37,13 +36,15 @@ If (!$BypassPrompts) {
 
 $Header = @{ "X-Octopus-ApiKey" = $OctopusAPIKey }
 
-# Get SpaceIds (if SpaceId = "All")
+# ====== SCRIPT BODY ======
+# Set arrays for later
 $EmptyProjects = @()
 $EmptyProjectsWithRunbooks = @()
 $EmptyProjectsWithDeployments = @()
 $EmptyProjectsWithNeither = @()
 $EmptyProjectsWithBoth = @()
 
+# Find Projects without a Deployment Process in All Spaces
 If ($SpaceId -eq "All") {
     $Spaces = Invoke-RestMethod -Method GET "$($OctopusURL)/api/Spaces/all" -Headers $Header
     Foreach ($Space in $Spaces) {
@@ -92,6 +93,7 @@ If ($SpaceId -eq "All") {
         }
     }
 }
+# Find Projects without a Deployment Process in $SpaceId
 Else {
     Try {
         $SkipSpace = $false
@@ -106,9 +108,11 @@ Else {
         Foreach ($Project in $Projects) {
             $GitRefDPCounter = 0
             Write-Host "Processing $($Project.name) ($($Project.Id))"
+			# Check for a Deployment Process in a normal Project
             If ($Project.PersistenceSettings.Type -eq "Database") {
                 $DeploymentProcess = Invoke-RestMethod -Method GET "$($OctopusURL)$($Project.Links.DeploymentProcess)" -Headers $Header
             }
+			# Check for a Deployment Process in a Git-enabled Project
             If (($Project.PersistenceSettings.Type -eq "VersionControlled") -and ($GitRefDPCounter -eq 0)) {
                 Try {
                 $GitRefList = Invoke-RestMethod -Method GET "$($OctopusURL)/api/Spaces-1/projects/$($Project.Id)/git/branches" -Headers $Header
@@ -136,6 +140,8 @@ Else {
         }
     }
 }
+
+# Check $EmptyProjects for Runbooks and Releases with Deployments
 Foreach ($EmptyProject in $EmptyProjects) {
     $Runbooks = Invoke-RestMethod -Method GET "$($OctopusURL)/api/$($EmptyProject.SpaceId)/Projects/$($EmptyProject.Id)/Runbooks" -Headers $Header
     If ($Runbooks.Items) {
