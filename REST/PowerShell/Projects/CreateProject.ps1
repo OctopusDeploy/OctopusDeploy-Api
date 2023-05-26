@@ -6,7 +6,7 @@
 $ErrorActionPreference = "Stop";
 
 # ====== BYPASS PROMPTS? ======
-$BypassPrompts = $true # Set to $true if you wish to predefine your parameters
+$BypassPrompts = $false # Set to $true if you wish to predefine your parameters
 
 
 # ====== PARAMETERS ======
