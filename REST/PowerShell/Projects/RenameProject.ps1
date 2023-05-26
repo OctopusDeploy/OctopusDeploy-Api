@@ -36,8 +36,10 @@ If (!$BypassPrompts) {
 	If ($ChangeProjectSlugPrompt -eq "N") {$ChangeProjectSlug = $false}
 }
 
+
 $Header = @{ "X-Octopus-ApiKey" = $OctopusAPIKey }
 
+# ====== SCRIPT BODY ======
 # Special character check
 $CheckSpecialChar = $NewProjectName | Select-String '[^ !@#$%^&();`~,.+=\-\w]' -AllMatches | ForEach-Object { $_.Matches.Value }
 If ($CheckSpecialChar) {
