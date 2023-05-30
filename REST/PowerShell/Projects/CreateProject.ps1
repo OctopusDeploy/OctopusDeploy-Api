@@ -69,14 +69,11 @@ $JsonPayload = @{
 }
 
 # Create Project using $JsonPayload
-Try {
-    $CheckProjName = (Invoke-RestMethod -Method GET -Uri "$($OctopusURL)/api/$($SpaceId)/projects/all"  -Headers $Header) | Where-Object {$_.Name -eq $ProjectName}
-    If ($CheckProjName) {throw}
-    Else {
-        $NewProject = Invoke-RestMethod -Method POST -Uri "$($OctopusURL)/api/$($SpaceId)/projects" -Body ($JsonPayload | ConvertTo-Json -Depth 10) -Headers $Header
-        Write-Host "You may view your new Project at: $($OctopusURL)$($NewProject.Links.Self)"
-    }
-}
-Catch {
+$CheckProjName = (Invoke-RestMethod -Method GET -Uri "$($OctopusURL)/api/$($SpaceId)/projects/all"  -Headers $Header) | Where-Object {$_.Name -eq $ProjectName}
+If ($CheckProjName) {
     Write-Warning "A Project with the name `"$($ProjectName)`" already exists in `"$($SpaceId)`". Please choose a Project Name that does not exist in this Space."
+}
+Else {
+    $NewProject = Invoke-RestMethod -Method POST -Uri "$($OctopusURL)/api/$($SpaceId)/projects" -Body ($JsonPayload | ConvertTo-Json -Depth 10) -Headers $Header
+    Write-Host "You may view your new Project at: $($OctopusURL)$($NewProject.Links.Self)"
 }
