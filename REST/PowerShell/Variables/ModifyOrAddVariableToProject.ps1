@@ -6,7 +6,8 @@ function Set-OctopusVariable {
         $spaceName = "Default",                   # Replace with the name of the space you are working in
         $environment = $null,                     # Replace with the name of the environment you want to scope the variables to
         $varName = "",                            # Replace with the name of the variable
-        $varValue = ""                            # Replace with the value of the variable
+        $varValue = "",                           # Replace with the value of the variable
+        $gitRefOrBranchName = $null               # Set this value if you are storing a plain-text variable and the project is version controlled. If no value is set, the default branch will be used.
     )
 
     # Defines header for API call
@@ -19,10 +20,18 @@ function Set-OctopusVariable {
     $project = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/all" -Headers $header) | Where-Object {$_.Name -eq $projectName}
 
     # Get project variables
-    $projectVariables = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/variables/$($project.VariableSetId)" -Headers $header
+    $databaseVariables = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/variables/$($project.VariableSetId)" -Headers $header
+    
+    if($project.IsVersionControlled -eq $true) {
+        if ([string]::IsNullOrWhiteSpace($gitRefOrBranchName)) {
+            $gitRefOrBranchName = $project.PersistenceSettings.DefaultBranch
+            Write-Output "Using $($gitRefOrBranchName) as the gitRef for this operation."
+        }
+        $versionControlledVariables = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/$($gitRefOrBranchName)/variables" -Headers $header
+    }
 
-    # Get environment to scope to
-    $environmentObj = $projectVariables.ScopeValues.Environments | Where { $_.Name -eq $environment } | Select -First 1
+    # Get environment values to scope to
+    $environmentObj = $databaseVariables.ScopeValues.Environments | Where { $_.Name -eq $environment } | Select -First 1
 
     # Define values for variable
     $variable = @{
@@ -35,6 +44,12 @@ function Set-OctopusVariable {
                 $environmentObj.Id
                 )
             }
+    }
+    # Assign the correct variables based on version-controlled project or not
+    $projectVariables = $databaseVariables
+
+    if($project.IsVersionControlled -eq $True -and $variable.IsSensitive -eq $False) {
+        $projectVariables = $versionControlledVariables
     }
 
     # Check to see if variable is already present. If so, removing old version(s).
@@ -56,7 +71,13 @@ function Set-OctopusVariable {
     $projectVariables.Variables += $variable
     
     # Update the collection
-    Invoke-RestMethod -Method Put -Uri "$octopusURL/api/$($space.Id)/variables/$($project.VariableSetId)" -Headers $header -Body ($projectVariables | ConvertTo-Json -Depth 10)
+    if($project.IsVersionControlled -eq $True -and $variable.IsSensitive -eq $False) {
+        Invoke-RestMethod -Method Put -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/$($gitRefOrBranchName)/variables" -Headers $header -Body ($projectVariables | ConvertTo-Json -Depth 10)    
+    }
+    else {
+        Invoke-RestMethod -Method Put -Uri "$octopusURL/api/$($space.Id)/variables/$($project.VariableSetId)" -Headers $header -Body ($projectVariables | ConvertTo-Json -Depth 10)
+    }
+    
 }
 
-Set-OctopusVariable -octopusURL "https://xxx.octopus.app/" -octopusAPIKey "API-xxx" -projectName "hello_world" -varName "name" -varValue "alex" -environment "Production"
+Set-OctopusVariable -octopusURL "https://xxx.octopus.app/" -octopusAPIKey "API-xxx" -projectName "hello_world" -varName "name" -varValue "alex" -environment "Production" -gitRefOrBranchName $null
