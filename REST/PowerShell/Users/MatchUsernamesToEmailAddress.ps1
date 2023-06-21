@@ -30,7 +30,7 @@ Foreach ($User in $Users) {
         }
     }
 }
-Write-Host "The folling User IDs were modified:"
+Write-Host "The following User IDs were modified:"
 $ModifiedUserIds
 Write-Host ""
 
