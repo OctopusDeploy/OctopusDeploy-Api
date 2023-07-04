@@ -329,6 +329,6 @@ If ($NoMatchingProject) {
 If ($UnableToCreate) {
     Write-Warning "Unable to create destination Triggers in $DestinationSpaceId at $DestinationOctopusURL for the following source Triggers:"
     Foreach ($_ in $UnableToCreate) {
-        Write-Host "$($_.Name) ($($_.Id)) via $($_.ProjectId)"
+        Write-Host "$($_.Name) via $($_.ProjectId)"
     }
 }
