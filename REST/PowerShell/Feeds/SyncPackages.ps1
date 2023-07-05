@@ -137,15 +137,15 @@ $destinationSpaceId = ((Invoke-RestMethod -Method Get -Uri "$destinationOctopusU
 
 # Create HTTP clients 
 $httpClientTimeoutInMinutes = 60
-Try { 
-    Add-Type -AssemblyName System.Net.Http
-    $client = [System.Net.Http.HttpClient]::new()
-}
-Catch {
-    Write-Warning "Something went wrong when trying the command:"
-    Write-Warning "Add-Type -AssemblyName System.Net.Http"
-    Write-Warning "`$client = [System.Net.Http.HttpClient]::new()"
-    Write-Host "Continuing..."
+if (-not('System.Net.Http.HttpClient' -as [type])) {
+    try {
+        Write-Warning "System.Net.Http.HttpClient type not found. Trying to load System.Net.Http assembly"
+        Add-Type -AssemblyName System.Net.Http
+    }
+    catch {
+        Write-Error "Can't load required System.Net.Http Assembly!"
+       exit 1
+    }
 }
 $sourceHttpClient = New-Object System.Net.Http.HttpClient
 $sourceHttpClient.DefaultRequestHeaders.Add("X-Octopus-ApiKey", $sourceOctopusAPIKey)
