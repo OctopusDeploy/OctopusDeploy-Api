@@ -106,9 +106,7 @@ function Get-OctopusObjectCount
 
         foreach ($item in $itemList.Items)
         {
-            $hasProperty = Get-Member -InputObject $item -Name "IsDisabled" -MemberType Properties
-
-            if ($hasProperty -eq $true)
+            if ($null -ne (Get-Member -InputObject $item -Name "IsDisabled" -MemberType Properties))
             {          
                 if ($item.IsDisabled -eq $false)
                 {
@@ -382,9 +380,7 @@ if ($hasLicenseSummary -eq $true)
     Write-Host "Checking the license summary for this instance"
     $licenseSummary = Invoke-OctopusApi -endPoint "licenses/licenses-current-status" -octopusUrl $OctopusDeployUrl -spaceId $null -apiKey $OctopusDeployApiKey
 
-    $hasProperty = Get-Member -InputObject $licenseSummary -Name "NumberOfMachines" -MemberType Properties
-
-    if ($hasProperty -eq $true)
+    if ($null -ne (Get-Member -InputObject $licenseSummary -Name "NumberOfMachines" -MemberType Properties))
     {
         $ObjectCounts.LicensedTargetCount = $licenseSummary.NumberOfMachines
     }
@@ -521,11 +517,9 @@ foreach ($spaceId in $spaceIdList)
         $ObjectCounts.ListeningTentacleWorkers += $workerPoolSummary.MachineEndpointSummaries.TentaclePassive
 
         Write-host "$spaceId has $($workerPoolSummary.MachineEndpointSummaries.TentacleActive) Polling Tentacles Workers"
-        $ObjectCounts.PollingTentacleWorkers += $workerPoolSummary.MachineEndpointSummaries.TentacleActive
+        $ObjectCounts.PollingTentacleWorkers += $workerPoolSummary.MachineEndpointSummaries.TentacleActive        
 
-        $hasProperty = Get-Member -InputObject $workerPoolSummary.MachineEndpointSummaries -Name "Ssh" -MemberType Properties
-
-        if ($hasProperty -eq $true)
+        if ($null -ne (Get-Member -InputObject $workerPoolSummary.MachineEndpointSummaries -Name "Ssh" -MemberType Properties))
         {
             Write-host "$spaceId has $($workerPoolSummary.MachineEndpointSummaries.TentacleActive) SSH Targets Workers"
             $ObjectCounts.SshWorkers += $workerPoolSummary.MachineEndpointSummaries.Ssh
