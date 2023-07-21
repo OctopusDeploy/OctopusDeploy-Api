@@ -23,7 +23,7 @@ foreach ($Obj in $Tenant.ProjectEnvironments.PSObject.Properties) {
         foreach ($Environment in $Obj.value) {
                 $EnvironmentIds += $Environment
         }
-    $ProjectEnvironments.Add($Obj.Name,$EnvironmentIds)
+        $ProjectEnvironments.Add($Obj.Name,$EnvironmentIds)
     }
 }
 
