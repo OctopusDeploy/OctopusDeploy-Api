@@ -1,4 +1,4 @@
-$Whatif = $false #set to $true for a dry run where no changes are committed, set to $false to commit changes
+$Whatif = $true #set to $true for a dry run where no changes are committed, set to $false to commit changes
 
 $OctopusAPIKey = "API-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX" 
 $OctopusUrl = "YOUR_OCTOPUS_URL" # No trailing slashes example = "http://octopusinstance.bla"
@@ -23,7 +23,7 @@ foreach ($Obj in $Tenant.ProjectEnvironments.PSObject.Properties) {
         foreach ($Environment in $Obj.value) {
                 $EnvironmentIds += $Environment
         }
-    $ProjectEnvironments.Add($Obj.Name,$EnvironmentIds)
+        $ProjectEnvironments.Add($Obj.Name,$EnvironmentIds)
     }
 }
 
