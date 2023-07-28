@@ -17,7 +17,7 @@ $space = $spaces.Items | Where-Object { $_.Name -ieq $spaceName }
 
 # Get source project
 $sourceProjects = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/projects?partialName=$([uri]::EscapeDataString($sourceProjectName))&skip=0&take=100" -Headers $header 
-$sourceProject = @($sourceProjects.Items | Where-Object { $_.Name -ieq $projectName }) | Select-Object -First 1
+$sourceProject = @($sourceProjects.Items | Where-Object { $_.Name -ieq $sourceProjectName }) | Select-Object -First 1
 
 # Get lifecycle to use
 $lifecycles = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/lifecycles?partialName=$([uri]::EscapeDataString($sourceLifecycleToUse))&skip=0&take=100" -Headers $header 
