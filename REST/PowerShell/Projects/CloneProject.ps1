@@ -17,7 +17,11 @@ $space = $spaces.Items | Where-Object { $_.Name -ieq $spaceName }
 
 # Get source project
 $sourceProjects = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/projects?partialName=$([uri]::EscapeDataString($sourceProjectName))&skip=0&take=100" -Headers $header 
-$sourceProject = @($sourceProjects.Items | Where-Object { $_.Name -ieq $sourceProjectName }) | Select-Object -First 1
+$matchingSourceProjects = @($sourceProjects.Items | Where-Object { $_.Name -ieq $sourceProjectName }) 
+$firstMatchingSourceProject = $matchingSourceProjects | Select-Object -First 1
+if ($matchingSourceProjects.Count -gt 1) {
+    Write-Warning "Multiple projects found matching name $($sourceProjectName), choosing first one ($($firstMatchingSourceProject.Id))"
+}
 
 # Get lifecycle to use
 $lifecycles = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/lifecycles?partialName=$([uri]::EscapeDataString($sourceLifecycleToUse))&skip=0&take=100" -Headers $header 
@@ -29,16 +33,19 @@ if ($matchingLifecycles.Count -gt 1) {
 
 # Get project Group
 $projectGroups = Invoke-RestMethod -Uri "$octopusURL/api/$($space.Id)/projectgroups?partialName=$([uri]::EscapeDataString($destinationProjectGroupName))&skip=0&take=100" -Headers $header 
-$projectGroup = @($projectGroups.Items | Where-Object { $_.Name -ieq $destinationProjectGroupName }) | Select-Object -First 1
-
+$matchingProjectGroups = @($projectGroups.Items | Where-Object { $_.Name -ieq $destinationProjectGroupName }) 
+$firstMatchingProjectGroup = $matchingProjectGroups | Select-Object -First 1
+if ($matchingProjectGroups.Count -gt 1) {
+    Write-Warning "Multiple project groups found matching name $($destinationProjectGroupName), choosing first one ($($firstMatchingProjectGroup.Id))"
+}
 
 # Clone project
 $clonedProjectRequest = @{
     Name           = $destinationProjectName
     Description    = $destinationProjectDescription
     LifecycleId    = $firstMatchingLifecycle.Id
-    ProjectGroupId = $projectGroup.Id
+    ProjectGroupId = $firstMatchingProjectGroup.Id
 }
 
-$newProject = Invoke-RestMethod -Method POST -Uri "$octopusURL/api/$($space.Id)/projects?clone=$($sourceProject.Id)" -Headers $header -Body ($clonedProjectRequest | ConvertTo-Json -Depth 10)
+$newProject = Invoke-RestMethod -Method POST -Uri "$octopusURL/api/$($space.Id)/projects?clone=$($firstMatchingSourceProject.Id)" -Headers $header -Body ($clonedProjectRequest | ConvertTo-Json -Depth 10)
 $newProject
