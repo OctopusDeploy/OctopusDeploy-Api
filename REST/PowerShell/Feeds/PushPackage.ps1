@@ -6,6 +6,7 @@ $octopusAPIKey = "API-YOURAPIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 $spaceName = "default"
 $packageFile = "path\to\package"
+$timeout = New-Object System.TimeSpan(0, 10, 0)
 
 # Load http assembly
 Add-Type -AssemblyName System.Net.Http
@@ -14,6 +15,7 @@ Add-Type -AssemblyName System.Net.Http
 $httpClientHandler = New-Object System.Net.Http.HttpClientHandler
 $httpClient = New-Object System.Net.Http.HttpClient $httpClientHandler
 $httpClient.DefaultRequestHeaders.Add("X-Octopus-ApiKey", $octopusAPIKey)
+$httpClient.Timeout = $timeout
 
 # Get space
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName} 
