@@ -119,7 +119,7 @@ function Update-CategorizedMachines
 
         $categorizedMachines.ActiveMachines += 1
 
-        if ($machine.Status -ne "Online")
+        if ($machine.HealthStatus -eq "Unavailable")
         {
             $categorizedMachines.OfflineMachines += $machine            
         }
