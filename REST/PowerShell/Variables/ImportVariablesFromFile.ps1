@@ -113,7 +113,7 @@ function Get-OctopusItemByName {
 
 # Get space
 $spaceList = Invoke-RestMethod "$octopusURL/api/spaces/all" -Headers $header
-$space = $spaceList.Items | Where-Object { $_.Name -eq $spaceName }
+$space = $spaceList | Where-Object { $_.Name -eq $spaceName }
 
 # Get destination project
 $projectList = Invoke-RestMethod "$octopusURL/api/$($space.Id)/projects/all" -Headers $header
@@ -143,7 +143,7 @@ $destinationData.HasRunbooks = ($destinationData.MajorVersion -ge 2019 -and $des
 
 $destinationVariableSetVariables = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/variables/$destinationProjectVariableSetId" -Headers $header
 $destinationEnvironmentList = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/environments/all" -Headers $header
-$destinationProjectChannelList = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)projects/$($destinationProject.Id)/channels" -Headers $header).Items
+$destinationProjectChannelList = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($destinationProject.Id)/channels" -Headers $header)
 $destinationRunbookList = @()
 
 If ($destinationData.HasRunbooks -eq $True) {
