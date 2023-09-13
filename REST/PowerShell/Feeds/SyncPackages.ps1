@@ -14,6 +14,9 @@ param (
 
     [Parameter(Mandatory)]
     [string] $SourceUrl,
+    
+    [Parameter()]
+    [string] $SourceDownloadUrl = $null,
 
     [Parameter(Mandatory)]
     [string] $SourceApiKey,
@@ -36,8 +39,15 @@ param (
 
 function Push-Package([string] $fileName, $package) {
     Write-Information "Package $fileName does not exist in destination"
-    Write-Verbose "Downloading $fileName..."
-    $download = $sourceHttpClient.GetStreamAsync($sourceOctopusURL + $package.Links.Raw).GetAwaiter().GetResult()
+
+    if ($null -eq $SourceDownloadUrl) {
+        $sourceUrl = $sourceOctopusURL + $package.Links.Raw
+    }else {
+        $sourceUrl = $SourceDownloadUrl + $package.Links.Raw
+    }
+
+    Write-Verbose "Downloading $fileName from $sourceUrl..."
+    $download = $sourceHttpClient.GetStreamAsync($sourceUrl).GetAwaiter().GetResult()
 
     $contentDispositionHeaderValue = New-Object System.Net.Http.Headers.ContentDispositionHeaderValue "form-data"
     $contentDispositionHeaderValue.Name = "fileData"
@@ -52,6 +62,7 @@ function Push-Package([string] $fileName, $package) {
     $content.Add($streamContent)
 
     # Upload package
+    Write-Verbose "Uploading $fileName to $destinationOctopusURL/api/$destinationSpaceId..."
     $upload = $destinationHttpClient.PostAsync("$destinationOctopusURL/api/$destinationSpaceId/packages/raw?replace=false", $content)
     while (-not $upload.AsyncWaitHandle.WaitOne(10000)) {
         Write-Verbose "Uploading $fileName..."
