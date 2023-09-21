@@ -19,7 +19,7 @@ $spaces = Invoke-RestMethod -Uri "$octopusURL/api/spaces?partialName=$([uri]::Es
 $space = $spaces.Items | Where-Object { $_.Name -eq $spaceName }
 
 Write-Host "Looking for library variable set '$libraryVariableSet'"
-$LibraryvariableSets = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/libraryvariablesets?contentType=Variables" -Headers $header)
+$LibraryvariableSets = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/libraryvariablesets?contentType=Variables&skip=0&take=100" -Headers $header)
 $LibraryVariableSet = $LibraryVariableSets.Items | Where-Object { $_.Name -eq $libraryVariableSetName }
 
 if ($null -eq $libraryVariableSet) {
