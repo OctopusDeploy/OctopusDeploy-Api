@@ -35,9 +35,7 @@ foreach ($template in $libraryVariableSets.$librarySetId.Templates) {
 }
 
 # Set variable value on tenant using variable Id from template
-foreach ($templateVariable in $libraryVariableSets.$librarySetId.Variables) {
-    $templateVariable.$variableValueId = $newValue
-}
+$libraryVariableSets.$librarySetId.Variables.$variableValueId = $newValue
 
 # Put modified JSON to update tenant
 Invoke-RestMethod -Method Put -Uri "$octopusURL/api/$($space.Id)/tenants/$($tenant.Id)/variables" -Headers $header -Body ($variables | ConvertTo-Json -Depth 10)
