@@ -460,7 +460,7 @@ foreach ($spaceId in $spaceIdList)
     Write-host "$spaceId has $($infrastructureSummary.ActiveECSClusterCount) Active ECS Cluster Targets"
     $ObjectCounts.ActiveECSClusterCount += $infrastructureSummary.ActiveECSClusterCount
 
-    Write-host "$spaceId has $($infrastructureSummary.ActiveFtpTargets) Active ECS Cluster Targets"
+    Write-host "$spaceId has $($infrastructureSummary.ActiveFtpTargets) Active FTP Targets"
     $ObjectCounts.ActiveFtpTargets += $infrastructureSummary.ActiveFtpTargets
 
     Write-host "$spaceId has $($infrastructureSummary.DisabledListeningTentacleTargets) Disabled Listening Tentacles Targets"
@@ -490,7 +490,7 @@ foreach ($spaceId in $spaceIdList)
     Write-host "$spaceId has $($infrastructureSummary.DisabledECSClusterCount) Disabled ECS Cluster Targets"
     $ObjectCounts.DisabledECSClusterCount += $infrastructureSummary.DisabledECSClusterCount
 
-    Write-host "$spaceId has $($infrastructureSummary.DisabledFtpTargets) Disabled ECS Cluster Targets"
+    Write-host "$spaceId has $($infrastructureSummary.DisabledFtpTargets) Disabled FTP Targets"
     $ObjectCounts.DisabledFtpTargets += $infrastructureSummary.DisabledFtpTargets
 
     if ($hasWorkers -eq $true)
@@ -551,6 +551,7 @@ Write-Host "            Kubernetes Target Count: $($ObjectCounts.ActiveKubernete
 Write-Host "            Azure Web App Target Count: $($ObjectCounts.ActiveAzureWebAppCount)"
 Write-Host "            Azure Service Fabric Cluster Target Count: $($ObjectCounts.ActiveAzureServiceFabricCount)"
 Write-Host "            Azure (Legacy) Cloud Service Target Count: $($ObjectCounts.ActiveAzureCloudServiceCount)"
+Write-Host "            AWS ECS Cluster Target Count: $($ObjectCounts.ActiveECSClusterCount)"
 Write-Host "            Offline Target Count: $($ObjectCounts.ActiveOfflineDropCount)"
 Write-Host "            Cloud Region Target Count: $($ObjectCounts.ActiveCloudRegions)"
 Write-Host "            Ftp Target Count: $($ObjectCounts.ActiveFtpTargets)"
@@ -563,8 +564,10 @@ Write-Host "            Kubernetes Target Count: $($ObjectCounts.DisabledKuberne
 Write-Host "            Azure Web App Target Count: $($ObjectCounts.DisabledAzureWebAppCount)"
 Write-Host "            Azure Service Fabric Cluster Target Count: $($ObjectCounts.DisabledAzureServiceFabricCount)"
 Write-Host "            Azure (Legacy) Cloud Service Target Count: $($ObjectCounts.DisabledAzureCloudServiceCount)"
+Write-Host "            AWS ECS Cluster Target Count: $($ObjectCounts.DisabledECSClusterCount)"
 Write-Host "            Offline Target Count: $($ObjectCounts.DisabledOfflineDropCount)"
 Write-Host "            Cloud Region Target Count: $($ObjectCounts.DisabledCloudRegions)"
+Write-Host "            Ftp Target Count: $($ObjectCounts.DisabledFtpTargets)"
 Write-Host "    Worker Count: $($ObjectCounts.WorkerCount)"
 Write-Host "        Active Workers: $($ObjectCounts.ActiveWorkerCount)" 
 Write-Host "        Unavailable Workers: $($ObjectCounts.UnavailableWorkerCount)"
