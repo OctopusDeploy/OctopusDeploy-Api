@@ -490,7 +490,7 @@ foreach ($spaceId in $spaceIdList)
     Write-host "$spaceId has $($infrastructureSummary.DisabledECSClusterCount) Disabled ECS Cluster Targets"
     $ObjectCounts.DisabledECSClusterCount += $infrastructureSummary.DisabledECSClusterCount
 
-    Write-host "$spaceId has $($infrastructureSummary.DisabledFtpTargets) Disabled ECS Cluster Targets"
+    Write-host "$spaceId has $($infrastructureSummary.DisabledFtpTargets) Disabled FTP Targets"
     $ObjectCounts.DisabledFtpTargets += $infrastructureSummary.DisabledFtpTargets
 
     if ($hasWorkers -eq $true)
