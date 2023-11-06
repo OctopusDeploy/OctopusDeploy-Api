@@ -2,7 +2,7 @@
 
 .SYNOPSIS
 Important: Tested for deployment packages on ProGet (https://inedo.com/proget) NuGet feeds. When
-using with other feed providers, set -DoDeletes $True to test-- it may turn out to be necessary to add a
+using with other feed providers, set -DoDeletes $False to test-- it may turn out to be necessary to add a
 variation of the Get-PackageOnFeed function.
 
 Deletes from one or more feeds any package meeting all of these criteria:
