@@ -6,18 +6,18 @@ using with other feed providers, set -DoDeletes $False to test-- it may turn out
 variation of the Get-PackageOnFeed function.
 
 Deletes from one or more feeds any package meeting all of these criteria:
- - ID in Octopus release(s)
- - version not in Octopus release(s)
+ - ID in Octopus release(s) or runbook snapshot(s)
+ - version not in Octopus release(s) or runbook snapshot(s)
  - published more than a specified timespan ago
 
 Generates a .txt summary. Example:
   Feed 'https://foo.com/nuget/foo/v3/index.json' package counts:
    - 21251 total
    - 64 to retain because published after 11/16/2021 18:04:57 -05:00
-   - 7803 to retain because no version of package ID referenced by any Octopus Release
+   - 7803 to retain because no version of package ID referenced by any Octopus Release or Runbook Snapshot
    - 13384 will now be checked against package versions referenced by Octopus...
-    - 266 to retain because referenced by Octopus Release(s)
-    - 13118 to delete because published more than 720 hours ago and Releases reference other versions of the package's ID but not the package's own version
+    - 266 to retain because referenced by Octopus Release(s) or Runbook Snapshot(s)
+    - 13118 to delete because published more than 720 hours ago and Releases or Runbook Snapshots reference other versions of the package's ID but not the package's own version
   Feed 'https://bar.com/nuget/bar/v3/index.json' package counts:
   [...]
 
@@ -32,11 +32,11 @@ Generates a .csv report with one row for every package version on the specified 
  - HoursSincePublished
  - Delete (TRUE or FALSE)
  - Reason -- one of the following:
-  - "delete because published more than [specified] hours ago and Releases reference other versions of the package's ID but not the package's own version"
+  - "delete because published more than [specified] hours ago and Releases or Runbook Snapshots reference other versions of the package's ID but not the package's own version"
   - "retain because no Release references any version of this package ID"
   - "retain because published within the past 720 hours"
-  - "retain because referenced by Release(s)"
- - ReferencedByReleases ("NA" or newline-separated URLs)
+  - "retain because referenced by Release(s) or Runbook Snapshot(s)"
+ - ReferencedByReleasesOrRunbookSnapshots ("NA" or newline-separated URLs)
 
  Generates a .csv deletions report with one row for every attempted package deletion
  - Author
@@ -112,6 +112,7 @@ None, but generates report files. See Synopsis for details.
 
 #>
 [CmdletBinding()] # Enable -Verbose switch
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseApprovedVerbs', '', Scope='Function')]
 Param(
 	[parameter(Mandatory = $true)][bool]$DoDeletes,
 	[parameter(Mandatory = $true)][hashtable]$FeedApiKeys,
@@ -298,41 +299,53 @@ function Get-InUsePackages {
 	[CmdletBinding()] # Enable -Verbose switch
 	[OutputType('System.Collections.Generic.Dictionary[string, Octopus.Client.Model.PackageResource]')]
 	Param ( 
-		[parameter(Mandatory = $true)][Octopus.Client.Model.ReleaseResource]$Release
+		[parameter(Mandatory = $true)][Octopus.Client.Model.ISnapshotResource]$RunbookSnapshotOrRelease
 	)
 	$packageVersions = @{ }
-	foreach ($selectedPackage in $Release.SelectedPackages) {
+	foreach ($selectedPackage in $RunbookSnapshotOrRelease.SelectedPackages) {
 		$packageVersions[$selectedPackage.ActionName] = $selectedPackage.Version
 	}
 	$headers = @{ "X-Octopus-ApiKey" = $OctopusApiKey }
+	if ([bool]$RunbookSnapshotOrRelease.PSObject.Properties['ProjectDeploymentProcessSnapshotId']) {
+		$snapshotType = 'deploymentprocesses'
+		$processSnapshotId = $RunbookSnapshotOrRelease.ProjectDeploymentProcessSnapshotId
+	} else {
+		$snapshotType = 'runbookProcesses'
+		$processSnapshotId = $RunbookSnapshotOrRelease.FrozenRunbookProcessId
+	}
 	$uri = [string]::Join('/', @(
 			$OctopusUri.TrimEnd('/'), 
-			$Release.SpaceId,
-			'deploymentprocesses', 
-			$Release.ProjectDeploymentProcessSnapshotId)
+			$RunbookSnapshotOrRelease.SpaceId,
+			$snapshotType, 
+			$processSnapshotId)
 	)
 	if (-not (Test-Path variable:script:CachedResponses)) {
 		$script:CachedResponses = @{}
 	}
 	if ($script:CachedResponses.ContainsKey($uri)) {
-		$deploymentProcessSnapshot = $script:CachedResponses[$uri]
+		$processSnapshot = $script:CachedResponses[$uri]
 	} else {
-		#Write-Verbose "Deployment process snaphot URI: $uri"
+		#Write-Verbose "Process snapshot URI: $uri"
 		$progPref = $ProgressPreference
 		$ProgressPreference = 'SilentlyContinue'
-		$deploymentProcessSnapshot = Invoke-RestMethod -Uri $uri -Headers $headers -Method Get -Verbose:$false
+		try {
+			$processSnapshot = Invoke-RestMethod -Uri $uri -Headers $headers -Method Get -Verbose:$false
+		} catch {
+			Write-Warning "Request to process snapshot URI '$uri' failed"
+			throw
+		}
 		$ProgressPreference = $progPref
-		$script:CachedResponses.Add($uri, $deploymentProcessSnapshot)
+		$script:CachedResponses.Add($uri, $processSnapshot)
 	}
 
 	$selectedPackageVersions = New-Object 'System.Collections.Generic.Dictionary[string,Octopus.Client.Model.PackageResource]'
-	foreach ($step in $deploymentProcessSnapshot.Steps) {
+	foreach ($step in $processSnapshot.Steps) {
 		foreach ($action in $step.Actions) {
 			if ((!$action.IsDisabled) -and $packageVersions[$action.Name] -and $action.ActionType -ne 'Octopus.DeployRelease') {
 				foreach ($package in $action.Packages) {
-					$packageDiagnosticText = "($($Release.SpaceId)/$($package.FeedId))/$(($OctopusUri -replace '/api$') + $Release.Links.Self)"
+					$packageDiagnosticText = "($($RunbookSnapshotOrRelease.SpaceId)/$($package.FeedId))/$(($OctopusUri -replace '/api$') + $RunbookSnapshotOrRelease.Links.Self)"
 					$selectedPackageVersion = New-Object 'Octopus.Client.Model.PackageResource'
-					$packageIDResult = Get-PackageId -Release $Release -PossibleOctostacheExpression $package.PackageId
+					$packageIDResult = Get-PackageId -RunbookSnapshotOrRelease $RunbookSnapshotOrRelease -PossibleOctostacheExpression $package.PackageId
 					if (-not $packageIDResult.DefinitelyFullyResolved) {
 						Write-Warning "'$($package.PackageId)' evaluated to '$($packageIDResult.Evaluated)'. $packageDiagnosticText"
 						if (-not (Test-Path variable:script:CachedResponses)) {
@@ -359,20 +372,20 @@ function Get-InUsePackages {
 
 <#
 	.SYNOPSIS
-	Get-PackageId attempts to evaluate an Octostache expression from a release's deployment process snapshot using
-	the same release's variable snapshots.
+	Get-PackageId attempts to evaluate an Octostache expression from a release's or runbook snapshot's
+	deployment process snapshot using the corresponding variable snapshots.
 	
 	Get-PackageId was implemented to address this scenario: Some process steps may define Octostache expressions 
 	for the names of packages, for example to define different package names to use depending on a release's 
-	channel. Unfortunately, deployment process snapshots contain only the octostache variable name, not the 
-	evaluated package name (even though the dynamically-selected package version is recorded alongside it).
+	channel. Unfortunately, process snapshots contain only the octostache variable name, not the evaluated
+	package name (even though the dynamically-selected package version is recorded alongside it).
 	
 	Processing accounts for channels.
 #>
 function Get-PackageId {
 	[CmdletBinding()] # Enable -Verbose switch
 	Param (
-		[parameter(Mandatory = $true)][Octopus.Client.Model.ReleaseResource]$Release,
+		[parameter(Mandatory = $true)][Octopus.Client.Model.ISnapshotResource]$RunbookSnapshotOrRelease,
 		[parameter(Mandatory = $true)][string]$PossibleOctostacheExpression
 	)
 	if ([Octostache.VariableDictionary]::CanEvaluationBeSkippedForExpression($PossibleOctostacheExpression)) {
@@ -388,9 +401,9 @@ function Get-PackageId {
 		}
 		$uri = [string]::Join('/', @(
 				$OctopusUri.TrimEnd('/'), 
-				$Release.SpaceId,
+				$RunbookSnapshotOrRelease.SpaceId,
 				'variables', 
-				$Release.ProjectVariableSetSnapshotId))
+				$RunbookSnapshotOrRelease.ProjectVariableSetSnapshotId))
 		if ($script:CachedResponses.ContainsKey($uri)) {
 			$variableSetSnapshots = $script:CachedResponses[$uri]
 		} else {
@@ -400,10 +413,10 @@ function Get-PackageId {
 			$ProgressPreference = $progPref
 			$script:CachedResponses.Add($uri, $variableSetSnapshots)
 		}
-		foreach ($libraryVariableSetSnapshotId in $Release.LibraryVariableSetSnapshotIds) {
+		foreach ($libraryVariableSetSnapshotId in $RunbookSnapshotOrRelease.LibraryVariableSetSnapshotIds) {
 			$uri = [string]::Join('/', @(
 					$OctopusUri.TrimEnd('/'), 
-					$Release.SpaceId,
+					$RunbookSnapshotOrRelease.SpaceId,
 					'variables', 
 					$libraryVariableSetSnapshotId)
 			)
@@ -422,9 +435,9 @@ function Get-PackageId {
 		foreach ($variableSetSnapshot in $variableSetSnapshots) {
 			foreach ($variable in $variableSetSnapshot.Variables) {
 				if (
-					((-not $Release.ChannelId) -or (-not $variable.Scope) -or (-not $variable.Scope.psobject.Properties['Channel'])) `
+					((-not $RunbookSnapshotOrRelease.ChannelId) -or (-not $variable.Scope) -or (-not $variable.Scope.psobject.Properties['Channel'])) `
 						-or `
-					($variable.Scope.psobject.Properties['Channel'] -and $variable.Scope.Channel.Contains($Release.ChannelId))
+					($variable.Scope.psobject.Properties['Channel'] -and $variable.Scope.Channel.Contains($RunbookSnapshotOrRelease.ChannelId))
 				) {
 					$snapshottedVariables[$variable.Name] = $variable.Value
 				}
@@ -529,7 +542,7 @@ function Test-Permissions {
 	$requiredSystemPermissions = @('SpaceView')
 	$requiredSpacePermissions = @('ProjectView', 'ProcessView', 'VariableView',
 		'VariableViewUnscoped', 'ReleaseView', 'LibraryVariableSetView',
-		'ActionTemplateView', 'TenantView')
+		'ActionTemplateView', 'TenantView', 'RunbookView', 'RunbookRunView')
 
 	$currentUser = $OctopusRepository.Users.GetCurrent()
 	$uniqueIdentifyingClaims = $currentUser.Identities | ForEach-Object { $_.Claims.Keys | ForEach-Object { 
@@ -598,12 +611,12 @@ function New-ReportRow {
 		[parameter(Mandatory = $true)]$Package,
 		[parameter(Mandatory = $true)][string]$Reason,
 		[parameter(Mandatory = $true)][bool]$Delete,
-		[parameter(Mandatory = $false)]$ReferencedByReleases
+		[parameter(Mandatory = $false)]$ReferencedByReleasesOrRunbookSnapshots
 	)
-	if ($ReferencedByReleases) {
-		$ReleaseLinks = ($ReferencedByReleases | ForEach-Object { ($OctopusUri -replace '/api$') + $_.Links.Self } ) -join "`n"
+	if ($ReferencedByReleasesOrRunbookSnapshots) {
+		$Links = ($ReferencedByReleasesOrRunbookSnapshots | ForEach-Object { ($OctopusUri -replace '/api$') + $_.Links.Self } ) -join "`n"
 	} else {
-		$ReleaseLinks = 'NA'
+		$Links = 'NA'
 	}
 	[PSCustomObject]@{
 		Author               = $Package.Author
@@ -616,7 +629,7 @@ function New-ReportRow {
 		HoursSincePublished  = $Package.HoursSincePublished
 		Delete               = $Delete
 		Reason               = $Reason
-		ReferencedByReleases = $ReleaseLinks
+		ReferencedByReleasesOrRunbookSnapshots = $Links
 	}
 }
 
@@ -675,7 +688,7 @@ if ((Load-OctopusAssemblies -CheckExistingOnly -NugetOutputDirectory $nugetExe.D
 Load-OctopusAssemblies -NugetOutputDirectory $nugetExe.Directory
 $octopusRepository = (New-Object Octopus.Client.OctopusRepository (New-Object Octopus.Client.OctopusServerEndpoint $OctopusURI, $OctopusApiKey))
 Test-Permissions -OctopusRepository $octopusRepository
-$inUsePackagesDescription = 'list of packages associated with Octopus releases'
+$inUsePackagesDescription = 'list of packages associated with Octopus releases or runbook snapshots'
 $inUsePackageInfo = [PSCustomObject]@{
 	Packages       = [System.Collections.Generic.Dictionary[string, PSCustomObject]]::new()
 	PackageIds     = [System.Collections.Generic.HashSet[string]]::new()
@@ -692,7 +705,7 @@ $progPref = $ProgressPreference
 $ProgressPreference = 'SilentlyContinue'
 $spaces = Invoke-RestMethod -Uri $uri -Headers $headers -Method Get -Verbose:$false
 $ProgressPreference = $progPref
-$releases = @()
+$releasesAndRunbookSnapshots = @()
 $spaces | ForEach-Object {
 	$space = [Octopus.Client.Model.SpaceResource]::new()
 	$space.Id = $_.Id
@@ -700,42 +713,45 @@ $spaces | ForEach-Object {
 	$space.IsDefault = $_.IsDefault
 	$space.Links = [Octopus.Client.Extensibility.LinkCollection]::new()
 	$space.Links.Add('SpaceHome', [Octopus.Client.Extensibility.Href]::new($_.Links.SpaceHome)) | Out-Null
+	$spaceClient = $octopusRepository.Client.ForSpace($space)
 	Write-Host "Querying Octopus for releases in $($space.Id) ($($space.Name))"
-	$releases += $octopusRepository.Client.ForSpace($space).Releases.FindAll()
+	$releasesAndRunbookSnapshots += $spaceClient.Releases.FindAll()
+	Write-Host "Querying Octopus for runbook snapshots in $($space.Id) ($($space.Name))"
+	$releasesAndRunbookSnapshots += $spaceClient.RunbookSnapshots.FindAll()
 }
 Write-Host "Compiling $inUsePackagesDescription"
-$releasesCount = $releases.Count
-$releasesStartTime = [System.DateTimeOffset]::Now
-$releasesProgress = 0
-foreach ($release in $releases) {
-	$proportionComplete = $releasesProgress / $releasesCount
-	if ($releasesProgress -eq 0) {
+$releasesAndRunbookSnapshotsCount = $releasesAndRunbookSnapshots.Count
+$releasesOrRunbookSnapshotsStartTime = [System.DateTimeOffset]::Now
+$releasesOrRunbookSnapshotsProgress = 0
+foreach ($releaseOrRunbookSnapshot in $releasesAndRunbookSnapshots) {
+	$proportionComplete = $releasesOrRunbookSnapshotsProgress / $releasesAndRunbookSnapshotsCount
+	if ($releasesOrRunbookSnapshotsProgress -eq 0) {
 		$secondsRemaining = -1
 	} else {
-		$secondsElapsed = [System.DateTimeOffset]::Now.Subtract($releasesStartTime).TotalSeconds
+		$secondsElapsed = [System.DateTimeOffset]::Now.Subtract($releasesOrRunbookSnapshotsStartTime).TotalSeconds
 		$estimatedSeconds = $secondsElapsed / $proportionComplete
 		$secondsRemaining = $estimatedSeconds - $secondsElapsed
 	}
 	Write-Progress -Activity "Compiling $inUsePackagesDescription" `
 		-PercentComplete ($proportionComplete * 100) `
 		-SecondsRemaining $secondsRemaining
-	#Write-Verbose "Requesting deployment process snapshot for release $releasesProgress of $releasesCount with ID $($release.id)"
-	$releaseInUsePackages = Get-InUsePackages -Release $release
-	foreach ($key in $releaseInUsePackages.Keys) {
-		if ($releaseInUsePackages[$key].PackageId -eq '') {
-			throw "The deployment process snapshot for '$($release.id)' references a package with an ID that evaluates to empty string (''). The package's version is '$($releaseInUsePackages[$key].Version)'"
+	#Write-Verbose "Requesting deployment process snapshot for release or runbook snapshot $releasesOrRunbookSnapshotsProgress of $releasesAndRunbookSnapshotsCount with ID $($releaseOrRunbookSnapshot.id)"
+	$inUsePackages = Get-InUsePackages -RunbookSnapshotOrRelease $releaseOrRunbookSnapshot
+	foreach ($key in $inUsePackages.Keys) {
+		if ($inUsePackages[$key].PackageId -eq '') {
+			throw "The process snapshot for '$($releaseOrRunbookSnapshot.id)' references a package with an ID that evaluates to empty string (''). The package's version is '$($inUsePackages[$key].Version)'"
 		}
-		$inUsePackageInfo.PackageIds.Add($releaseInUsePackages[$key].PackageId) | Out-Null
+		$inUsePackageInfo.PackageIds.Add($inUsePackages[$key].PackageId) | Out-Null
 		if (!$inUsePackageInfo.Packages[$key]) {
 			$inUsePackageInfo.Packages[$key] = [PSCustomObject]@{
-				Package  = $releaseInUsePackages[$key]
-				Releases = @($release)
+				Package  = $inUsePackages[$key]
+				ReleasesOrRunbookSnaphots = @($releaseOrRunbookSnapshot)
 			}
 		} else {
-			$inUsePackageInfo.Packages[$key].Releases += $release
+			$inUsePackageInfo.Packages[$key].ReleasesOrRunbookSnaphots += $releaseOrRunbookSnapshot
 		}
 	}
-	$releasesProgress++
+	$releasesOrRunbookSnapshotsProgress++
 }
 $inUsePackageInfo.QueryEndTime = [System.DateTimeOffset]::Now
 #Write-Progress -Activity "Compiling $inUsePackagesDescription" -PercentComplete 100 -Completed
@@ -769,7 +785,7 @@ try {
 			"Feed '$feedUri' package counts:",
 			" - $totalPackagesOnFeed total",
 			" - $($packagesOnFeed.RetainedBecausePublishedRecently.Count) to retain because published after $PublishedNoLaterThan",
-			" - $($packagesOnFeed.RetainedBecauseIDNotUsedByOctopus.Count) to retain because no version of package ID referenced by any Octopus Release",
+			" - $($packagesOnFeed.RetainedBecauseIDNotUsedByOctopus.Count) to retain because no version of package ID referenced by any Octopus Release or Runbook Snapshot",
 			" - $($packagesOnFeed.ToBeChecked.Count) will now be checked against package versions referenced by Octopus..."
 		)
 		$summaryReportLines | Write-Host
@@ -783,9 +799,9 @@ try {
 				$packagesToDelete[$feedUri].Add($packageId_VersionOnFeed, $packagesOnFeed.ToBeChecked[$packageId_VersionOnFeed])
 			}
 		}
-		$deleteReason = "published more than $PreserveRecentPackagesThresholdInHours hours ago and Releases reference other versions of the package's ID but not the package's own version"
+		$deleteReason = "published more than $PreserveRecentPackagesThresholdInHours hours ago and Releases or Runbook Snapshots reference other versions of the package's ID but not the package's own version"
 		$summaryReportLines = @(
-			"  - $($packagesOnFeedReferencedByOctopus.Count) to retain because referenced by Octopus Release(s)",
+			"  - $($packagesOnFeedReferencedByOctopus.Count) to retain because referenced by Octopus Release(s) or Runbook Snapshot(s)",
 			"  - $($packagesToDelete[$feedUri].Count) to delete because $deleteReason"
 		)
 		$summaryReportLines | Write-Host
@@ -797,13 +813,13 @@ try {
 			$reportRows.Add((New-ReportRow -FeedUri $feedUri -Package $package -Reason $reason -Delete $false))
 		}
 		foreach ($package in $packagesOnFeed.RetainedBecauseIDNotUsedByOctopus.Values) {
-			$reason = 'retain because no Release references any version of this package ID'
+			$reason = 'retain because no Release or Runbook Snapshot references any version of this package ID'
 			$reportRows.Add((New-ReportRow -FeedUri $feedUri -Package $package -Reason $reason -Delete $false))
 		}
 		foreach ($package in $packagesOnFeedReferencedByOctopus.Values) {
-			$reason = 'retain because referenced by Release(s)'
+			$reason = 'retain because referenced by Release(s) or Runbook Snapshot(s)'
 			$packageInfoFromOctopus = $inUsePackageInfo.Packages[([string]::Join(' ', @($package.ID, $package.NormalizedVersion)))]
-			$reportRows.Add((New-ReportRow -FeedUri $feedUri -Package $package -Reason $reason -ReferencedByReleases $packageInfoFromOctopus.Releases -Delete $false))
+			$reportRows.Add((New-ReportRow -FeedUri $feedUri -Package $package -Reason $reason -ReferencedByReleasesOrRunbookSnapshots $packageInfoFromOctopus.ReleasesOrRunbookSnaphots -Delete $false))
 		}	
 		foreach ($package in $packagesToDelete[$feedUri].Values) {
 			$reason = "delete because $deleteReason"
