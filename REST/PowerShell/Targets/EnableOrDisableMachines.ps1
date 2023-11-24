@@ -28,8 +28,7 @@ do {
     $machines += $response.Items
 } while ($response.Links.'Page.Next')
 
-# Get machines
-
+# Work on updating each machine
 foreach ($machineName in $machineNames) {
     $matchingMachines = @($machines | Where-Object { $_.Name -ieq $machineName })
     if ($null -eq $matchingMachines -or $matchingMachines.Count -eq 0) {
@@ -50,4 +49,3 @@ foreach ($machineName in $machineNames) {
     Write-Output "Updating machine: $($machine.Name) ($($machine.Id)), IsDisabled: $(!$machinesEnabled)"
     Invoke-RestMethod -Method Put -Uri "$octopusURL/api/$($space.Id)/machines/$($machine.Id)" -Headers $header -Body ($machine | ConvertTo-Json -Depth 10) | Out-Null
 }
-
