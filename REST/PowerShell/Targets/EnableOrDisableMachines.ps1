@@ -1,4 +1,4 @@
-﻿$ErrorActionPreference = "Stop";
+$ErrorActionPreference = "Stop";
 
 # Define working variables
 $octopusURL = "https://your.octopus.app"
@@ -12,7 +12,7 @@ $spaceName = "Default"
 $machineNames = @("MyMachine1", "MyMachine2")
 
 # Set this to $False to Disable machines, or $True to Enable the machines
-$machinesEnabled = $true
+$machinesEnabled = $false
 
 # Get space
 $spaces = Invoke-RestMethod -Uri "$octopusURL/api/spaces?partialName=$([uri]::EscapeDataString($spaceName))&skip=0&take=100" -Headers $header 
@@ -32,19 +32,22 @@ do {
 
 foreach ($machineName in $machineNames) {
     $matchingMachines = @($machines | Where-Object { $_.Name -ieq $machineName })
-    if ($null -eq $matchingMachines) {
+    if ($null -eq $matchingMachines -or $matchingMachines.Count -eq 0) {
         Write-Warning "Found no matching machines for $machineName, continuing"
     }
     if ($matchingMachines.Count -gt 1) {
         Write-Error "Found multiple machines matching name: $machineName. Don't know which machine to enable or disable!"
     }
     $machine = $matchingMachines | Select-Object -First 1
-
+    if ($null -eq $machine) {
+        Write-Warning "Machine object is null or empty for $machineName, skipping"
+        Continue;
+    }
     # Enable/disable machine
     $machine.IsDisabled = !$machinesEnabled
 
     # Update machine
-    Write-Verbose "Updating machine: $($machine.Name) ($($machine.Id)), IsDisabled: $(!$machinesEnabled)"
-    Invoke-RestMethod -Method Put -Uri "$octopusURL/api/$($space.Id)/machines/$($machine.Id)" -Headers $header -Body ($machine | ConvertTo-Json -Depth 10)
+    Write-Output "Updating machine: $($machine.Name) ($($machine.Id)), IsDisabled: $(!$machinesEnabled)"
+    Invoke-RestMethod -Method Put -Uri "$octopusURL/api/$($space.Id)/machines/$($machine.Id)" -Headers $header -Body ($machine | ConvertTo-Json -Depth 10) | Out-Null
 }
 
