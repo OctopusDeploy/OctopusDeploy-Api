@@ -8,6 +8,8 @@ $projectName = "MyProject"
 $releaseVersion = "1.0.0.0"
 $channelName = "Default"
 $spaceName = "default"
+# Optional for version-controlled projects
+$branchName = ""
 
 # Get space
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
@@ -20,14 +22,35 @@ $channel = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/pro
 
 # Create release payload
 $releaseBody = @{
-    ChannelId        = $channel.Id
-    ProjectId        = $project.Id
-    Version          = $releaseVersion
-    SelectedPackages = @()
+    ChannelId               = $channel.Id
+    ProjectId               = $project.Id
+    Version                 = $releaseVersion
+    VersionControlReference = $null
+    SelectedPackages        = @()
+}
+
+# Check if project is Config-as-Code
+if ($project.IsVersionControlled) {
+    if ([string]::IsNullOrWhitespace($branchName)) {
+        Write-Output "BranchName is not provided. Looking up default branch"
+        # Get default Git branch for Config-as-Code project
+        $branchName = $project.PersistenceSettings.DefaultBranch
+    }
+    # Get canonical branch name
+    $projectBranch = Invoke-RestMethod -Uri "$octopusURL/api/$($space.id)/projects/$($project.id)/git/branches/$branchName" -Headers $header
+    $templateLink = $octopusURL + $projectBranch.Links.ReleaseTemplate -Replace "{\?channel,releaseId}", "?channel=$($channel.Id)"
+
+    # Set release gitref
+    $releaseBody.VersionControlReference = @{
+        GitRef = $projectBranch.CanonicalName
+    }
+}
+else {
+    $templateLink = "$octopusURL/api/$($space.id)/deploymentprocesses/deploymentprocess-$($project.id)/template?channel=$($channel.Id)"
 }
 
 # Get deployment process template
-$template = Invoke-RestMethod -Uri "$octopusURL/api/$($space.id)/deploymentprocesses/deploymentprocess-$($project.id)/template?channel=$($channel.Id)" -Headers $header
+$template = Invoke-RestMethod -Uri $templateLink -Headers $header
 
 # Loop through the deployment process packages and add to release payload
 $template.Packages | ForEach-Object {
