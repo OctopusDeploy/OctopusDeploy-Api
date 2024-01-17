@@ -528,7 +528,7 @@ foreach ($spaceId in $spaceIdList)
 }
 
 Write-Host "Calculating Windows and Linux Agent Count"
-$ObjectCounts.WindowsLinuxAgentCount = $ObjectCounts.ActivePollingTentacleTargets + $ObjectCounts.PollingTentacleWorkers + $ObjectCounts.ActiveListeningTentacleTargets + $ObjectCounts.ListeningTentacleWorkers + $ObjectCounts.ActiveSshTargets + $ObjectCounts.SshWorkers
+$ObjectCounts.WindowsLinuxAgentCount = $ObjectCounts.ActivePollingTentacleTargets + $ObjectCounts.ActiveListeningTentacleTargets + $ObjectCounts.ActiveSshTargets
 
 if ($hasLicenseSummary -eq $false)
 {
