@@ -1,5 +1,5 @@
-$OctopusDeployUrl = "https://YOURINSTANCEURL"
-$OctopusDeployApiKey = "YOUR API KEY"
+$OctopusDeployUrl = "https://yourinstance"
+$OctopusDeployApiKey = "API-XXXX"
 
 ## To avoid nuking your instance, this script will pull back 50 items at a time and count them.  It is designed to run on instances as far back as 3.4.
 
@@ -535,7 +535,13 @@ if ($hasLicenseSummary -eq $false)
     $ObjectCounts.LicensedTargetCount = $ObjectCounts.TargetCount - $ObjectCounts.ActiveCloudRegions - $ObjectCounts.DisabledTargets    
 }
 
+# Get node information
+$nodeInfo = Invoke-OctopusApi -endPoint "octopusservernodes" -octopusUrl $OctopusDeployUrl -spaceId $null -apiKey $OctopusDeployApiKey
+
 Write-Host "The item counts are as follows:"
+Write-Host "    Instance ID: $($apiInformation.InstallationId)"
+Write-Host "    Server Version: $($apiInformation.Version)"
+Write-Host "    Number of Server Nodes: $($nodeInfo.TotalResults)"
 Write-Host "    Licensed Target Count: $($ObjectCounts.LicensedTargetCount) (these are active targets de-duped across the instance if running a modern version of Octopus)" -ForegroundColor Green
 Write-Host "    Project Count: $($ObjectCounts.ProjectCount)"
 Write-Host "    Tenant Count: $($ObjectCounts.TenantCount)" 
