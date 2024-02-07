@@ -204,7 +204,8 @@ function Get-OctopusDeploymentTargetsCount
                 {
                     $targetCount.DisabledListeningTentacleTargets += 1
                 }
-                elseif ($item.EndPoint.CommunicationStyle -eq "Kubernetes")
+                # Cover newer k8s agent and traditional worker-API approach
+                elseif ($item.EndPoint.CommunicationStyle -ilike "Kubernetes*")
                 {
                     $targetCount.DisabledKubernetesCount += 1
                 }
@@ -260,7 +261,8 @@ function Get-OctopusDeploymentTargetsCount
                 {
                     $targetCount.ActiveListeningTentacleTargets += 1
                 }
-                elseif ($item.EndPoint.CommunicationStyle -eq "Kubernetes")
+                # Cover newer k8s agent and traditional worker-API approach
+                elseif ($item.EndPoint.CommunicationStyle -ilike "Kubernetes*")
                 {
                     $targetCount.ActiveKubernetesCount += 1
                 }
@@ -448,6 +450,9 @@ foreach ($spaceId in $spaceIdList)
     Write-host "$spaceId has $($infrastructureSummary.ActiveSshTargets) Active SSH Targets"
     $ObjectCounts.ActiveSshTargets += $infrastructureSummary.ActiveSshTargets
 
+    Write-host "$spaceId has $($infrastructureSummary.ActiveSshTargets) Active Kubernetes Targets"
+    $ObjectCounts.ActiveKubernetesCount += $infrastructureSummary.ActiveKubernetesCount
+
     Write-host "$spaceId has $($infrastructureSummary.ActiveAzureWebAppCount) Active Azure Web App Targets"
     $ObjectCounts.ActiveAzureWebAppCount += $infrastructureSummary.ActiveAzureWebAppCount
 
@@ -477,6 +482,9 @@ foreach ($spaceId in $spaceIdList)
 
     Write-host "$spaceId has $($infrastructureSummary.DisabledSshTargets) Disabled SSH Targets"
     $ObjectCounts.DisabledSshTargets += $infrastructureSummary.DisabledSshTargets
+
+    Write-host "$spaceId has $($infrastructureSummary.ActiveSshTargets) Disabled Kubernetes Targets"
+    $ObjectCounts.DisabledKubernetesCount += $infrastructureSummary.DisabledKubernetesCount
 
     Write-host "$spaceId has $($infrastructureSummary.DisabledAzureWebAppCount) Disabled Azure Web App Targets"
     $ObjectCounts.DisabledAzureWebAppCount += $infrastructureSummary.DisabledAzureWebAppCount
