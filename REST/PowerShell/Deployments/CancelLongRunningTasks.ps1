@@ -16,7 +16,7 @@ foreach ($space in $spaceList.Items)
     if ($spaceId -ne $CurrentSpaceId)
     {
         Write-Host "Checking $spaceId for running tasks (looking for executing tasks only)"
-        $taskList = (Invoke-RestMethod"$OctopusUrl/api/tasks?skip=0&states=Executing&spaces=$spaceId&take=100000" -Headers $header)
+        $taskList = (Invoke-RestMethod" $OctopusUrl/api/tasks?skip=0&states=Executing&spaces=$spaceId&take=100000" -Headers $header)
         $taskCount = $taskList.TotalResults
 
         Write-Host "Found $taskCount currently running tasks"
