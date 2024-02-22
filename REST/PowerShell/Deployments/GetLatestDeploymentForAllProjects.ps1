@@ -25,7 +25,7 @@ foreach ($project in $projects)
     try {
         $latestDeployment = Invoke-RestMethod -Uri $deploymentsUrl -Method Get -Headers $headers -ErrorAction Stop | Select-Object -ExpandProperty Items | Select-Object -First 1
 
-        if ($latestDeployment) 
+        if ($null -ne $latestDeployment) 
         {
             $releaseId = $latestDeployment.ReleaseId
             $releaseUrl = "$octopusURL/api/$spaceId/releases/$releaseId"
