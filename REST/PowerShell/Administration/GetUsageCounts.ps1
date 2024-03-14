@@ -348,7 +348,7 @@ $ObjectCounts = @{
     SshWorkers = 0
     ActiveWorkerCount = 0
     UnavailableWorkerCount = 0
-    WindowsLinuxAgentCount = 0
+    WindowsLinuxMachineCount = 0
     LicensedTargetCount = 0
     LicensedWorkerCount = 0
 }
@@ -535,8 +535,8 @@ foreach ($spaceId in $spaceIdList)
     }
 }
 
-Write-Host "Calculating Windows and Linux Agent Count"
-$ObjectCounts.WindowsLinuxAgentCount = $ObjectCounts.ActivePollingTentacleTargets + $ObjectCounts.ActiveListeningTentacleTargets + $ObjectCounts.ActiveSshTargets
+Write-Host "Calculating Windows and Linux Machine Count"
+$ObjectCounts.WindowsLinuxMachineCount = $ObjectCounts.ActivePollingTentacleTargets + $ObjectCounts.ActiveListeningTentacleTargets + $ObjectCounts.ActiveSshTargets
 
 if ($hasLicenseSummary -eq $false)
 {
@@ -553,7 +553,7 @@ Write-Host "    Number of Server Nodes: $($nodeInfo.TotalResults)"
 Write-Host "    Licensed Target Count: $($ObjectCounts.LicensedTargetCount) (these are active targets de-duped across the instance if running a modern version of Octopus)" -ForegroundColor Green
 Write-Host "    Project Count: $($ObjectCounts.ProjectCount)"
 Write-Host "    Tenant Count: $($ObjectCounts.TenantCount)" 
-Write-Host "    Agent Counts: $($ObjectCounts.WindowsLinuxAgentCount)" 
+Write-Host "    Machine Counts (Active Linux and Windows Tentacles and SSH Connections): $($ObjectCounts.WindowsLinuxMachineCount)" 
 Write-Host "    Deployment Target Count: $($ObjectCounts.TargetCount)"
 Write-Host "        Active and Available Targets: $($ObjectCounts.ActiveTargetCount)" -ForegroundColor Green
 Write-Host "        Active but Unavailable Targets: $($ObjectCounts.UnavailableTargetCount)" -ForegroundColor Yellow
