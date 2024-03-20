@@ -1,0 +1,176 @@
+$ErrorActionPreference = "Stop";
+
+# Define Octopus Deploy variables
+$octopusURL = "https://octopus.server.com/"
+$octopusAPIKey = "API-KEYKEYKEY"
+$octopusHeader = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
+$spaceName = "Default"
+
+# Define Octopus Deploy variables
+$projectName = "projectName"
+$channelName = "Default"
+
+# Define your Azure DevOps organization, project, feed, and package details
+$organization = "AzureOrg"
+$azureProject = ""
+$feed = "AzureUniversalPackagesFeed"
+$pat = "YOUR-PAT-TOKEN"
+
+$outputPath = "C:\Octopus\Packages"  # Specify your desired download path
+$fileending = "zip"
+
+
+# Get space
+$space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $octopusHeader) | Where-Object {$_.Name -eq $spaceName}
+$spaceId = $space.Id
+
+
+# Get all the package from the Azure feed
+# Base URL for the REST API
+$baseUrl = "https://feeds.dev.azure.com/$organization/$azureProject/_apis/packaging/Feeds/$feed/Packages/?includeAllVersions=true"
+
+# Authenticate with Azure using PAT
+$azureHeader = @{
+    Authorization = "Basic " + [Convert]::ToBase64String([System.Text.Encoding]::ASCII.GetBytes("`:$pat"))
+}
+$result = Invoke-RestMethod -Uri $baseUrl -Method Get -Headers $azureHeader
+
+$versions = $result.value[0].versions
+$packageId = $result.value[0].name
+$packageList = $result.value | Select-Object -ExpandProperty name
+
+
+# Get latest package version in Octopus
+$latestPackages = Invoke-RestMethod -Uri "$octopusURL/api/$spaceId/feeds/feeds-builtin/packages/versions?packageId=$packageId&take=1" -Headers $octopusHeader 
+$latestPackage = $latestPackages.Items | Select-Object -First 1
+$targetVersion = $latestPackage.version
+
+$newerVersions = $versions | Sort-Object { [Version]::new($_.version) }
+if($targetVersion) {    
+    # Filter versions that are newer than the target version
+    $newerVersions = $versions |
+        Where-Object { [Version]::new($_.version) -gt [Version]::new($targetVersion) } |
+        Sort-Object { [Version]::new($_.version) }
+}
+
+# Verify we have any new versions
+if (-not $newerVersions) {
+    Write-Host "The version array is empty. Exiting script."
+    return
+}
+
+
+# Check if the Azure CLI is installed
+if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+    Write-Host "Azure CLI is not installed. Installing..."
+
+    # Download and install the Azure CLI
+    Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile AzCliSetup.msi
+    Start-Process -Wait -FilePath msiexec -ArgumentList '/i', 'AzCliSetup.msi'
+
+    Write-Host "Azure CLI installation complete."
+    $Env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine")      
+}
+
+
+## Prepare Ocotpus variables
+# Get project
+$project = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$spaceId/projects/all" -Headers $octopusHeader) | Where-Object {$_.Name -eq $projectName}
+$projectId = $project.Id
+# Get channel
+$channel = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$spaceId/projects/$projectId/channels" -Headers $octopusHeader).Items | Where-Object {$_.Name -eq $channelName}
+$channelId = $channel.Id
+
+
+## Login to Azure
+# Set the organization context
+az devops configure --defaults organization=https://dev.azure.com/$organization
+# Set the project context
+az devops configure --defaults project=$azureProject
+# Connect to Azure DevOps
+$pat | az devops login
+
+
+# Download the newer versions for the current package
+foreach ($version in $newerVersions) {
+    foreach ($packageName in $packageList) {
+
+        $packageVersion = $version.version
+        $fileLocation = "$outputPath\$packageName.$packageVersion.$fileending"
+
+        if (-not (Test-Path $fileLocation)) {
+            if ($null -eq $azureProject -or $azureProject -eq "") {
+                az artifacts universal download --organization "https://dev.azure.com/$organization/" --feed $feed --name $packageId --version $packageVersion --path $outputPath
+            } else {                
+                az artifacts universal download --organization "https://dev.azure.com/$organization/" --project $azureProject --scope project  --feed $feed --name $packageId --version $packageVersion --path $outputPath
+            }
+            Write-Host "Package download complete."
+        }
+
+        # Define working variables
+        $timeout = New-Object System.TimeSpan(0, 10, 0)
+
+        # Create http client handler
+        $httpClientHandler = New-Object System.Net.Http.HttpClientHandler
+        $httpClient = New-Object System.Net.Http.HttpClient $httpClientHandler
+        $httpClient.DefaultRequestHeaders.Add("X-Octopus-ApiKey", $octopusAPIKey)
+        $httpClient.Timeout = $timeout
+
+        # Open file stream
+        $fileStream = New-Object System.IO.FileStream($fileLocation, [System.IO.FileMode]::Open)
+
+        # Create dispositon object
+        $contentDispositionHeaderValue = New-Object System.Net.Http.Headers.ContentDispositionHeaderValue "form-data"
+        $contentDispositionHeaderValue.Name = "fileData"
+        $contentDispositionHeaderValue.FileName = [System.IO.Path]::GetFileName($fileLocation)
+
+        # Creat steam content
+        $streamContent = New-Object System.Net.Http.StreamContent $fileStream
+        $streamContent.Headers.ContentDisposition = $contentDispositionHeaderValue
+        $contentType = "multipart/form-data"
+        $streamContent.Headers.ContentType = New-Object System.Net.Http.Headers.MediaTypeHeaderValue $contentType
+
+        $content = New-Object System.Net.Http.MultipartFormDataContent
+        $content.Add($streamContent)
+
+        # Upload package
+        $httpClient.PostAsync("$octopusURL/api/$spaceId/packages/raw?replace=false", $content).Result
+
+        if ($null -ne $fileStream)
+        {
+            $fileStream.Close()
+        }        
+    }
+
+    # Create release payload
+    $releaseBody = @{
+        ChannelId        = $channelId
+        ProjectId        = $projectId
+        Version          = $version.version
+        SelectedPackages = @()
+    }
+
+    # Get deployment process template
+    $template = Invoke-RestMethod -Uri "$octopusURL/api/$spaceId/deploymentprocesses/deploymentprocess-$projectId/template?channel=$channelId" -Headers $octopusHeader
+
+    # Loop through the deployment process packages and add to release payload
+    $template.Packages | ForEach-Object {
+        $uri = "$octopusURL/api/$spaceId/feeds/$($_.FeedId)/packages/versions?packageId=$($_.PackageId)&take=1"
+        $version = Invoke-RestMethod -Uri $uri -Method GET -Headers $octopusHeader
+        $version = $version.Items[0].Version
+
+        $releaseBody.SelectedPackages += @{
+            ActionName           = $_.ActionName
+            PackageReferenceName = $_.PackageReferenceName
+            Version              = $version
+        }
+    }
+
+    # Create the release
+    $release = Invoke-RestMethod -Uri "$octopusURL/api/$spaceId/releases" -Method POST -Headers $octopusHeader -Body ($releaseBody | ConvertTo-Json -depth 10)
+
+    # Display created release
+    $release
+}
+
+Remove-Item "$outputPath\*" -Recurse -Force
