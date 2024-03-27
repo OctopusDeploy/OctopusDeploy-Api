@@ -25,7 +25,7 @@ $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Heade
 Write-Host "Looking for usages of variable value named '$variableValueToFind' in space: '$spaceName'"
 
 # Get variables from variable sets
-$variableSets = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/libraryvariablesets?contentType=Variables" -Headers $header
+$variableSets = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/libraryvariablesets?contentType=Variables&skip=0&take=5000" -Headers $header
 
 foreach ($variableSet in $variableSets.Items)
 {
