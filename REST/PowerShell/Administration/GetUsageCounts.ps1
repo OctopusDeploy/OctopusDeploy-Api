@@ -1,5 +1,16 @@
+# You must replace the string "https://yourinstance" with the URL to your Octopus instance.
 $OctopusDeployUrl = "https://yourinstance"
+
+# You must replace the string "API-XXXX" with an API key able to access your Octopus instance.
+# See the documentation at https://octopus.com/docs/octopus-rest-api/how-to-create-an-api-key for instructions
+# on generating an API key.
 $OctopusDeployApiKey = "API-XXXX"
+
+# Validation that variable have been updated
+if ($OctopusDeployUrl -eq "https://yourinstance" -or $OctopusDeployApiKey -eq "API-XXXX") {
+    Write-Host "You must replace the placeholder variables with values specific to your Octopus instance"
+    exit 1
+}
 
 ## To avoid nuking your instance, this script will pull back 50 items at a time and count them.  It is designed to run on instances as far back as 3.4.
 
