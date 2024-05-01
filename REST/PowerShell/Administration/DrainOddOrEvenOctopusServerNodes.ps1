@@ -58,7 +58,7 @@ for ($i = 0; $i -lt $octopusServerNodes.Length; $i++) {
     if ($ContinueDrainOperation) {
         
         if ($octopusServerNode.IsInMaintenanceMode -eq $True) {
-            Write-Message "Skipping drain of node: $nodeName as its already in a draining/drained state"
+            Write-Message "Skipping drain of node: $nodeName as it's already in a draining/drained state"
             Continue;
         }
         
@@ -82,6 +82,6 @@ for ($i = 0; $i -lt $octopusServerNodes.Length; $i++) {
         }
     }
     else {
-        Write-Message "Skipping drain of node: $nodeName as its not a valid candidate"
+        Write-Message "Skipping drain of node: $nodeName as it's not a valid candidate"
     }
 }
