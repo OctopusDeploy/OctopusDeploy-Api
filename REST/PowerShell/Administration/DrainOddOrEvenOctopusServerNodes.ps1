@@ -6,8 +6,23 @@ $headers = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 # Set to $False to drain "odd" numbered nodes
 $DrainEvenNodes = $false
 
+# Set WhatIf to $False to perform the drain of nodes
+# Set WhatIf to $True to show which nodes would be drained without actually draining them
+$global:WhatIf = $True
+
 if ($octopusURL.EndsWith("/")) {
     $serverNodeUri = $OctopusUrl.Substring(0, $OctopusUrl.Length - 1);
+}
+
+Write-Verbose "OctopusURL: $octopusURL"
+Write-Verbose "DrainEvenNodes: $DrainEvenNodes"
+Write-Verbose "WhatIf: $WhatIf"
+
+function Write-Message($message) {
+    if ($global:WhatIf -eq $True) {
+        $message = "WHATIF: " + $message
+    }
+    Write-Output $message
 }
 
 # Get Octopus Server Nodes
@@ -43,28 +58,30 @@ for ($i = 0; $i -lt $octopusServerNodes.Length; $i++) {
     if ($ContinueDrainOperation) {
         
         if ($octopusServerNode.IsInMaintenanceMode -eq $True) {
-            Write-Output "Skipping drain of node: $nodeName as its already in a draining/drained state"
+            Write-Message "Skipping drain of node: $nodeName as its already in a draining/drained state"
             Continue;
         }
-
-        Write-Output "Draining node: $nodeName"
-        $body = @{
-            Id                  = $octopusServerNode.Id
-            Name                = $octopusServerNode.MaxConcurrentTasks
-            MaxConcurrentTasks  = $octopusServerNode.MaxConcurrentTasks
-            IsInMaintenanceMode = $true
-        }
-
-        # Convert body to JSON
-        $body = $body | ConvertTo-Json -Depth 10
-        $serverNodeUri = $OctopusUrl + $octopusServerNode.Links.Node;
         
-        # Post update
-        $updateServerNodeResponse = Invoke-RestMethod -Method Put -Uri $serverNodeUri -Body $body -Headers $headers 
+        Write-Message "Draining node: $nodeName"
+        if ($global:WhatIf -eq $False) {
+            $body = @{
+                Id                  = $octopusServerNode.Id
+                Name                = $octopusServerNode.MaxConcurrentTasks
+                MaxConcurrentTasks  = $octopusServerNode.MaxConcurrentTasks
+                IsInMaintenanceMode = $true
+            }
 
-        # This script can be extended to check the nodes have completed a drain operation here by checking the nodes RunningTaskCount property is 0
+            # Convert body to JSON
+            $body = $body | ConvertTo-Json -Depth 10
+            $serverNodeUri = $OctopusUrl + $octopusServerNode.Links.Node;
+        
+            # Post update
+            $updateServerNodeResponse = Invoke-RestMethod -Method Put -Uri $serverNodeUri -Body $body -Headers $headers 
+
+            # This script can be extended to check the nodes have completed a drain operation here by checking the nodes RunningTaskCount property is 0
+        }
     }
     else {
-        Write-Output "Skipping drain of node: $nodeName as its not a valid candidate"
+        Write-Message "Skipping drain of node: $nodeName as its not a valid candidate"
     }
 }
