@@ -76,6 +76,7 @@ $destinationProjectName = "DestinationProjectName"
 
 $externalFeedName = "Docker Hub"
 $workerPoolName = "Azure Worker Pool"
+$roleName = "demo-k8s-cluster"
 
 # Get space
 Write-Host "Getting source space ..."
@@ -163,15 +164,30 @@ foreach ($sourceRunbook in $sourceProjectRunbooks)
 
             if ($null -ne $action.Properties.'Octopus.Action.Template.Id')
             {
+                # Get source template
                 $sourceActionTemplate = $sourceActionTemplates | Where-Object {$_.Id -eq $action.Properties.'Octopus.Action.Template.Id'}
 
-                # Check destination to see if that template was installed
-                $destinationActionTemplate = $destinationActionTemplates | Where-Object {$_.CommunityActionTemplateId -eq $sourceActionTemplate.CommunityActionTemplateId}
-
-                if ($null -eq $destinationActionTemplate)
+                # Check for community template
+                if ($null -ne $sourceActionTemplate.CommunityActionTemplateId)
                 {
-                    Write-Host "Installing Community Library step $($sourceActionTemplate.Name) to $destinationOctopusURL, Space $($destinationSpace.Name) ($($destinationSpace.Id))..."
-                    $destinationActionTemplate = Invoke-RestMethod -Method Post -Uri "$destinationOctopusURL/api/communityactiontemplates/$($sourceActionTemplate.CommunityActionTemplateId)/installation/$($destinationSpace.Id)" -Headers $destinationHeader
+                    # Check destination to see if that template was installed
+                    $destinationActionTemplate = $destinationActionTemplates | Where-Object {$_.Website -eq $sourceActionTemplate.Website}
+
+                    if ($null -eq $destinationActionTemplate)
+                    {
+                        Write-Host "Installing Community Library step $($sourceActionTemplate.Name) to $destinationOctopusURL, Space $($destinationSpace.Name) ($($destinationSpace.Id))..."
+                        $destinationActionTemplate = Invoke-RestMethod -Method Post -Uri "$destinationOctopusURL/api/communityactiontemplates/$($sourceActionTemplate.CommunityActionTemplateId)/installation/$($destinationSpace.Id)" -Headers $destinationHeader
+                    }
+                }
+                else
+                {
+                    # Copy the source template into the destination
+                    $sourceActionTemplate.Id = $null
+                    $sourceActionTemplate.SpaceId = $null
+                    
+                    # Copy to destination
+                    Write-Host "Copying Library template $($sourceActionTemplate.Name) to $($destinationSpace.Name) ..."
+                    $destinationActionTemplate = Invoke-RestMethod -Method Post -Uri "$destinationOctopusURL/api/$($destinationSpace.Id)/actiontemplates" -Body ($sourceActionTemplate | ConvertTo-Json -Depth 10) -Headers $destinationHeader
                 }
 
                 $action.Properties.'Octopus.Action.Template.Id' = $destinationActionTemplate.Id
@@ -183,7 +199,7 @@ foreach ($sourceRunbook in $sourceProjectRunbooks)
        # Update role
        if ($null -ne $step.Properties.'Octopus.Action.TargetRoles')
        {
-           $step.Properties.'Octopus.Action.TargetRoles' = "demo-k8s-cluster"
+           $step.Properties.'Octopus.Action.TargetRoles' = $roleName
        }
 
        if ($null -ne $sourceRunbook.PublishedRunbookSnapshotId)
