@@ -181,13 +181,18 @@ foreach ($sourceRunbook in $sourceProjectRunbooks)
                 }
                 else
                 {
-                    # Copy the source template into the destination
-                    $sourceActionTemplate.Id = $null
-                    $sourceActionTemplate.SpaceId = $null
+                    # Check to see if template exists, name is all we can use here
+                    if ($null -eq ($destinationActionTemplates | Where-Object {$_.Name -eq $sourceActionTemplate.Name}))
+                    {
+
+                        # Copy the source template into the destination
+                        $sourceActionTemplate.Id = $null
+                        $sourceActionTemplate.SpaceId = $null
                     
-                    # Copy to destination
-                    Write-Host "Copying Library template $($sourceActionTemplate.Name) to $($destinationSpace.Name) ..."
-                    $destinationActionTemplate = Invoke-RestMethod -Method Post -Uri "$destinationOctopusURL/api/$($destinationSpace.Id)/actiontemplates" -Body ($sourceActionTemplate | ConvertTo-Json -Depth 10) -Headers $destinationHeader
+                        # Copy to destination
+                        Write-Host "Copying Library template $($sourceActionTemplate.Name) to $($destinationSpace.Name) ..."
+                        $destinationActionTemplate = Invoke-RestMethod -Method Post -Uri "$destinationOctopusURL/api/$($destinationSpace.Id)/actiontemplates" -Body ($sourceActionTemplate | ConvertTo-Json -Depth 10) -Headers $destinationHeader
+                    }
                 }
 
                 $action.Properties.'Octopus.Action.Template.Id' = $destinationActionTemplate.Id
