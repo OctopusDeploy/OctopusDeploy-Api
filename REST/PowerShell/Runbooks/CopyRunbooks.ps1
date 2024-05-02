@@ -193,6 +193,10 @@ foreach ($sourceRunbook in $sourceProjectRunbooks)
                         Write-Host "Copying Library template $($sourceActionTemplate.Name) to $($destinationSpace.Name) ..."
                         $destinationActionTemplate = Invoke-RestMethod -Method Post -Uri "$destinationOctopusURL/api/$($destinationSpace.Id)/actiontemplates" -Body ($sourceActionTemplate | ConvertTo-Json -Depth 10) -Headers $destinationHeader
                     }
+                    else
+                    {
+                        $destinationActionTemplate = ($destinationActionTemplates | Where-Object {$_.Name -eq $sourceActionTemplate.Name})
+                    }                    
                 }
 
                 $action.Properties.'Octopus.Action.Template.Id' = $destinationActionTemplate.Id
