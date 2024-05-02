@@ -171,12 +171,14 @@ foreach ($sourceRunbook in $sourceProjectRunbooks)
                 if ($null -ne $sourceActionTemplate.CommunityActionTemplateId)
                 {
                     # Check destination to see if that template was installed
-                    $destinationActionTemplate = $destinationActionTemplates | Where-Object {$_.Website -eq $sourceActionTemplate.Website}
+                    $sourceCommunityActionTemplate = Get-OctopusItems -OctopusUri "$sourceOctopusURL/api/communityactiontemplates/$($sourceActionTemplate.CommunityActionTemplateId)" -ApiKey $sourceOctopusAPIKey
+                    $destinationCommunityActionTemplate = (Get-OctopusItems -OctopusUri "$destinationOctopusURL/api/communityactiontemplates" -ApiKey $destinationOctopusAPIKey | Where-Object {$_.Website -eq $sourceCommunityActionTemplate.Website})
+                    $destinationActionTemplate = ($destinationActionTemplates | Where-Object {$_.CommunityActionTemplateId -eq $destinationCommunityActionTemplate.Id})
 
                     if ($null -eq $destinationActionTemplate)
                     {
                         Write-Host "Installing Community Library step $($sourceActionTemplate.Name) to $destinationOctopusURL, Space $($destinationSpace.Name) ($($destinationSpace.Id))..."
-                        $destinationActionTemplate = Invoke-RestMethod -Method Post -Uri "$destinationOctopusURL/api/communityactiontemplates/$($sourceActionTemplate.CommunityActionTemplateId)/installation/$($destinationSpace.Id)" -Headers $destinationHeader
+                        $destinationActionTemplate = Invoke-RestMethod -Method Post -Uri "$destinationOctopusURL/api/communityactiontemplates/$($destinationCommunityActionTemplate.Id)/installation/$($destinationSpace.Id)" -Headers $destinationHeader
                     }
                 }
                 else
@@ -196,7 +198,7 @@ foreach ($sourceRunbook in $sourceProjectRunbooks)
                     else
                     {
                         $destinationActionTemplate = ($destinationActionTemplates | Where-Object {$_.Name -eq $sourceActionTemplate.Name})
-                    }                    
+                    }
                 }
 
                 $action.Properties.'Octopus.Action.Template.Id' = $destinationActionTemplate.Id
