@@ -76,6 +76,7 @@ $destinationProjectName = "DestinationProjectName"
 
 $externalFeedName = "Docker Hub"
 $workerPoolName = "Azure Worker Pool"
+$roleName = "demo-k8s-cluster"
 
 # Get space
 Write-Host "Getting source space ..."
@@ -90,6 +91,10 @@ $sourceProject = (Get-OctopusItems -OctopusUri "$sourceOctopusURL/api/$($sourceS
 Write-Host "Getting source runbooks ..."
 $sourceProjectRunbooks = (Get-OctopusItems -OctopusUri "$sourceOctopusURL/api/$($sourceSpace.Id)/runbooks" -ApiKey $sourceOctopusAPIKey) | Where-Object {$_.ProjectId -eq $sourceProject.Id}
 
+# Get source action templates
+Write-Host "Getting source Action Templates ..."
+$sourceActionTemplates = Get-OctopusItems -OctopusUri "$sourceOctopusURL/api/$($sourceSpace.Id)/ActionTemplates" -ApiKey $sourceOctopusAPIKey
+
 # Get destination space
 Write-Host "Getting destination space ..."
 $destinationSpaces = Get-OctopusItems -OctopusUri "$destinationOctopusURL/api/spaces" -ApiKey $destinationOctopusAPIKey
@@ -98,6 +103,10 @@ $destinationSpace = $destinationSpaces | Where-Object {$_.Name -eq $destinationS
 # Get destination project
 Write-Host "Getting destination project ..."
 $destinationProject = (Get-OctopusItems -OctopusUri "$destinationOctopusURL/api/$($destinationSpace.Id)/projects" -ApiKey $destinationOctopusAPIKey) | Where-Object {$_.Name -eq $destinationProjectName}
+
+Write-Host "Getting destination Action Templates ..."
+$destinationActionTemplates = Get-OctopusItems -OctopusUri "$destinationOctopusURL/api/$($destinationSpace.Id)/ActionTemplates" -ApiKey $destinationOctopusAPIKey
+$destinationCommunityActionTemplates = Get-OctopusItems -OctopusUri "$destinationOctopusURL/api/communityactiontemplates" -ApiKey $destinationOctopusAPIKey
 
 ##############################################################################
 ## If you need to reference an external feed on the destination
@@ -153,6 +162,48 @@ foreach ($sourceRunbook in $sourceProjectRunbooks)
             {
                 $action.WorkerPoolId = $destinationWorkerPool.Id
             }
+
+            if ($null -ne $action.Properties.'Octopus.Action.Template.Id')
+            {
+                # Get source template
+                $sourceActionTemplate = $sourceActionTemplates | Where-Object {$_.Id -eq $action.Properties.'Octopus.Action.Template.Id'}
+
+                # Check for community template
+                if ($null -ne $sourceActionTemplate.CommunityActionTemplateId)
+                {
+                    # Check destination to see if that template was installed
+                    $sourceCommunityActionTemplate = Get-OctopusItems -OctopusUri "$sourceOctopusURL/api/communityactiontemplates/$($sourceActionTemplate.CommunityActionTemplateId)" -ApiKey $sourceOctopusAPIKey
+                    $destinationCommunityActionTemplate = ($destinationCommunityActionTemplates | Where-Object {$_.Website -eq $sourceCommunityActionTemplate.Website})
+                    $destinationActionTemplate = ($destinationActionTemplates | Where-Object {$_.CommunityActionTemplateId -eq $destinationCommunityActionTemplate.Id})
+
+                    if ($null -eq $destinationActionTemplate)
+                    {
+                        Write-Host "Installing Community Library step $($sourceActionTemplate.Name) to $destinationOctopusURL, Space $($destinationSpace.Name) ($($destinationSpace.Id))..."
+                        $destinationActionTemplate = Invoke-RestMethod -Method Post -Uri "$destinationOctopusURL/api/communityactiontemplates/$($destinationCommunityActionTemplate.Id)/installation/$($destinationSpace.Id)" -Headers $destinationHeader
+                    }
+                }
+                else
+                {
+                    # Check to see if template exists, name is all we can use here
+                    if ($null -eq ($destinationActionTemplates | Where-Object {$_.Name -eq $sourceActionTemplate.Name}))
+                    {
+
+                        # Copy the source template into the destination
+                        $sourceActionTemplate.Id = $null
+                        $sourceActionTemplate.SpaceId = $null
+                    
+                        # Copy to destination
+                        Write-Host "Copying Library template $($sourceActionTemplate.Name) to $($destinationSpace.Name) ..."
+                        $destinationActionTemplate = Invoke-RestMethod -Method Post -Uri "$destinationOctopusURL/api/$($destinationSpace.Id)/actiontemplates" -Body ($sourceActionTemplate | ConvertTo-Json -Depth 10) -Headers $destinationHeader
+                    }
+                    else
+                    {
+                        $destinationActionTemplate = ($destinationActionTemplates | Where-Object {$_.Name -eq $sourceActionTemplate.Name})
+                    }
+                }
+
+                $action.Properties.'Octopus.Action.Template.Id' = $destinationActionTemplate.Id
+            }         
        }
 
        $step.Id = $null
@@ -160,9 +211,14 @@ foreach ($sourceRunbook in $sourceProjectRunbooks)
        # Update role
        if ($null -ne $step.Properties.'Octopus.Action.TargetRoles')
        {
-           $step.Properties.'Octopus.Action.TargetRoles' = "demo-k8s-cluster"
+           $step.Properties.'Octopus.Action.TargetRoles' = $roleName
        }
 
+       if ($null -ne $sourceRunbook.PublishedRunbookSnapshotId)
+       {
+            Write-Warning "$($sourceRunbook.Name) has a published snapshot, destination will be unpublished."
+            $sourceRunbook.PublishedRunbookSnapshotId = $null
+       }
     }
 
     # Update runbook properties
