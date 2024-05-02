@@ -106,6 +106,7 @@ $destinationProject = (Get-OctopusItems -OctopusUri "$destinationOctopusURL/api/
 
 Write-Host "Getting destination Action Templates ..."
 $destinationActionTemplates = Get-OctopusItems -OctopusUri "$destinationOctopusURL/api/$($destinationSpace.Id)/ActionTemplates" -ApiKey $destinationOctopusAPIKey
+$destinationCommunityActionTemplates = Get-OctopusItems -OctopusUri "$destinationOctopusURL/api/communityactiontemplates" -ApiKey $destinationOctopusAPIKey
 
 ##############################################################################
 ## If you need to reference an external feed on the destination
@@ -172,7 +173,7 @@ foreach ($sourceRunbook in $sourceProjectRunbooks)
                 {
                     # Check destination to see if that template was installed
                     $sourceCommunityActionTemplate = Get-OctopusItems -OctopusUri "$sourceOctopusURL/api/communityactiontemplates/$($sourceActionTemplate.CommunityActionTemplateId)" -ApiKey $sourceOctopusAPIKey
-                    $destinationCommunityActionTemplate = (Get-OctopusItems -OctopusUri "$destinationOctopusURL/api/communityactiontemplates" -ApiKey $destinationOctopusAPIKey | Where-Object {$_.Website -eq $sourceCommunityActionTemplate.Website})
+                    $destinationCommunityActionTemplate = ($destinationCommunityActionTemplates | Where-Object {$_.Website -eq $sourceCommunityActionTemplate.Website})
                     $destinationActionTemplate = ($destinationActionTemplates | Where-Object {$_.CommunityActionTemplateId -eq $destinationCommunityActionTemplate.Id})
 
                     if ($null -eq $destinationActionTemplate)
