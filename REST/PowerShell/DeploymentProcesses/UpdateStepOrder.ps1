@@ -59,8 +59,8 @@ if ($oldIndexForStep -ne $newIndexForStep){
     foreach($step in $newSteps){
         Write-Host "$($step.Name)"
     }
-    # Commit changes to process - uncomment to commit
-    #Invoke-RestMethod -Method Put -Uri "$octopusURL/$($project.Links.DeploymentProcess)" -Headers $header -Body ($deploymentProcess | ConvertTo-Json -Depth 100)
+    # Commit changes to process - comment out this line to preview changes before committing
+    Invoke-RestMethod -Method Put -Uri "$octopusURL/$($project.Links.DeploymentProcess)" -Headers $header -Body ($deploymentProcess | ConvertTo-Json -Depth 100)
 }
 else{
     Write-Host "New index for step is the same as existing index for step or step name not found, no steps moved."
