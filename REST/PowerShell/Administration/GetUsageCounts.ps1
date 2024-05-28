@@ -6,7 +6,8 @@ $OctopusDeployUrl = "https://yourinstance"
 # on generating an API key.
 $OctopusDeployApiKey = "API-XXXX"
 
-# Validation that variable have been updated
+# Validation that variable have been updated. Do not update the values here - they must stay as "https://yourinstance"
+# and "API-XXXX", as this is how we check that the variables above were updated.
 if ($OctopusDeployUrl -eq "https://yourinstance" -or $OctopusDeployApiKey -eq "API-XXXX") {
     Write-Host "You must replace the placeholder variables with values specific to your Octopus instance"
     exit 1
@@ -323,6 +324,10 @@ function Get-OctopusDeploymentTargetsCount
     
     return $targetCount
 }
+
+# Add support for TLS 1.2
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls13
 
 $ObjectCounts = @{
     ProjectCount = 0
