@@ -66,7 +66,7 @@ for ($i = 0; $i -lt $octopusServerNodes.Length; $i++) {
         if ($global:WhatIf -eq $False) {
             $body = @{
                 Id                  = $octopusServerNode.Id
-                Name                = $octopusServerNode.MaxConcurrentTasks
+                Name                = $octopusServerNode.Name
                 MaxConcurrentTasks  = $octopusServerNode.MaxConcurrentTasks
                 IsInMaintenanceMode = $true
             }
