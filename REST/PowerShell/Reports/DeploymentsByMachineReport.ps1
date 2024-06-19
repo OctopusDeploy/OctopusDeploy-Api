@@ -13,8 +13,13 @@ $octopusAPIKey = "API-KEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 $spaceName = "Default"
 
-$deploymentsFrom = "2024-06-19"
-$deploymentsTo = "2024-06-20"
+# Only get the last 4 hours of deployments
+$now = Get-Date
+$deploymentsFrom = $now.AddHours(-4).ToString("yyyy-MM-ddTHH:mm:ss")
+$deploymentsTo = $now.ToString("yyyy-MM-ddTHH:mm:ss")
+
+$eventsFrom = $([System.Web.HTTPUtility]::UrlEncode($deploymentsFrom))
+$eventsTo = $([System.Web.HTTPUtility]::UrlEncode($deploymentsTo))
 
 # Project filters
 $projectNames = @("Project 1", "Project 2")
@@ -134,7 +139,7 @@ function Get-ServerTaskDetails {
     return $serverTaskDetail
 }
 
-$eventsUrl = "$octopusURL/api/events?includeSystem=false&spaces=$($space.Id)&eventCategories=DeploymentStarted&documentTypes=Deployments&from=$($deploymentsFrom)T00%3A00%3A00%2B00%3A00&to=$($deploymentsTo)T23%3A59%3A59%2B00%3A00"
+$eventsUrl = "$octopusURL/api/events?includeSystem=false&spaces=$($space.Id)&eventCategories=DeploymentStarted&documentTypes=Deployments&from=$eventsFrom&to=$eventsTo"
 
 # Check for optional projects filter
 if ($projectNames.Length -gt 0) {
