@@ -1,5 +1,10 @@
 $ErrorActionPreference = "Stop";
 
+# Fix ANSI Color on PWSH Core issues when displaying objects
+if ($PSEdition -eq "Core") {
+    $PSStyle.OutputRendering = "PlainText"
+}
+
 $stopwatch = [system.diagnostics.stopwatch]::StartNew()
 
 # Define working variables
@@ -17,7 +22,7 @@ $projectNames = @("Project 1", "Project 2")
 # Environment filters
 $environmentNames = @("Development", "Test")
 
-$csvExportPath = New-TemporaryFile
+$csvExportPath = "" # /path/to/export.csv
 
 # Get space
 Write-Output "Retrieving space '$($spaceName)'"
@@ -245,7 +250,7 @@ if ($results.Count -gt 0) {
         $results | Export-Csv -Path $csvExportPath -NoTypeInformation
     }
     else {
-        $results | Sort-Object -Property Project, Release, Environment, QueueTime | Format-Table -Property *
+        $results | Sort-Object -Property Project, Release, Environment, QueueTime | Format-Table -Property * | Out-String -Width 1000
     }
 }
 
