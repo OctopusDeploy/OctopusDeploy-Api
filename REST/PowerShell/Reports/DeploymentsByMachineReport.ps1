@@ -1,5 +1,9 @@
 $ErrorActionPreference = "Stop";
 
+# Add support for TLS 1.2 + TLS 1.3
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls13
+
 # Fix ANSI Color on PWSH Core issues when displaying objects
 if ($PSEdition -eq "Core") {
     $PSStyle.OutputRendering = "PlainText"
@@ -9,7 +13,7 @@ $stopwatch = [system.diagnostics.stopwatch]::StartNew()
 
 # Define working variables
 $octopusURL = "https://your.octopus.app"
-$octopusAPIKey = "API-KEY"
+$octopusAPIKey = "API-XXXX"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 $spaceName = "Default"
 
@@ -28,6 +32,13 @@ $projectNames = @("Project 1", "Project 2")
 $environmentNames = @("Development", "Test")
 
 $csvExportPath = "" # /path/to/export.csv
+
+# Validation that variable have been updated. Do not update the values here - they must stay as "https://your.octopus.app"
+# and "API-XXXX", as this is how we check that the variables above were updated.
+if ($octopusURL -eq "https://your.octopus.app" -or $octopusAPIKey -eq "API-XXXX") {
+    Write-Host "You must replace the placeholder variables with values specific to your Octopus instance"
+    exit 1
+}
 
 # Get space
 Write-Output "Retrieving space '$($spaceName)'"
