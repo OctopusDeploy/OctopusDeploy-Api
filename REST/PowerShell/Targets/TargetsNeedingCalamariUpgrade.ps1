@@ -33,7 +33,6 @@ $machines = @()
 foreach ($space in $spaces) {
     Write-Verbose "Retrieving all machines in space '$($space.Name)'"
 
-    
     $response = $null
     do {
         $uri = if ($response) { $octopusURL + $response.Links.'Page.Next' } else { "$octopusURL/api/$($space.Id)/machines" }
