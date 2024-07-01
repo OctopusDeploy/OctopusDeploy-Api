@@ -21,7 +21,7 @@ $projectList = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/
 # Loop through projects
 foreach ($project in $projectList) {
     
-    $runbooksListLink = "/api/$($space.Id)/projects/$($project.Id)/runbooks/all"
+    $runbooksListLink = "/api/$($space.Id)/projects/$($project.Id)/runbooks/all/v2"
     $runbooksList = Invoke-RestMethod -Method Get -Uri "$octopusURL$runbooksListLink" -Headers $header
 
     # Loop through runbooks
