@@ -90,8 +90,8 @@ function Invoke-OctopusLogoUpload
     END { }
 }
 
-#Execution Starts Here
-$uri = "https://your-octopus-server/api/Spaces-#/projects/Projects-#/logo" # change for appropriate space and project
-$inFile = "C:\path\to\logo.png" #any supported image format
+# Execution Starts Here
+$uri = "https://your-octopus-server/api/Spaces-#/projects/Projects-#/logo" # Change for appropriate space and project
+$inFile = "C:\path\to\logo.png" # Any supported image format
 $apiKey = "API-XXXXXXXXXXXXXX"
 Invoke-OctopusLogoUpload -Uri $uri -InFile $inFile -ApiKey $apiKey
