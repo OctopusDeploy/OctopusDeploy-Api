@@ -55,7 +55,7 @@ else {
             Write-Output "Removing tenant '$($tenant.Name)' association with certificate '$($cert.Name)'"
             $cert.TenantIds = $cert.TenantIds | Where-Object { $_ -ne $tenant.Id }
             if($cert.TenantIds.Length -eq 0 -and $cert.TenantedDeploymentParticipation -ieq "Tenanted") {
-                Write-Warning "Removing tenant assocation from archived certificate '$($cert.Name)' would cause no tenants to be linked. Changing TenantedDeploymentParticipation to TenantedOrUntenanted"
+                Write-Warning "Removing tenant assocation from current certificate '$($cert.Name)' would cause no tenants to be linked. Changing TenantedDeploymentParticipation to TenantedOrUntenanted"
                 $cert.TenantedDeploymentParticipation = "TenantedOrUntenanted"
             }
             $certBody = $cert | ConvertTo-Json -Depth 10
