@@ -20,19 +20,19 @@ $defaultSpaceId = $space.Id
 $project = (Invoke-RestMethod -Uri "$octopusURI/api/$defaultSpaceId/projects/all" -Method GET -Headers $header) | Where-Object { $_.Name -eq $projectName }
 if (!$project) {
     Write-Warning "Can't find $projectName, skipping this project."
-    continue
+    return
 }
 
 # Get project deployment settings
 $projectDeploymentSettings = Invoke-RestMethod -Uri "$octopusURI/api/$defaultSpaceId/projects/$($project.id)/deploymentsettings" -Method GET -Headers $header
 if ($null -eq $projectDeploymentSettings) {
     Write-Warning "Can't find deployment settings for $projectName, skipping this project."
-    continue
+    return
 }
     
 if ($setting -eq $projectDeploymentSettings.DefaultGuidedFailureMode) {
     Write-Host "$projectname guided failure setting is already set to: $setting... Skipping"
-    continue
+    return
 }
 $projectDeploymentSettings.DefaultGuidedFailureMode = $setting
 $jsonBody = $projectDeploymentSettings | ConvertTo-Json -Depth 12
