@@ -1,3 +1,8 @@
+###############################################################################################################################################################
+# NOTE: This script only finds the initial deployment to an environment. Deployments to individual targets via a Deployment Target Trigger are not detected.  #
+# NOTE: Use this script as a first pass to find projects that have not been deployed recently, but always verify the results.                                 #
+###############################################################################################################################################################
+
 $octopusURL = "YOUR OCTOPUS URL"
 $apiKey = "YOUR OCTOPUS API KEY"
 $spaceName = "YOUR SPACE NAME"
