@@ -127,7 +127,7 @@ foreach ($project in $projects) {
     # Get tenants connected to the project
     if ($project.TenantedDeploymentMode -ne "Untenanted") {
         # Filter tenants connected to this project
-        $projectTenants = $allTenants | Where-Object {
+        $projectTenants = ($allTenants | Where-Object {
             if ($_.ProjectEnvironments -ne $null) {
                 # Retrieve the keys from ProjectEnvironments
                 $projectEnvironmentKeys = @()
@@ -142,7 +142,7 @@ foreach ($project in $projects) {
             } else {
                 $false
             }
-        }
+        })
 
         if ($projectTenants.Count -gt 0) {
             Write-Host "Tenants connected to the project:"
