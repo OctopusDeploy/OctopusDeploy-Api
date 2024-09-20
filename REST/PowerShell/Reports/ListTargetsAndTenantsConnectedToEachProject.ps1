@@ -80,7 +80,7 @@ foreach ($project in $projects) {
         # Check each action in the step
         if ($step.Actions -ne $null) {
             foreach ($action in $step.Actions) {
-                if ($action.Properties) {
+                if ($null -ne $action.Properties -and $acion.Properties.Count -gt 0) {
 
                     $rolePropertyKey = "Octopus.Action.TargetRoles"
                     if ($rolePropertyKey) {
