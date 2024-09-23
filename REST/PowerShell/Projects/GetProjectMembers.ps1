@@ -115,7 +115,8 @@ foreach ($project_group in $project_groups) {
       
       $has_project_scoping = @($scoped_user_roles | Where-Object { $_.ProjectIds -contains $project.Id }).Length -gt 0
       $has_project_group_scoping = @($scoped_user_roles | Where-Object { $_.ProjectGroupIds -contains $project_group.Id }).Length -gt 0
-      $output_no_project_scopes = ($showUsersIfNoProjectScopes -and -not $has_project_scoping -and -not $has_project_group_scoping)
+      $has_no_project_scopes = @($scoped_user_roles | Where-Object { $_.ProjectIds.Length -eq 0 -and $_.ProjectGroupIds.Length -eq 0 }).Length -gt 0
+      $output_no_project_scopes = ($showUsersIfNoProjectScopes -and $has_no_project_scopes)
 
       if ($has_project_scoping -or $has_project_group_scoping -or $output_no_project_scopes) {
         $team.MemberUserIds | ForEach-Object { 
