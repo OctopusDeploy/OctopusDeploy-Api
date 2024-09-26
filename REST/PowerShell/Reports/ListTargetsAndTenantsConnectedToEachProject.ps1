@@ -1,16 +1,23 @@
-<# This script gathers the following information regarding each project in the specified space on your Octoptus instance:
+<# This script gathers the following information regarding each project in the specified space on your Octopus instance:
+
 -----------------------------------
 Project: <Project name>
 Roles used in the project: <roles>
 Deployment targets used by the project: <targets>
 Tenants connected to the project:
 -----------------------------------
+
+It can optionally export the results to a CSV file
 #>
 
 # Replace with your actual values
 $octopusURL = "https://<OCTOPUS_URL>"
 $apiKey = "<API_KEY>"
 $spaceName = "<SPACE_NAME>"             # The name of the space you want to query
+
+# Variables for CSV export
+$exportToCsv = $true                    # Set to $true to enable CSV export
+$exportPath = "C:\@downloads\export.csv"   # Set the desired export path
 
 $header = @{ "X-Octopus-ApiKey" = $apiKey }
 
@@ -43,13 +50,37 @@ $allMachines = Invoke-RestMethod -Method Get -Uri $machinesUrl -Headers $header
 $tenantsUrl = "$octopusURL/api/$($spaceId)/tenants/all"
 $allTenants = Invoke-RestMethod -Method Get -Uri $tenantsUrl -Headers $header
 
+# Array to collect results
+$projectResults = @()
+
 foreach ($project in $projects) {
     Write-Host "-----------------------------------"
     Write-Host "Project: $($project.Name)"
 
+    # Initialize variables for this project
+    $projectName = $project.Name
+    $projectIsCaC = $false
+    $projectIsTenanted = $false
+    $roles = @()
+    $machinesUsed = @()
+    $tenantsConnected = @()
+
     # Skip project if it is CaC
     if ($project.PersistenceSettings -and $project.PersistenceSettings.Type -eq "VersionControlled") {
         Write-Host " - This project is stored in Git - Unable to determine corresponding targets"
+        $projectIsCaC = $true
+
+        # Create a result object for this project
+        $projectResult = [PSCustomObject]@{
+            ProjectName           = $projectName
+            IsCaC                 = $projectIsCaC
+            RolesUsed             = ''
+            DeploymentTargetsUsed = ''
+            IsTenanted            = ''
+            TenantsConnected      = ''
+        }
+        $projectResults += $projectResult
+
         continue
     }
 
@@ -58,10 +89,8 @@ foreach ($project in $projects) {
     $deploymentProcess    = Invoke-RestMethod -Method Get -Uri $deploymentProcessUrl -Headers $header
 
     # Get roles/target tags for each step
-    $roles = @()
     foreach ($step in $deploymentProcess.Steps) {
-        if ($step.Properties) {
-
+        if ($null -ne $step.Properties -and $step.Properties.PSObject.Properties.Count -gt 0) {
             $rolePropertyKey = "Octopus.Action.TargetRoles"
             # Retrieve the property value
             if ($step.Properties -is [System.Collections.IDictionary]) {
@@ -80,21 +109,18 @@ foreach ($project in $projects) {
         # Check each action in the step
         if ($step.Actions -ne $null) {
             foreach ($action in $step.Actions) {
-                if ($null -ne $action.Properties -and $acion.Properties.Count -gt 0) {
-
+                if ($null -ne $action.Properties -and $action.Properties.PSObject.Properties.Count -gt 0) {
                     $rolePropertyKey = "Octopus.Action.TargetRoles"
-                    if ($rolePropertyKey) {
-                        # Retrieve the property value
-                        if ($action.Properties -is [System.Collections.IDictionary]) {
-                            $propertyValue = $action.Properties[$rolePropertyKey]
-                        } else {
-                            $propertyValue = $action.Properties."$rolePropertyKey"
-                        }
+                    # Retrieve the property value
+                    if ($action.Properties -is [System.Collections.IDictionary]) {
+                        $propertyValue = $action.Properties[$rolePropertyKey]
+                    } else {
+                        $propertyValue = $action.Properties."$rolePropertyKey"
+                    }
 
-                        if (-not [string]::IsNullOrWhiteSpace($propertyValue)) {
-                            $actionRoles = $propertyValue -split ',' | ForEach-Object { $_.Trim() }
-                            $roles += $actionRoles
-                        }
+                    if (-not [string]::IsNullOrWhiteSpace($propertyValue)) {
+                        $actionRoles = $propertyValue -split ',' | ForEach-Object { $_.Trim() }
+                        $roles += $actionRoles
                     }
                 }
             }
@@ -126,6 +152,8 @@ foreach ($project in $projects) {
 
     # Get tenants connected to the project
     if ($project.TenantedDeploymentMode -ne "Untenanted") {
+        $projectIsTenanted = $true
+
         # Filter tenants connected to this project
         $projectTenants = ($allTenants | Where-Object {
             if ($_.ProjectEnvironments -ne $null) {
@@ -149,12 +177,34 @@ foreach ($project in $projects) {
             foreach ($tenant in $projectTenants) {
                 Write-Host " - $($tenant.Name)"
             }
+            $tenantsConnected = $projectTenants.Name
         } else {
             Write-Host "No tenants connected to the project."
         }
     } else {
         Write-Host "Project is not tenanted."
     }
+
+    # Create a result object for this project
+    $projectResult = [PSCustomObject]@{
+        ProjectName           = $projectName
+        IsCaC                 = $projectIsCaC
+        RolesUsed             = $roles -join '; '
+        DeploymentTargetsUsed = ($machinesUsed | Select-Object -ExpandProperty Name) -join '; '
+        IsTenanted            = $projectIsTenanted
+        TenantsConnected      = $tenantsConnected -join '; '
+    }
+    $projectResults += $projectResult
 }
 
 Write-Host "-----------------------------------`n"
+
+# Export results to CSV if enabled
+if ($exportToCsv -and $projectResults.Count -gt 0) {
+    try {
+        $projectResults | Export-Csv -Path $exportPath -NoTypeInformation -Encoding UTF8
+        Write-Host "Results exported to CSV file at '$exportPath'"
+    } catch {
+        Write-Error "Failed to export results to CSV: $_"
+    }
+}
