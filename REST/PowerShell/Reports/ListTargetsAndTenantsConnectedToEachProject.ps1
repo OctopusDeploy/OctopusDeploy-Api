@@ -17,7 +17,7 @@ $spaceName = "<SPACE_NAME>"             # The name of the space you want to quer
 
 # Variables for CSV export
 $exportToCsv = $true                    # Set to $true to enable CSV export
-$exportPath = "C:\<EXPORT>\<PATH\export.csv"   # Set the desired export path
+$exportPath = "C:\<EXPORT>\<PATH>\export.csv"   # Set the desired export path
 
 $header = @{ "X-Octopus-ApiKey" = $apiKey }
 
