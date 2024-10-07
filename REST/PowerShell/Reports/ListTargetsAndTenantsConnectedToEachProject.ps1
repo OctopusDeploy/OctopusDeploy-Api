@@ -202,15 +202,6 @@ foreach ($project in $projects) {
             }
         }
     }
-
-    # If there are no machines or tenants, add a single row
-    if ($machinesUsed.Count -eq 0 -and $tenantsConnected.Count -eq 0) {
-        $projectResults += [PSCustomObject]@{
-            ProjectName      = $projectName
-            DeploymentTarget = ''
-            Tenant           = ''
-        }
-    }
 }
 
 Write-Host "-----------------------------------`n"
