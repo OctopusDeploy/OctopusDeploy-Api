@@ -50,7 +50,7 @@ $allMachines = Invoke-RestMethod -Method Get -Uri $machinesUrl -Headers $header
 $tenantsUrl = "$octopusURL/api/$($spaceId)/tenants/all"
 $allTenants = Invoke-RestMethod -Method Get -Uri $tenantsUrl -Headers $header
 
-# Array to collect results
+# Initialize an array to collect results
 $projectResults = @()
 
 foreach ($project in $projects) {
@@ -65,22 +65,17 @@ foreach ($project in $projects) {
     $machinesUsed = @()
     $tenantsConnected = @()
 
-    # Skip project if it is CaC
+    # Skip project if it is Configuration as Code (CaC)
     if ($project.PersistenceSettings -and $project.PersistenceSettings.Type -eq "VersionControlled") {
         Write-Host " - This project is stored in Git - Unable to determine corresponding targets"
         $projectIsCaC = $true
 
-        # Create a result object for this project
-        $projectResult = [PSCustomObject]@{
+        # Add a single row for the project
+        $projectResults += [PSCustomObject]@{
             ProjectName           = $projectName
-            IsCaC                 = $projectIsCaC
-            RolesUsed             = ''
-            DeploymentTargetsUsed = ''
-            IsTenanted            = ''
-            TenantsConnected      = ''
+            DeploymentTarget      = ''
+            Tenant                = ''
         }
-        $projectResults += $projectResult
-
         continue
     }
 
@@ -185,16 +180,28 @@ foreach ($project in $projects) {
         Write-Host "Project is not tenanted."
     }
 
-    # Create a result object for this project
-    $projectResult = [PSCustomObject]@{
-        ProjectName           = $projectName
-        IsCaC                 = $projectIsCaC
-        RolesUsed             = $roles -join '; '
-        DeploymentTargetsUsed = ($machinesUsed | Select-Object -ExpandProperty Name) -join '; '
-        IsTenanted            = $projectIsTenanted
-        TenantsConnected      = $tenantsConnected -join '; '
+    # Prepare data for CSV output
+    # Create combinations of Deployment Targets and Tenants
+    if ($machinesUsed.Count -eq 0) {
+        $machinesUsed = @('')
+    } else {
+        $machinesUsed = $machinesUsed | Select-Object -ExpandProperty Name
     }
-    $projectResults += $projectResult
+
+    if ($tenantsConnected.Count -eq 0) {
+        $tenantsConnected = @('')
+    }
+
+    # Create rows for each combination
+    foreach ($machineName in $machinesUsed) {
+        foreach ($tenantName in $tenantsConnected) {
+            $projectResults += [PSCustomObject]@{
+                ProjectName      = $projectName
+                DeploymentTarget = $machineName
+                Tenant           = $tenantName
+            }
+        }
+    }
 }
 
 Write-Host "-----------------------------------`n"
