@@ -14,9 +14,20 @@ $enable = $false # Set to $true to enable an account, set to $false to disable a
 # Find user account
 $allUserAccounts = Invoke-RestMethod -Method GET -uri "$octopusURL/api/users/all" -Headers $header
 
-If ($usernameOrEmail -ieq "email") {   
-    $userAccount = ($allUserAccounts | Where-Object { $_.EmailAddress -ieq $userAccountEmailAddress }) | Select-Object -First 1
+If ($usernameOrEmail -ieq "email") {  
+    $userAccount = $allUserAccounts | Where-Object { $_.EmailAddress -ieq $userAccountEmailAddress }
+    if ($userAccount.count -gt 1) {
+        Write-Warning "Multiple accounts detected with the specified email. Consider specifying an account by username instead."
+        Foreach ($account in $userAccount) {
+            Write-Host "Username: $($account.Username)"
+            Write-Host "Email: $($account.EmailAddress)"
+            Write-Host "Id: $($account.Id)"
+            Write-Host "---"
+        }
+        Break
+    }
 }
+
 Else {
     If ($usernameOrEmail -ieq "username") {
         $userAccount = ($allUserAccounts | Where-Object { $_.Username -ieq $userAccountUsername }) | Select-Object -First 1
@@ -30,8 +41,9 @@ If (!$userAccount) {
 }
 
 If ($userAccount) {
-    Write-host "Disabling the account $($userAccount.DisplayName) ($($userAccount.Id))"
+    If ($enable) { $enableDisable = "enabled" }; If (!$enable) { $enableDisable = "disabled" }
+    Write-Host "Committing changes to account: $($userAccount.DisplayName) ($($userAccount.Id))"
     $userAccount.IsActive = $enable
     $disableUser = Invoke-RestMethod -Method PUT -uri "$octopusURL/api/users/$($userAccount.Id)" -Body ($userAccount | ConvertTo-Json -Depth 10) -Headers $header
-    Write-Host "DONE!"
+    Write-Host "User account $enableDisable"
 }
