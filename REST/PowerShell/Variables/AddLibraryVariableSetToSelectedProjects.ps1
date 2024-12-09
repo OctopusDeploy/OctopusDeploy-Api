@@ -6,6 +6,7 @@ $octopusAPIKey = "API-YOURAPIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 $projectName = "MyProject"
 $librarySetName = "MyLibrarySet"
+$spaceName = "MySpace"
 
 # Get space
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
