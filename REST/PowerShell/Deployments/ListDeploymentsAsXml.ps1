@@ -110,7 +110,7 @@ do {
         $xml.WriteElementString("Environment", (Get-Name $deployment.EnvironmentId $environments))
         $xml.WriteElementString("Project", (Get-Name $deployment.ProjectId $projects))
         $xml.WriteElementString("ProjectGroup", (Get-Name $deployment.ProjectGroupId $projectGroups))
-        $xml.WriteElementString("Created", $deployment.Created.ToString("s"))
+        $xml.WriteElementString("Created", ([DateTime]$deployment.Created).ToString("s"))
         $xml.WriteElementString("Name", $deployment.Name)
         $xml.WriteElementString("Id", $deployment.Id)
         $xml.WriteElementString("ReleaseNotes", $release.ReleaseNotes)
