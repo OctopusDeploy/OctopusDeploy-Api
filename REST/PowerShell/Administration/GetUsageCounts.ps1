@@ -566,7 +566,7 @@ Write-Host "The item counts are as follows:"
 Write-Host "    Instance ID: $($apiInformation.InstallationId)"
 Write-Host "    Server Version: $($apiInformation.Version)"
 Write-Host "    Number of Server Nodes: $($nodeInfo.TotalResults)"
-Write-Host "    Licensed Machine Count: $($ObjectCounts.LicensedTargetCount) (these are active targets de-duped across the instance if running a modern version of Octopus)" -ForegroundColor Green
+Write-Host "    Licensed Target Count: $($ObjectCounts.LicensedTargetCount) (these are active targets de-duped across the instance if running a modern version of Octopus)" -ForegroundColor Green
 Write-Host "    Project Count: $($ObjectCounts.ProjectCount)"
 Write-Host "    Tenant Count: $($ObjectCounts.TenantCount)" 
 Write-Host "    Total Machine Count (Active Linux and Windows Tentacles and SSH Connections): $($ObjectCounts.WindowsLinuxMachineCount)" 
