@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Configuration variables
-octopusURL="https://octopus-operations.octopus.app"
+octopusURL="https://.octopus.app"
 apiKey="API-"
 spaceName="Space Name"
 projectName="Project Name"
