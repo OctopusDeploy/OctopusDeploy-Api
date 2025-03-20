@@ -569,7 +569,7 @@ Write-Host "    Number of Server Nodes: $($nodeInfo.TotalResults)"
 Write-Host "    Licensed Target Count: $($ObjectCounts.LicensedTargetCount) (these are active targets de-duped across the instance if running a modern version of Octopus)" -ForegroundColor Green
 Write-Host "    Project Count: $($ObjectCounts.ProjectCount)"
 Write-Host "    Tenant Count: $($ObjectCounts.TenantCount)" 
-Write-Host "    Machine Counts (Active Linux and Windows Tentacles and SSH Connections): $($ObjectCounts.WindowsLinuxMachineCount)" 
+Write-Host "    Total Machine Count (Active Linux and Windows Tentacles and SSH Connections): $($ObjectCounts.WindowsLinuxMachineCount)" 
 Write-Host "    Deployment Target Count: $($ObjectCounts.TargetCount)"
 Write-Host "        Active and Available Targets: $($ObjectCounts.ActiveTargetCount)" -ForegroundColor Green
 Write-Host "        Active but Unavailable Targets: $($ObjectCounts.UnavailableTargetCount)" -ForegroundColor Yellow
