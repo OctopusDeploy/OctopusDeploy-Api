@@ -8,7 +8,7 @@ $octopusAPIKey = "API-XXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 $userAccountEmailAddress = "OCTOPUS_EMAIL@SOMEEMAIL.COM"
 $userAccountUsername = "OCTOPUS_USERNAME"
-$usernameOrEmail = "email" # Set to "username" if you wish to delete by username
+$usernameOrEmail = "email" # Set to "username" if you wish to disable by username
 $enable = $false # Set to $true to enable an account, set to $false to disable an account
 
 # Find user account
