@@ -22,25 +22,23 @@ $spaces = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces?partialName
 $space = $spaces.Items | Where-Object { $_.Name -eq $spaceName }
 
 # Get project
-if ($projectName -ine "All") {
+if ($projectName -ieq "All") {
+    $runbooks = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/runbooks?skip=0&take=10000" -Headers $header
+    $runbookList = $runbooks.Items
+}
+else {
     $projects = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects?partialName=$([uri]::EscapeDataString($projectName))&skip=0&take=100" -Headers $header
     $project = $projects.Items | Where-Object { $_.Name -eq $projectName }
     
-    # Get runbook
-    if ($runbookName -ine "All") {
-        $runbooks = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/runbooks?partialName=$([uri]::EscapeDataString($runbookName))&skip=0&take=100" -Headers $header
-        $runbookList = $runbooks.Items | Where-Object { $_.Name -eq $runbookName }
-    }
-
+    # Get runbook(s)
     if ($runbookName -ieq "All") {
         $runbooks = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/runbooks?skip=0&take=10000" -Headers $header
         $runbookList = $runbooks.Items
     }
-}
-
-if ($projectName -ieq "All") {
-    $runbooks = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/runbooks?skip=0&take=10000" -Headers $header
-    $runbookList = $runbooks.Items
+    else {
+        $runbooks = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/runbooks?partialName=$([uri]::EscapeDataString($runbookName))&skip=0&take=100" -Headers $header
+        $runbookList = $runbooks.Items | Where-Object { $_.Name -eq $runbookName }
+    }
 }
 
 # Find target date
@@ -52,6 +50,7 @@ foreach ($runbook in $runbookList) {
     if (($targetRetentionUnitType -ieq $unit) -and ($targetRetentionQuantityToKeep -lt $($runbook.RunRetentionPolicy.QuantityToKeep))) {
         Write-Host "Retention Policy for $($runbook.Name) ($($runbook.Id)) ($($runbook.ProjectId)) set to: $($runbook.RunRetentionPolicy.QuantityToKeep) $unit"
     }
+
     # (if not all snapshots are deleted for a particular runbook, increase take=value below or run the script again)
     if (!$printRunbookRetentionPolicyOnly) {
         $snapshots = Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/runbooks/$($runbook.Id)/runbookSnapshots?take=10000" -Headers $header
@@ -62,7 +61,7 @@ foreach ($runbook in $runbookList) {
         foreach ($snapshot in $snapshots.Items) {
             if ($snapshot.Id -eq $runbook.PublishedRunbookSnapshotId)
             {
-                Write-Host "Runbook snapshot $($snapshot.Id) is currently published one. Preserving."
+                Write-Host "$($snapshot.Id) is the current published runbook snapshot. Preserving."
             }
             else
             {
