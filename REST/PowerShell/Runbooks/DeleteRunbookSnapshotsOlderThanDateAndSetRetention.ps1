@@ -44,6 +44,7 @@ else {
 # Confirm results greater than 0
 if (!$runbookList) {
     Write-Host "No Runbooks found. Check the values for `$spaceName, `$projectName, and `$runbookName."
+    break
 }
 
 # Find target date
