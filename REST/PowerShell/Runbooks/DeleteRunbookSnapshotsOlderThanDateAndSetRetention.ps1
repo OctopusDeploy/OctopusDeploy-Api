@@ -41,6 +41,11 @@ else {
     }
 }
 
+# Confirm results greater than 0
+if (!$runbookList) {
+    Write-Host "No Runbooks found. Check the values for `$spaceName, `$projectName, and `$runbookName."
+}
+
 # Find target date
 $deleteSnapshotOlderThan = (Get-Date).AddDays(-$keepNewerThanXDaysAgo).tostring("yyyy-MM-dd")
 
