@@ -1,4 +1,4 @@
-# Restores a earlier version of a specific step template to an earlier version
+# Restores an earlier version of a specific step template as a new version
 # You can find previous step template versions (and version ids) at /api/Spaces-##/actiontemplates/ActionTemplates-##
 
 # Define working variables
