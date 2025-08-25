@@ -104,7 +104,8 @@ function Get-OctopusObjectCount
         $apiKey
     )
 
-    $itemCount = 0
+    $activeItemCount = 0
+    $disabledItemCount = 0
     $currentPage = 1
     $pageSize = 50
     $skipValue = 0
@@ -122,12 +123,16 @@ function Get-OctopusObjectCount
             {          
                 if ($item.IsDisabled -eq $false)
                 {
-                    $itemCount += 1
+                    $activeItemCount += 1
+                }
+                else
+                {
+                    $disabledItemCount += 1
                 }
             }
             else 
             {
-                $itemCount += 1    
+                $activeItemCount += 1    
             }
         }
 
@@ -144,7 +149,32 @@ function Get-OctopusObjectCount
         }
     }
     
-    return $itemCount
+    return @{
+        ActiveItemCount = $activeItemCount
+        DisabledItemCount = $disabledItemCount
+        TotalItemCount = $activeItemCount + $disabledItemCount
+    }
+}
+
+function Get-EffectiveLimit 
+{
+    param (
+        $limit
+    )
+
+    if ($null -ne (Get-Member -InputObject $limit -Name "LicensedLimit" -MemberType Properties))
+    {
+        if ($limit.LicensedLimit -eq 2147483647) # int.MaxValue means it is an unlimited license
+        {
+            return "of Unlimited"
+        }
+        else
+        {
+            return "of $($limit.LicensedLimit)"
+        }
+    }
+    
+    return ""
 }
 
 function Get-OctopusDeploymentTargetsCount
@@ -330,8 +360,12 @@ function Get-OctopusDeploymentTargetsCount
 [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls13
 
 $ObjectCounts = @{
-    ProjectCount = 0
-    TenantCount = 0        
+    TotalProjectCount = 0
+    ActiveProjectCount = 0
+    DisabledProjectCount = 0
+    TotalTenantCount = 0        
+    ActiveTenantCount = 0
+    DisabledTenantCount = 0
     TargetCount = 0 
     DisabledTargets = 0
     ActiveTargetCount = 0
@@ -365,8 +399,18 @@ $ObjectCounts = @{
     ActiveWorkerCount = 0
     UnavailableWorkerCount = 0
     WindowsLinuxMachineCount = 0
-    LicensedTargetCount = 0
+    LicensedTargetCount = $null
+    LicensedTargetEntitlement = $null
     LicensedWorkerCount = 0
+    LicensedWorkerEntitlement = $null
+    LicensedUserCount = 0
+    LicensedUserEntitlement = $null    
+    LicensedProjectCount = 0
+    LicensedProjectEntitlement = $null
+    LicensedTenantCount = $null
+    LicensedTenantEntitlement = $null
+    LicensedMachineCount = $null
+    LicensedMachineEntitlement = $null
 }
 
 Write-Host "Getting Octopus Deploy Version Information"
@@ -374,6 +418,7 @@ $apiInformation = Invoke-OctopusApi -endPoint "/api" -spaceId $null -octopusUrl 
 $splitVersion = $apiInformation.Version -split "\."
 $OctopusMajorVersion = [int]$splitVersion[0]
 $OctopusMinorVersion = [int]$splitVersion[1]
+$isPtm = $false
 
 $hasLicenseSummary = $OctopusMajorVersion -ge 4
 $hasSpaces = $OctopusMajorVersion -ge 2019
@@ -398,6 +443,19 @@ if ($hasLicenseSummary -eq $true)
     Write-Host "Checking the license summary for this instance"
     $licenseSummary = Invoke-OctopusApi -endPoint "licenses/licenses-current-status" -octopusUrl $OctopusDeployUrl -spaceId $null -apiKey $OctopusDeployApiKey
 
+    if ($null -eq (Get-Member -InputObject $licenseSummary -Name "IsPtm" -MemberType Properties))
+    {
+        $isPtm = $false
+    }
+    elseif($licenseSummary.IsPtm -eq $true)
+    {
+        $isPtm = $true
+    }
+    else
+    {
+        $isPtm = $false
+    }
+
     if ($null -ne (Get-Member -InputObject $licenseSummary -Name "NumberOfMachines" -MemberType Properties))
     {
         $ObjectCounts.LicensedTargetCount = $licenseSummary.NumberOfMachines
@@ -406,17 +464,49 @@ if ($hasLicenseSummary -eq $true)
     {
         foreach ($limit in $licenseSummary.Limits)
         {
+            if ($limit.Name -eq "Projects")
+            {
+                Write-Host "Your instance is currently using $($limit.CurrentUsage) Projects"
+                $ObjectCounts.LicensedProjectCount = $limit.CurrentUsage
+                $objectCounts.LicensedProjectEntitlement = Get-EffectiveLimit $limit
+            }
+
+            if ($limit.Name -eq "Tenants")
+            {
+                Write-Host "Your instance is currently using $($limit.CurrentUsage) Tenants"
+                $ObjectCounts.LicensedTenantCount = $limit.CurrentUsage
+                $objectCounts.LicensedTenantEntitlement = Get-EffectiveLimit $limit
+            }
+
             if ($limit.Name -eq "Targets")
             {
-                Write-Host "Your instance is currently using $($limit.CurrentUsage) Targets"
-                $ObjectCounts.LicensedTargetCount = $limit.CurrentUsage
+                if ($isPtm -eq $true)
+                {                
+                    Write-Host "Your instance is currently using $($limit.CurrentUsage) Machines"
+                    $ObjectCounts.LicensedMachineCount = $limit.CurrentUsage
+                    $objectCounts.LicensedMachineEntitlement = Get-EffectiveLimit $limit
+                }
+                else
+                {
+                    Write-Host "Your instance is currently using $($limit.CurrentUsage) Targets"
+                    $ObjectCounts.LicensedTargetCount = $limit.CurrentUsage
+                    $objectCounts.LicensedTargetEntitlement = Get-EffectiveLimit $limit
+                }                
             }
 
             if ($limit.Name -eq "Workers")
             {
                 Write-Host "Your instance is currently using $($limit.CurrentUsage) Workers"
                 $ObjectCounts.LicensedWorkerCount = $limit.CurrentUsage
+                $objectCounts.LicensedWorkerEntitlement = Get-EffectiveLimit $limit
             }
+
+            if ($limit.Name -eq "Users")
+            {
+                Write-Host "Your instance is currently using $($limit.CurrentUsage) Users"
+                $ObjectCounts.LicensedUserCount = $limit.CurrentUsage
+                $objectCounts.LicensedUserEntitlement = Get-EffectiveLimit $limit
+            }            
         }
     }
 }
@@ -425,17 +515,29 @@ if ($hasLicenseSummary -eq $true)
 foreach ($spaceId in $spaceIdList)
 {    
     Write-Host "Getting project counts for $spaceId"
-    $activeProjectCount = Get-OctopusObjectCount -endPoint "projects" -spaceId $spaceId -octopusUrl $OctopusDeployUrl -apiKey $OctopusDeployApiKey
+    $projectCounts = Get-OctopusObjectCount -endPoint "projects" -spaceId $spaceId -octopusUrl $OctopusDeployUrl -apiKey $OctopusDeployApiKey
 
-    Write-Host "$spaceId has $activeProjectCount active projects."
-    $ObjectCounts.ProjectCount += $activeProjectCount
+    Write-Host "$spaceId has $($projectCounts.ActiveItemCount) active projects."
+    $ObjectCounts.ActiveProjectCount += $projectCounts.ActiveItemCount
+
+    Write-Host "$spaceId has $($projectCounts.DisabledItemCount) disabled projects."
+    $ObjectCounts.DisabledProjectCount += $projectCounts.DisabledItemCount
+
+    Write-Host "$spaceId has $($projectCounts.TotalItemCount) total projects."
+    $ObjectCounts.TotalProjectCount += $projectCounts.TotalItemCount
 
     Write-Host "Getting tenant counts for $spaceId"
-    $activeTenantCount = Get-OctopusObjectCount -endPoint "tenants" -spaceId $spaceId -octopusUrl $OctopusDeployUrl -apiKey $OctopusDeployApiKey
+    $tenantCounts = Get-OctopusObjectCount -endPoint "tenants" -spaceId $spaceId -octopusUrl $OctopusDeployUrl -apiKey $OctopusDeployApiKey
 
-    Write-Host "$spaceId has $activeTenantCount tenants."
-    $ObjectCounts.TenantCount += $activeTenantCount
+    Write-Host "$spaceId has $($tenantCounts.ActiveItemCount) active tenants."
+    $ObjectCounts.ActiveTenantCount += $tenantCounts.ActiveItemCount
 
+    Write-Host "$spaceId has $($tenantCounts.InactiveItemCount) disabled tenants."
+    $ObjectCounts.DisabledTenantCount += $tenantCounts.DisabledItemCount
+
+    Write-Host "$spaceId has $($tenantCounts.TotalItemCount) total tenants."
+    $ObjectCounts.TotalTenantCount += $tenantCounts.TotalItemCount
+    
     Write-Host "Getting Infrastructure Summary for $spaceId"
     $infrastructureSummary = Get-OctopusDeploymentTargetsCount -spaceId $spaceId -octopusUrl $OctopusDeployUrl -apiKey $OctopusDeployApiKey
 
@@ -566,9 +668,26 @@ Write-Host "The item counts are as follows:"
 Write-Host "    Instance ID: $($apiInformation.InstallationId)"
 Write-Host "    Server Version: $($apiInformation.Version)"
 Write-Host "    Number of Server Nodes: $($nodeInfo.TotalResults)"
-Write-Host "    Licensed Target Count: $($ObjectCounts.LicensedTargetCount) (these are active targets de-duped across the instance if running a modern version of Octopus)" -ForegroundColor Green
-Write-Host "    Project Count: $($ObjectCounts.ProjectCount)"
-Write-Host "    Tenant Count: $($ObjectCounts.TenantCount)" 
+Write-Host "    Entitlement Usage"
+if ($isPtm -eq $true)
+{
+    Write-Host "        Licensed Project Count: $($ObjectCounts.LicensedProjectCount) $($ObjectCounts.LicensedProjectEntitlement)" -ForegroundColor Green
+    Write-Host "        Licensed Tenant Count: $($ObjectCounts.LicensedTenantCount) $($ObjectCounts.LicensedTenantEntitlement)" -ForegroundColor Green
+    Write-Host "        Licensed Machine Count: $($ObjectCounts.LicensedMachineCount) $($ObjectCounts.LicensedMachineEntitlement)" -ForegroundColor Green
+}
+else
+{
+    Write-Host "        Licensed Target Count: $($ObjectCounts.LicensedTargetCount) $($ObjectCounts.LicensedTargetEntitlement)" -ForegroundColor Green
+}
+
+Write-Host "        Licensed User Count: $($ObjectCounts.LicensedUserCount) $($ObjectCounts.LicensedUserEntitlement)" -ForegroundColor Green
+Write-Host "        Licensed Worker Count: $($ObjectCounts.LicensedWorkerCount) $($ObjectCounts.LicensedWorkerEntitlement)" -ForegroundColor Green
+Write-Host "    Project Count: $($ObjectCounts.TotalProjectCount)"
+Write-Host "        Active Project Count (Counted against entitlements for all licenses): $($ObjectCounts.ActiveProjectCount)" -ForegroundColor Green
+Write-Host "        Disabled Project Count (Counted against entitlements for free licenses): $($ObjectCounts.DisabledProjectCount)"
+Write-Host "    Tenant Count: $($ObjectCounts.TotalTenantCount)" 
+Write-Host "        Active Tenant Count (Counted against entitlements for all licenses): $($ObjectCounts.ActiveTenantCount)" -ForegroundColor Green
+Write-Host "        Disabled Tenant Count (Counted against entitlements for free licenses): $($ObjectCounts.DisabledTenantCount)" 
 Write-Host "    Machine Counts (Active Linux and Windows Tentacles and SSH Connections): $($ObjectCounts.WindowsLinuxMachineCount)" 
 Write-Host "    Deployment Target Count: $($ObjectCounts.TargetCount)"
 Write-Host "        Active and Available Targets: $($ObjectCounts.ActiveTargetCount)" -ForegroundColor Green
