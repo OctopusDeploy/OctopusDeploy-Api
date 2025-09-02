@@ -14,10 +14,9 @@ $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Heade
 # Get project
 $project = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/all" -Headers $header) | Where-Object {$_.Name -eq $projectName}
 
-# Get runbooks
-# If more than 30 runbooks please use ?take=x and ?skip=y in the URL to get more paginated results
-# e.g. /runbooks?take=30&skip=30
-$runbookList = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/runbooks" -Headers $header).Items
+# All Get runbooks
+$runbookCount = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/runbooks" -Headers $header).TotalResults
+$runbookList = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/projects/$($project.Id)/runbooks?take=$($runbookCount)" -Headers $header).Items
 
 #Get snapshot and frozen process for that snapshot, loop through each action, and try to add slug to hash table for the runbook. 
 #This will fail if slug already exists and print out to the console
@@ -34,7 +33,6 @@ foreach($runbook in $runbookList)
         }
         catch
         {
-            
             Write-Host "[DUPE ERROR] Slug: $($action.Slug), Runbook: $($runbook.Name), Step: $($action.Name)"
         }
     }
