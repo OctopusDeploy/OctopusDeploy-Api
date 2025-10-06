@@ -359,6 +359,7 @@ try {
         @{
             Id = $_.Id
             Name = $_.Name
+            ProjectEnvironments = $_.ProjectEnvironments
         }
     })
     Write-Verbose "Found $($tenants.Count) tenants: $($tenants.Name -join ', ')"
@@ -409,6 +410,42 @@ if (-not $RunbookName -and $Release) {
         exit 1
     }
 }
+
+# Step 3.6: Validate tenants are connected to the target environment
+Write-Verbose "Validating tenant-environment associations..."
+$validTenants = @()
+$skippedTenants = @()
+
+foreach ($tenant in $tenants) {
+    # Check if this tenant has the project connected to the target environment
+    $projectEnvironments = $tenant.ProjectEnvironments
+    
+    # Check if the project-environment combination exists for this tenant
+    $tenantHasEnvironment = $false
+    
+    if ($projectEnvironments -and $projectEnvironments.PSObject.Properties.Name -contains $projectId) {
+        $projectEnvs = $projectEnvironments.$projectId
+        if ($projectEnvs -contains $environmentId) {
+            $tenantHasEnvironment = $true
+        }
+    }
+    
+    if ($tenantHasEnvironment) {
+        $validTenants += $tenant
+        Write-Verbose "Tenant '$($tenant.Name)' is connected to environment '$Environment' for project '$ProjectName'"
+    } else {
+        $skippedTenants += $tenant
+        Write-Warning "Tenant '$($tenant.Name)' (ID: $($tenant.Id)) was found with tag '$TenantTag' but is NOT connected to environment '$Environment' for project '$ProjectName'. This tenant will be skipped."
+    }
+}
+
+if ($validTenants.Count -eq 0) {
+    Write-Error "No tenants found that are both tagged with '$TenantTag' AND connected to environment '$Environment' for project '$ProjectName'"
+    exit 1
+}
+
+Write-Host "Tenant validation complete: $($validTenants.Count) valid, $($skippedTenants.Count) skipped" -ForegroundColor Cyan
+$tenants = $validTenants
 
 # Step 4: Execute deploy or runbook based on whether RunbookName is provided - loop through each tenant
 $successCount = 0
