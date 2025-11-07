@@ -1,0 +1,206 @@
+---
+- name: Install and Configure Octopus Deploy Tentacle on RHEL
+  hosts: all
+  become: yes
+  vars:
+    # Octopus Server Configuration
+    octopus_server_url: "https://your-octopus-server.example.com"
+    octopus_api_key: "API-XXXXXXXXXXXXXXXXXXXXXXXXXX"
+    octopus_server_thumbprint: "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
+    # Tentacle Configuration
+    tentacle_port: 10933
+    tentacle_home: "/opt/octopus"
+    tentacle_app: "/opt/octopus/tentacle"
+    tentacle_config: "/etc/octopus"
+
+    # Registration Configuration
+    octopus_space: "Default"
+    octopus_environments:
+      - "Development"
+      - "Test"
+    octopus_roles:
+      - "web-server"
+      - "app-server"
+    octopus_tenant_tags: []
+    octopus_tenants: []
+
+    # Machine Policy (optional)
+    machine_policy: "Default Machine Policy"
+
+    # Display name for the tentacle
+    tentacle_display_name: "{{ ansible_hostname }}"
+
+  tasks:
+    - name: Install required packages
+      yum:
+        name:
+          - wget
+          - yum-utils
+        state: present
+
+    - name: Add Octopus Deploy RPM key
+      rpm_key:
+        key: https://rpm.octopus.com/public.key
+        state: present
+
+    - name: Add Octopus Deploy repository
+      yum_repository:
+        name: Octopus
+        description: Octopus Deploy Repository
+        baseurl: https://rpm.octopus.com/
+        enabled: yes
+        gpgcheck: yes
+        gpgkey: https://rpm.octopus.com/public.key
+
+    - name: Install Tentacle
+      yum:
+        name: tentacle
+        state: present
+        update_cache: yes
+
+    - name: Create Tentacle application directory
+      file:
+        path: "{{ tentacle_app }}"
+        state: directory
+        mode: '0755'
+
+    - name: Create Tentacle configuration directory
+      file:
+        path: "{{ tentacle_config }}"
+        state: directory
+        mode: '0755'
+
+    - name: Configure Tentacle instance
+      shell: |
+        /opt/octopus/tentacle/Tentacle create-instance \
+          --instance "Tentacle" \
+          --config "{{ tentacle_config }}/tentacle.config"
+      args:
+        creates: "{{ tentacle_config }}/tentacle.config"
+
+    - name: Configure Tentacle home directory
+      shell: |
+        /opt/octopus/tentacle/Tentacle configure \
+          --instance "Tentacle" \
+          --home "{{ tentacle_home }}" \
+          --app "{{ tentacle_app }}"
+      changed_when: false
+
+    - name: Generate and configure certificate
+      shell: |
+        /opt/octopus/tentacle/Tentacle new-certificate \
+          --instance "Tentacle" \
+          --if-blank
+      register: cert_result
+      changed_when: "'Generating certificate' in cert_result.stdout"
+
+    - name: Reset trust (remove any existing trust relationships)
+      shell: |
+        /opt/octopus/tentacle/Tentacle configure \
+          --instance "Tentacle" \
+          --reset-trust
+      changed_when: false
+
+    - name: Configure trust with Octopus server
+      shell: |
+        /opt/octopus/tentacle/Tentacle configure \
+          --instance "Tentacle" \
+          --trust "{{ octopus_server_thumbprint }}"
+      changed_when: false
+
+    - name: Configure Tentacle in listening mode
+      shell: |
+        /opt/octopus/tentacle/Tentacle configure \
+          --instance "Tentacle" \
+          --port "{{ tentacle_port }}" \
+          --noListen "False"
+      changed_when: false
+
+    - name: Configure firewalld to allow Tentacle port
+      firewalld:
+        port: "{{ tentacle_port }}/tcp"
+        permanent: yes
+        state: enabled
+        immediate: yes
+      when: ansible_facts['os_family'] == "RedHat"
+      ignore_errors: yes
+
+    - name: Get Tentacle thumbprint
+      shell: |
+        /opt/octopus/tentacle/Tentacle show-thumbprint \
+          --instance "Tentacle"
+      register: tentacle_thumbprint
+      changed_when: false
+
+    - name: Display Tentacle thumbprint
+      debug:
+        msg: "Tentacle thumbprint: {{ tentacle_thumbprint.stdout_lines[-1] }}"
+
+    - name: Build environment list for registration
+      set_fact:
+        environment_params: "{{ octopus_environments | map('regex_replace', '^(.*)$', '--environment \"\\1\"') | join(' ') }}"
+
+    - name: Build role list for registration
+      set_fact:
+        role_params: "{{ octopus_roles | map('regex_replace', '^(.*)$', '--role \"\\1\"') | join(' ') }}"
+
+    - name: Build tenant tag list for registration
+      set_fact:
+        tenant_tag_params: "{{ octopus_tenant_tags | map('regex_replace', '^(.*)$', '--tenantTag \"\\1\"') | join(' ') }}"
+      when: octopus_tenant_tags | length > 0
+
+    - name: Build tenant list for registration
+      set_fact:
+        tenant_params: "{{ octopus_tenants | map('regex_replace', '^(.*)$', '--tenant \"\\1\"') | join(' ') }}"
+      when: octopus_tenants | length > 0
+
+    - name: Register Tentacle with Octopus Server
+      shell: |
+        /opt/octopus/tentacle/Tentacle register-with \
+          --instance "Tentacle" \
+          --server "{{ octopus_server_url }}" \
+          --apiKey "{{ octopus_api_key }}" \
+          --space "{{ octopus_space }}" \
+          {{ environment_params }} \
+          {{ role_params }} \
+          {% if tenant_tag_params is defined %}{{ tenant_tag_params }}{% endif %} \
+          {% if tenant_params is defined %}{{ tenant_params }}{% endif %} \
+          --name "{{ tentacle_display_name }}" \
+          --publicHostName "{{ ansible_default_ipv4.address }}" \
+          --comms-style TentaclePassive \
+          --force \
+          --machinePolicy "{{ machine_policy }}"
+      register: registration_result
+      changed_when: "'Machine registered successfully' in registration_result.stdout"
+      failed_when: registration_result.rc != 0 and 'already exists' not in registration_result.stderr
+
+    - name: Install Tentacle service
+      shell: |
+        /opt/octopus/tentacle/Tentacle service \
+          --instance "Tentacle" \
+          --install \
+          --start
+      args:
+        creates: /etc/systemd/system/Tentacle.service
+
+    - name: Ensure Tentacle service is running and enabled
+      systemd:
+        name: Tentacle
+        state: started
+        enabled: yes
+        daemon_reload: yes
+
+    - name: Check Tentacle service status
+      systemd:
+        name: Tentacle
+        state: started
+      register: tentacle_status
+
+    - name: Display registration status
+      debug:
+        msg:
+          - "Tentacle installation completed!"
+          - "Tentacle is listening on port: {{ tentacle_port }}"
+          - "Machine name: {{ tentacle_display_name }}"
+          - "Public hostname/IP: {{ ansible_default_ipv4.address }}"

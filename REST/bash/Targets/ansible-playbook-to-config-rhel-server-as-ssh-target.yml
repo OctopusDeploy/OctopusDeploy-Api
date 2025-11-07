@@ -1,0 +1,99 @@
+---
+- name: Configure Red Hat Enterprise Linux server as an Octopus SSH Target
+  hosts: all
+  become: yes
+  vars:
+    # SSH target configuration
+    octopus_ssh_user: "octopus"
+    octopus_ssh_home: "/home/octopus"
+    octopus_ssh_authorized_keys: []   # e.g., ["ssh-rsa AAAAB3... your key ... user@host"]
+    octopus_ssh_port: 22
+
+    # Optional: install common deployment dependencies
+    install_common_tools: true
+
+    # Optional: firewall management
+    manage_firewalld: true
+
+  tasks:
+    - name: Ensure required system packages are installed
+      yum:
+        name:
+          - openssh-server
+          - openssh-clients
+          - sudo
+        state: present
+      tags: ssh
+
+    - name: Start and enable SSH service
+      systemd:
+        name: sshd
+        state: started
+        enabled: yes
+
+    - name: Ensure the Octopus SSH user exists
+      user:
+        name: "{{ octopus_ssh_user }}"
+        home: "{{ octopus_ssh_home }}"
+        shell: /bin/bash
+        create_home: yes
+        state: present
+
+    - name: Allow Octopus SSH user passwordless sudo
+      copy:
+        dest: "/etc/sudoers.d/{{ octopus_ssh_user }}"
+        content: "{{ octopus_ssh_user }} ALL=(ALL) NOPASSWD:ALL"
+        mode: '0440'
+
+    - name: Ensure .ssh directory exists
+      file:
+        path: "{{ octopus_ssh_home }}/.ssh"
+        state: directory
+        owner: "{{ octopus_ssh_user }}"
+        group: "{{ octopus_ssh_user }}"
+        mode: '0700'
+
+    - name: Configure authorized SSH keys for Octopus user
+      authorized_key:
+        user: "{{ octopus_ssh_user }}"
+        key: "{{ item }}"
+      with_items: "{{ octopus_ssh_authorized_keys }}"
+      when: octopus_ssh_authorized_keys | length > 0
+
+    - name: Set secure permissions for authorized_keys file
+      file:
+        path: "{{ octopus_ssh_home }}/.ssh/authorized_keys"
+        owner: "{{ octopus_ssh_user }}"
+        group: "{{ octopus_ssh_user }}"
+        mode: '0600'
+      when: octopus_ssh_authorized_keys | length > 0
+
+    - name: Configure firewall to allow SSH port
+      firewalld:
+        port: "{{ octopus_ssh_port }}/tcp"
+        permanent: yes
+        state: enabled
+        immediate: yes
+      when: manage_firewalld | bool
+      ignore_errors: yes
+
+    - name: (Optional) Install common deployment tools
+      yum:
+        name:
+          - unzip
+          - tar
+          - git
+          - curl
+          - wget
+        state: present
+      when: install_common_tools | bool
+      tags: tools
+
+    - name: Display SSH target information
+      debug:
+        msg:
+          - "Octopus SSH target configured successfully!"
+          - "User: {{ octopus_ssh_user }}"
+          - "Home directory: {{ octopus_ssh_home }}"
+          - "SSH Port: {{ octopus_ssh_port }}"
+          - "Connect from Octopus Deploy using: ssh://{{ ansible_default_ipv4.address }}:{{ octopus_ssh_port }}"
