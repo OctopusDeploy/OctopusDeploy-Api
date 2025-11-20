@@ -6,13 +6,15 @@ file names, or warnings).
 
 If a match is found, it outputs the Deployment Description and a direct URL link 
 to the task in the Octopus UI.
+
+NOTE: Setting the $taskLimit variable to a high value has the potential to generate a large number of API calls, so be mindful of this when setting the value.
 #>
 
 $octopusUrl = "https://your-octopus-url"
 $apiKey = "API-x"
 $spaceName = "Default" 
 $searchKeyword = "search keywords" # The text to find
-$taskLimit = 20 # Max number of recent tasks to scan
+$taskLimit = 20 # Max number of recent tasks to scan. 
 
 $header = @{ "X-Octopus-ApiKey" = $apiKey }
 
