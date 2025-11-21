@@ -29,8 +29,8 @@ $tasksEndpoint = "$octopusUrl/api/$spaceId/tasks?skip=0&take=$taskLimit&name=Dep
 # Note: You can add "&environment=Environments-1" to the URL above to filter further
 
 try {
-    $Response = Invoke-RestMethod -Uri $tasksEndpoint -Headers $header -Method Get
-    $tasks = $Response.Items
+    $response = Invoke-RestMethod -Uri $tasksEndpoint -Headers $header -Method Get
+    $tasks = $response.Items
 }
 catch {
     Write-Error $_.Exception
