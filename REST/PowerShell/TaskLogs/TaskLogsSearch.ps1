@@ -1,6 +1,6 @@
 <#
 .DESCRIPTION
-    This script automates the process of finding specific text within Octopus Deploy task logs.
+    This script automates the process of finding specific text within Octopus Deploy task logs (case-insensitive).
     It retrieves the most recent deployment tasks via the Octopus API, downloads the full 
     raw log transcript for each, and scans for a user-defined keyword (e.g., specific error codes, 
     file names, or warnings).
