@@ -35,7 +35,7 @@ function Get-SpaceId {
         $spaceId = $space.Id
     } 
     catch {
-        Write-Host "Error getting Space Id"
+        Write-Warning "Error getting $spaceName space ID from $spacesEndpoint."
         Write-Error $_.Exception
         exit
     }
@@ -53,6 +53,7 @@ function Get-Tasks($spaceId) {
         $tasks = $response.Items
     }
     catch {
+        Write-Warning "Error getting tasks from $tasksEndpoint."
         Write-Error $_.Exception
         exit
     }
@@ -94,7 +95,7 @@ function Search-TaskLogs($spaceId) {
             }
         }
         catch {
-            Write-Host $rawLogEndpoint
+            Write-Warning "Error getting task log from $rawLogEndpoint"
             Write-Error $_.Exception
         }
     }
