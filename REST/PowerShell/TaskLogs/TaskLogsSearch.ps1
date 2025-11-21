@@ -44,7 +44,7 @@ catch {
     exit
 }
 
-if (-not $tasks) {
+if ($tasks.Length -eq 0) {
     Write-Host "No tasks found."
     exit
 }
