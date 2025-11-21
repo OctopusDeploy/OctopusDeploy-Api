@@ -1,14 +1,22 @@
 <#
-This script automates the process of finding specific text within Octopus Deploy task logs.
-It retrieves the most recent deployment tasks via the Octopus API, downloads the full 
-raw log transcript for each, and scans for a user-defined keyword (e.g., specific error codes, 
-file names, or warnings).
+.DESCRIPTION
+    This script automates the process of finding specific text within Octopus Deploy task logs.
+    It retrieves the most recent deployment tasks via the Octopus API, downloads the full 
+    raw log transcript for each, and scans for a user-defined keyword (e.g., specific error codes, 
+    file names, or warnings).
 
-If a match is found, it outputs the Deployment Description and a direct URL link 
-to the task in the Octopus UI.
+    If a match is found, it outputs the Deployment Description and a direct URL link 
+    to the task in the Octopus UI.
 
-NOTE: Setting the $taskLimit variable to a high value has the potential to generate a large number of API calls, 
-so be mindful of this when setting the value.
+.NOTES
+    - Requires a valid Octopus API Key.
+    - Setting the $taskLimit variable to a high value has the potential to generate a large number of API calls.
+
+.EXAMPLE
+    .\TaskLogsSearch.ps1
+    > Searching logs for keyword: 'Error: 500'
+    > [MATCH FOUND] Deploy release 1.0.0 to Production
+    > Link: https://your-octopus-url/app#/Spaces-1/tasks/ServerTasks-12345
 #>
 
 $octopusUrl = "https://your-octopus-url"
