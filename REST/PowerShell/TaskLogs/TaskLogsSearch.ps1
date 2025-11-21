@@ -26,7 +26,6 @@ $space = (Invoke-RestMethod -Method Get -Uri "$octopusUrl/api/spaces/all" -Heade
 $spaceId = $space.Id
 
 $tasksEndpoint = "$octopusUrl/api/$spaceId/tasks?skip=0&take=$taskLimit&name=Deploy"
-# Note: You can add "&environment=Environments-1" to the URL above to filter further
 
 try {
     $response = Invoke-RestMethod -Uri $tasksEndpoint -Headers $header -Method Get
