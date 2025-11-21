@@ -12,6 +12,7 @@ var octopusURL = "http://OctoTemp";
 var octopusAPIKey = "API-YOURAPIKEY";
 string projectName = "MyProject";
 string spaceName = "default";
+string sensitiveValue = "mySensitiveValue";
 
 string processTemplateUsageStepName = "Run a Process Template";
 string processTemplateSlug = "my-process-template";
