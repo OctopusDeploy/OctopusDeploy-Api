@@ -14,7 +14,7 @@ so be mindful of this when setting the value.
 $octopusUrl = "https://your-octopus-url"
 $apiKey = "API-x"
 $spaceName = "Default" 
-$searchKeyword = "search keywords" # The text to find
+$searchKeyword = "search keyword" # The text to find
 $taskLimit = 20 # Max number of recent tasks to scan. 
 
 $header = @{ "X-Octopus-ApiKey" = $apiKey }
@@ -57,10 +57,9 @@ foreach ($task in $tasks) {
     $rawLogEndpoint = "$octopusUrl/api/$spaceId/tasks/$taskId/raw"
     
     try {
-        # Using -ErrorAction SilentlyContinue because some system tasks might not have raw logs
-        $logContent = Invoke-RestMethod -Uri $rawLogEndpoint -Headers $header -Method Get -ErrorAction SilentlyContinue
+        $logContent = Invoke-RestMethod -Uri $rawLogEndpoint -Headers $header -Method Get
         
-        if ($logContent -and ($logContent -match $searchKeyword)) {
+        if ($logContent -and ($logContent -match [regex]::Escape($searchKeyword))) {
             Write-Host "`n[MATCH FOUND] $description" -ForegroundColor Green
             
             # Construct the UI Link
