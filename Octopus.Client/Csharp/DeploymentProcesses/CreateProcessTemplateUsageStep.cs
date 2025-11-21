@@ -43,12 +43,30 @@ try
     Octopus.Client.Model.DeploymentActionResource stepAction = new DeploymentActionResource();
     stepAction.ActionType = "Octopus.ProcessTemplate";
     stepAction.Name = processTemplateUsageStepName;
-    // Add process template specific properties into action propeties
+    
+    // Add process template specific properties into action properties
     stepAction.Properties.Add("Octopus.Action.ProcessTemplate.Reference.Slug", processTemplateSlug);
     stepAction.Properties.Add("Octopus.Action.ProcessTemplate.Reference.VersionMask", processTemplateVersionMask);
-    // Add values for any required process template parameters into action propeties
+    
+    // Add values for any required process template parameters into action properties
     stepAction.Properties.Add("LinuxWorker", "my-linux-worker");
+    
+    // Package parameter
+    var packageReference = new PackageReference
+    {
+        Name = "Package Parameter",
+        PackageId = "MyPackage",
+    };
+    packageReference.Properties.Add("PackageParameterName", "Package Parameter");
+    packageReference.Properties.Add("SelectionMode", "deferred");
+	
+    stepAction.Packages.Add(packageReference);
 
+    stepAction.Properties.Add("Package Parameter", "{\"PackageId\":\"MyPackage\",\"FeedId\":\"feeds-builtin\"}");
+
+    // Sensitive parameter
+    stepAction.Properties.Add("Sensitive Parameter", new PropertyValueResource(sensitiveValue, true));
+    
     // Add step action and step to process
     newStep.Actions.Add(stepAction);
     deploymentProcess.Steps.Add(newStep);
