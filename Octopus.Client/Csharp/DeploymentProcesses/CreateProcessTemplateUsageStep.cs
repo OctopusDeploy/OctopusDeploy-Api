@@ -63,7 +63,7 @@ try
 	
     stepAction.Packages.Add(packageReference);
 
-    stepAction.Properties.Add("Package Parameter", "{\"PackageId\":\"MyPackage\",\"FeedId\":\"feeds-builtin\"}");
+    stepAction.Properties.Add("Package Parameter", "{\"PackageId\":\"MyPackage\",\"FeedId\":\"my-feed-id\"}");
 
     // Sensitive parameter
     stepAction.Properties.Add("Sensitive Parameter", new PropertyValueResource(sensitiveValue, true));
