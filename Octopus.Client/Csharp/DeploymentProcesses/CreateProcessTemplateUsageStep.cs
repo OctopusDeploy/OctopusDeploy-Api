@@ -57,7 +57,6 @@ try
     {
         Name = "Package Parameter",
         PackageId = "MyPackage",
-		FeedId = "feeds-builtin",
     };
     packageReference.Properties.Add("PackageParameterName", "Package Parameter");
     packageReference.Properties.Add("SelectionMode", "deferred");
