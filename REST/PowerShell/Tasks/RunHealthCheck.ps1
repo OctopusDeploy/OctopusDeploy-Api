@@ -15,48 +15,43 @@ $MachineNames = @() # Leave blank to check all machines
 
 # Get space
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) |
-    Where-Object { $_.Name -eq $spaceName }
-if (-not $space)
-{
+Where-Object { $_.Name -eq $spaceName }
+if (-not $space) {
     throw "Space '$spaceName' not found"
 }
 
 # Get EnvironmentId
 $EnvironmentID = $null
-if (-not [string]::IsNullOrWhiteSpace($EnvironmentName))
-{
+if (-not [string]::IsNullOrWhiteSpace($EnvironmentName)) {
     $EnvironmentID = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/environments/all" -Headers $header) |
-        Where-Object { $_.Name -eq $EnvironmentName } |
-        Select-Object -ExpandProperty Id -First 1
-    if (-not $EnvironmentID)
-    {
+    Where-Object { $_.Name -eq $EnvironmentName } |
+    Select-Object -ExpandProperty Id -First 1
+    if (-not $EnvironmentID) {
         throw "Environment '$EnvironmentName' not found in space '$($space.Name)'"
     }
 }
 
 # Get MachineIds
 $MachineIds = @()
-if ($MachineNames.Count -gt 0)
-{
+if ($MachineNames.Count -gt 0) {
     $MachineIds = @((Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/machines/all" -Headers $header) |
         Where-Object { $MachineNames -contains $_.Name } |
         Select-Object -ExpandProperty Id)
-    if ($MachineIds.Count -ne $MachineNames.Count)
-    {
+    if ($MachineIds.Count -ne $MachineNames.Count) {
         throw "One or more machines not found in space '$($space.Name)'"
     }
 }
 
 # Create json payload
 $jsonPayload = @{
-    SpaceId = "$($space.Id)"
-    Name = "Health"
+    SpaceId     = "$($space.Id)"
+    Name        = "Health"
     Description = $Description
-    Arguments = @{
-        Timeout = "$([TimeSpan]::FromMinutes($TimeOutAfterMinutes))"
+    Arguments   = @{
+        Timeout        = "$([TimeSpan]::FromMinutes($TimeOutAfterMinutes))"
         MachineTimeout = "$([TimeSpan]::FromMinutes($MachineTimeoutAfterMinutes))"
-        EnvironmentId = $EnvironmentID
-        MachineIds = $MachineIds
+        EnvironmentId  = $EnvironmentID
+        MachineIds     = $MachineIds
     }
 }
 
