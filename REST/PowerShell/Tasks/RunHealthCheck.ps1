@@ -26,7 +26,7 @@ if (-not [string]::IsNullOrWhiteSpace($EnvironmentName))
         Select-Object -ExpandProperty Id -First 1
 }
 
-# Get MachineIds (kept as an array for the JSON payload)
+# Get MachineIds
 $MachineIds = @()
 if ($MachineNames.Count -gt 0)
 {
