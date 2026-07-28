@@ -27,7 +27,7 @@ if (-not [string]::IsNullOrWhiteSpace($environmentName)) {
     Where-Object { $_.Name -eq $environmentName } |
     Select-Object -ExpandProperty Id -First 1
     if (-not $environmentId) {
-        throw "Environment '$EnvironmentName' not found in space '$($space.Name)'"
+        throw "Environment '$environmentName' not found in space '$($space.Name)'"
     }
 }
 
