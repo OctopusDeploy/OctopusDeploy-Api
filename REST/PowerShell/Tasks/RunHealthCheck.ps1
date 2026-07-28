@@ -5,13 +5,13 @@ $octopusURL = "http://youroctourl"
 $octopusAPIKey = "API-YOURAPIKEY"
 $header = @{ "X-Octopus-ApiKey" = $octopusAPIKey }
 $spaceName = "Default"
-$Description = "Health check started from Powershell script"
-$TimeOutAfterMinutes = 5
-$MachineTimeoutAfterMinutes = 5
+$description = "Health check started from Powershell script"
+$timeoutAfterMinutes = 5
+$machineTimeoutAfterMinutes = 5
 
 # Choose an Environment, a set of machine names, or both.
-$EnvironmentName = "Development" # Leave blank to check all environments
-$MachineNames = @() # Leave blank to check all machines
+$environmentName = "Development" # Leave blank to check all environments
+$machineNames = @("TestMachine1", "TestMachine2") # Leave blank to check all machines
 
 # Get space
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) |
@@ -21,23 +21,23 @@ if (-not $space) {
 }
 
 # Get EnvironmentId
-$EnvironmentID = $null
-if (-not [string]::IsNullOrWhiteSpace($EnvironmentName)) {
-    $EnvironmentID = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/environments/all" -Headers $header) |
-    Where-Object { $_.Name -eq $EnvironmentName } |
+$environmentId = $null
+if (-not [string]::IsNullOrWhiteSpace($environmentName)) {
+    $environmentId = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/environments/all" -Headers $header) |
+    Where-Object { $_.Name -eq $environmentName } |
     Select-Object -ExpandProperty Id -First 1
-    if (-not $EnvironmentID) {
+    if (-not $environmentId) {
         throw "Environment '$EnvironmentName' not found in space '$($space.Name)'"
     }
 }
 
 # Get MachineIds
-$MachineIds = @()
-if ($MachineNames.Count -gt 0) {
-    $MachineIds = @((Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/machines/all" -Headers $header) |
-        Where-Object { $MachineNames -contains $_.Name } |
+$machineIds = @()
+if ($machineNames.Count -gt 0) {
+    $machineIds = @((Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/machines/all" -Headers $header) |
+        Where-Object { $machineNames -contains $_.Name } |
         Select-Object -ExpandProperty Id)
-    if ($MachineIds.Count -ne $MachineNames.Count) {
+    if ($machineIds.Count -ne $machineNames.Count) {
         throw "One or more machines not found in space '$($space.Name)'"
     }
 }
@@ -46,12 +46,12 @@ if ($MachineNames.Count -gt 0) {
 $jsonPayload = @{
     SpaceId     = "$($space.Id)"
     Name        = "Health"
-    Description = $Description
+    Description = $description
     Arguments   = @{
-        Timeout        = "$([TimeSpan]::FromMinutes($TimeOutAfterMinutes))"
-        MachineTimeout = "$([TimeSpan]::FromMinutes($MachineTimeoutAfterMinutes))"
-        EnvironmentId  = $EnvironmentID
-        MachineIds     = $MachineIds
+        Timeout        = "$([TimeSpan]::FromMinutes($timeoutAfterMinutes))"
+        MachineTimeout = "$([TimeSpan]::FromMinutes($machineTimeoutAfterMinutes))"
+        EnvironmentId  = $environmentId
+        MachineIds     = $machineIds
     }
 }
 
