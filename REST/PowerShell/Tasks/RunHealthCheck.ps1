@@ -10,24 +10,29 @@ $TimeOutAfterMinutes = 5
 $MachineTimeoutAfterMinutes = 5
 
 # Choose an Environment, a set of machine names, or both.
-$EnvironmentName = "Development"
-$MachineNames = @()
+$EnvironmentName = "Development" # Leave blank to check all environments
+$MachineNames = @() # Leave blank to check all machines
 
 # Get space
-$space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) | Where-Object {$_.Name -eq $spaceName}
+$space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) |
+    Where-Object { $_.Name -eq $spaceName }
 
 # Get EnvironmentId
 $EnvironmentID = $null
-if([string]::IsNullOrWhiteSpace($EnvironmentName) -eq $False) 
+if (-not [string]::IsNullOrWhiteSpace($EnvironmentName))
 {
-    $EnvironmentID += (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/environments/all" -Headers $header) | Where-Object {$_.Name -eq $EnvironmentName} | Select-Object -ExpandProperty Id -First 1
+    $EnvironmentID = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/environments/all" -Headers $header) |
+        Where-Object { $_.Name -eq $EnvironmentName } |
+        Select-Object -ExpandProperty Id -First 1
 }
 
-# Get MachineIds
-$MachineIds = $null
-if($MachineNames.Count -gt 0)
+# Get MachineIds (kept as an array for the JSON payload)
+$MachineIds = @()
+if ($MachineNames.Count -gt 0)
 {
-    $MachineIds = $EnvironmentID += (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/machines/all" -Headers $header) | Where-Object {$_.Name -eq $EnvironmentName} | Select-Object -ExpandProperty Id -Join ", "
+    $MachineIds = @((Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/machines/all" -Headers $header) |
+        Where-Object { $MachineNames -contains $_.Name } |
+        Select-Object -ExpandProperty Id)
 }
 
 # Create json payload
