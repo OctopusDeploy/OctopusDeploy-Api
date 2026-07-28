@@ -16,6 +16,10 @@ $MachineNames = @() # Leave blank to check all machines
 # Get space
 $space = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/spaces/all" -Headers $header) |
     Where-Object { $_.Name -eq $spaceName }
+if (-not $space)
+{
+    throw "Space '$spaceName' not found"
+}
 
 # Get EnvironmentId
 $EnvironmentID = $null
