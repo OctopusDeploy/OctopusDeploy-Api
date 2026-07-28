@@ -24,6 +24,10 @@ if (-not [string]::IsNullOrWhiteSpace($EnvironmentName))
     $EnvironmentID = (Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/environments/all" -Headers $header) |
         Where-Object { $_.Name -eq $EnvironmentName } |
         Select-Object -ExpandProperty Id -First 1
+    if (-not $EnvironmentID)
+    {
+        throw "Environment '$EnvironmentName' not found in space '$($space.Name)'"
+    }
 }
 
 # Get MachineIds
@@ -33,6 +37,10 @@ if ($MachineNames.Count -gt 0)
     $MachineIds = @((Invoke-RestMethod -Method Get -Uri "$octopusURL/api/$($space.Id)/machines/all" -Headers $header) |
         Where-Object { $MachineNames -contains $_.Name } |
         Select-Object -ExpandProperty Id)
+    if ($MachineIds.Count -ne $MachineNames.Count)
+    {
+        throw "One or more machines not found in space '$($space.Name)'"
+    }
 }
 
 # Create json payload
