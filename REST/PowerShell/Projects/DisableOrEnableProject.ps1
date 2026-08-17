@@ -1,5 +1,5 @@
 # ==================================================================================================================
-# This script deletes a Project on the specified Octopus Server.
+# This script disables or enables a Project on the specified Octopus Server.
 # ==================================================================================================================
 
 $ErrorActionPreference = "Stop";
@@ -16,6 +16,7 @@ If ($BypassPrompts) {
     $OctopusAPIKey = "API-XXXXXXXXXXXXXXXXXX"
     $SpaceId = "Spaces-XX"
     $ProjectName = "My Project"
+    $ProjectEnabled = $false
 }
 
 If (!$BypassPrompts) {
@@ -25,9 +26,16 @@ If (!$BypassPrompts) {
 	$OctopusURL = (Read-Host "Enter your Octopus Instance URL with no trailing slash (i.e. `"http://YOUR_OCTOPUS_URL.bla`")").trim('"')
 	$SpaceId = (Read-Host "Enter the SpaceId where the Library Variable Set resides (example: `"Spaces-1`")").trim('"')
 	$ProjectName = (Read-Host "Enter a name for your new Project (example: `"My Project`")").trim('"')
+	$ProjectStatusPrompt = (Read-Host "Type `"D`" to Disable or `"E`" to Enable `"$($ProjectName)`"").trim('"')
+	While (($ProjectStatusPrompt -ne "D") -and ($ProjectStatusPrompt -ne "E")) {
+		$ProjectStatusPrompt = (Read-Host "Type `"D`" to Disable or `"E`" to Enable `"$($ProjectName)`"").trim('"')
+	}
+	If ($ProjectStatusPrompt -eq "D") {$ProjectEnabled = $false}
+	If ($ProjectStatusPrompt -eq "E") {$ProjectEnabled = $true}
 }
 
 $Header = @{ "X-Octopus-ApiKey" = $OctopusAPIKey }
+
 
 # ====== SCRIPT BODY ======
 # Try to GET the ProjectId for $ProjectName
@@ -41,30 +49,35 @@ Catch {
     break
 }
 
-# Confirmation (ignored if $BypassPrompts = $true)
-If (!$BypassPrompts) {
-    Write-Host "=================================================================================================================================="
-    $Confirm = (Read-Host "Are you sure you want to DELETE the Project `"$ProjectName`" ($($Project.Id))? This cannot be undone. (Type Y to continue or N to quit)").trim('"')
-	While (($Confirm -ne "N") -and ($Confirm -ne "Y")) {
-		$Confirm = (Read-Host "Are you sure you want to DELETE the Project `"$ProjectName`" ($($Project.Id))? This cannot be undone. (Type Y to continue or N to quit)").trim('"')
-	}  
-	If ($Confirm -eq "N") {
-		Write-Warning "Aborted. No changes were made."
-		break
-	}
+# Check if Project is already Disabled/Enabled
+If ($Project.IsDisabled -eq !$ProjectEnabled) {
+    If ($Project.IsDisabled) {
+        Write-Host "`"$($ProjectName)`" ($($Project.Id)) already disabled! No action required!"
+        break
+    }
+    If (!$Project.IsDisabled) {
+        Write-Host "`"$($ProjectName)`" ($($Project.Id)) already enabled! No action required!"
+        break
+    }
 }
 
-# Delete Project
-Invoke-RestMethod -Method DEL "$($OctopusURL)/api/$($SpaceId)/Projects/$($Project.Id)" -Headers $Header
+# Disable/Enable Project
+$Project.IsDisabled = !$ProjectEnabled
+If ($ProjectEnabled -eq $false) {
+	Write-Host "Disabling `"$($ProjectName)`" ($($Project.Id))"
+}
+If ($ProjectEnabled -eq $true) {
+	Write-Host "Enabling `"$($ProjectName)`" ($($Project.Id))"
+}
+# Save Project changes
 Try {
-    $DeleteCheck = (Invoke-RestMethod -Method GET "$($OctopusURL)/api/$($SpaceId)/Projects/all" -Headers $Header) | Where-Object {$_.Name -eq $ProjectName}
-    If (!$DeleteCheck) {
-        Write-Host "The Project named `"$($ProjectName)`" ($($Project.Id)) was DELETED."
-    }
-    If ($DeleteCheck) {throw}
+    $SaveProject = Invoke-RestMethod -Method PUT -Uri "$($OctopusURL)/api/$($SpaceId)/Projects/$($Project.Id)" -Headers $Header -Body ($Project | ConvertTo-Json -Depth 10)
 }
 Catch {
-    Write-Warning "Unable to DELETE the Project `"$($ProjectName)`" via `"$($OctopusURL)/api/$($SpaceId)/Projects/$($Project.Id)`""
-    Write-Warning "Check your parameters (Octopus API key, URL, SpaceId, etc.), ensure your API key has sufficient permissions, and the Octopus Server is accessible from this machine."
-    break
+    Write-Warning "Something went wrong when attempting a PUT via `"$($OctopusURL)/api/$($SpaceId)/Projects/$($Project.Id)`"."
+}
+
+$ProjectCheck = Invoke-RestMethod -Method GET -Uri "$($OctopusURL)/api/$($SpaceId)/Projects/$($Project.Id)" -Headers $Header
+If ($ProjectCheck.IsDisabled -eq !$ProjectEnabled) {
+	Write-Host "Success!"
 }
