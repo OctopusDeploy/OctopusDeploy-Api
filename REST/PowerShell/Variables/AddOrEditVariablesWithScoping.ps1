@@ -50,40 +50,96 @@ Function Get-EnvironmentId {
 }
 
 Function Modify-Variable {
-
     # Define parameters
     param(
         $VariableSet,
         $VariableName,
         $VariableValue,
         $VariableEnvScope,
+        $VariableRoleScope,
+        $VariableTenantTagScope,
         $SpaceName
     )
+    
+    #Function to test if all scopes match
+    function Test-ScopeMatch {
+        param($VariableScope, $TargetScope)
+        
+        #If neither have a scope, they match, so return true.
+        if (!$TargetScope -and !$VariableScope) { return $true }      
+        
+        #Code to support comma separated string as well as arrays, this detects if there's a comma in a string and converts it to an array.
+        if ($TargetScope -is [string] -and $TargetScope.Contains(',')) {
+            $TargetScope = $TargetScope -split ',' | ForEach-Object { $_.Trim() }
+        }
 
-    #If given a scope parameter, find the matching variable with scope and modify the value
-    if ($VariableEnvScope) {
-
-        #Code to transform the environment name to environment ID.
-        $SpaceId = Get-SpaceId -Space $SpaceName
-        $environmentId = Get-EnvironmentId -EnvironmentName $VariableEnvScope -SpaceId $SpaceId
-
-        #loop through all variables and change the value if the name and environment ID match
+        #Make both scopes an array for easier comparison regardless if they are arrays.
+        $VariableScopeArray = if ($VariableScope -is [array]) { $VariableScope } else { @($VariableScope) }
+        $TargetScopeArray = if ($TargetScope -is [array]) { $TargetScope } else { @($TargetScope) }
+        
+        #If their counts are different, they dont match. This is to catch when one scope has both of the others, but has extra scopes.
+        if ($VariableScopeArray.Count -ne $TargetScopeArray.Count) {
+            return $false
+        }
+        
+        #Every target scope must exist in the variable scope
+        foreach ($target in $TargetScopeArray) {
+            if ($VariableScopeArray -notcontains $target) {
+                return $false
+            }
+        }
+        
+        #Every variable scope must exist in the target scope
+        foreach ($varScope in $VariableScopeArray) {
+            if ($TargetScopeArray -notcontains $varScope) {
+                return $false
+            }
+        }
+        
+        return $true
+    }
+    
+    #If we are matching on ANY scope, test matching
+    if ($VariableEnvScope -or $VariableRoleScope -or $VariableTenantTagScope) {
+        
+        #Create environment IDs out of names.
+        $environmentIds = $null
+        if ($VariableEnvScope) {
+            $SpaceId = Get-SpaceId -Space $SpaceName
+            if ($VariableEnvScope -is [array]) {
+                $environmentIds = @()
+                foreach ($env in $VariableEnvScope) {
+                    $environmentIds += Get-EnvironmentId -EnvironmentName $env -SpaceId $SpaceId
+                }
+            } else {
+                $environmentIds = Get-EnvironmentId -EnvironmentName $VariableEnvScope -SpaceId $SpaceId
+            }
+        }
+        
+        #Check each variable and if they match, change it.
         ForEach ($variable in $VariableSet.Variables) {
-            if ($variable.Name -eq $VariableName -and $variable.Scope.Environment -eq $environmentId) {
-                $variable.Value = $VariableValue
+            if ($variable.Name -eq $VariableName) {
+                $environmentMatch = Test-ScopeMatch -VariableScope $variable.Scope.Environment -TargetScope $environmentIds
+                $roleMatch = Test-ScopeMatch -VariableScope $variable.Scope.Role -TargetScope $VariableRoleScope
+                $tenantTagMatch = Test-ScopeMatch -VariableScope $variable.Scope.TenantTag -TargetScope $VariableTenantTagScope
+                
+                # Only modify if all specified scopes match
+                if ($environmentMatch -and $roleMatch -and $tenantTagMatch) {
+                    $variable.Value = $VariableValue
+                }
             }
         }
     }
-    #When a scope parameter is not given
+    #If no scopes are provided, we will check to see if the names match and the corresponding variable has no scopes.
     else {
-        #Find the variable you want to edit by name, then edit the value. Only edit if the variable is unscoped.
         ForEach ($variable in $VariableSet.Variables) {
-            if ($variable.Name -eq $VariableName -and !$variable.Scope.Environment) {
+            if ($variable.Name -eq $VariableName -and !$variable.Scope.Environment -and !$variable.Scope.Role -and !$variable.Scope.TenantTag) {
                 $variable.Value = $VariableValue
             }
         }
     }
 }
+
 
 Function Add-Variable {
 
@@ -299,11 +355,13 @@ try {
     #--------------------------
     #Modify-Variable Information
     #--------------------------
-    #If you want to modify an Environmentally scoped variable, you must pass the Environment with -VariableEnvScope and the Space with -SpaceName. Note, if you have multiple environments scoped if it matches on one it will modify the variable, it doesn't need to match on all.
-    
-    #Modify-Variable -VariableSet $octopusProjectVariables -VariableName "Test" -VariableValue "New" 
-    #Modify-Variable -VariableSet $octopusProjectVariables -VariableName "Test2" -VariableValue "New2" -VariableEnvScope "Development" -SpaceName "Default"
-    
+    #If you want to modify a variable with scopes, you must pass EVERY scope. It will try to find the variable value that has all of the matching scopes and modify that one. 
+
+    #Modify-Variable -VariableSet $octopusProjectVariables -VariableName "Test" -VariableValue "NewEnvScope" -VariableEnvScope "Development" -SpaceName "Default"
+    #Modify-Variable -VariableSet $octopusProjectVariables -VariableName "Test" -VariableValue "NewEnvRoleScope" -VariableEnvScope "Development" -VariableRoleScope "BestServers" -SpaceName "Default"
+    #Modify-Variable -VariableSet $octopusProjectVariables -VariableName "Test" -VariableValue "NewEnvRoleTenantScope" -VariableEnvScope "Development" -VariableRoleScope "SecondBestServers" -VariableTenantTagScope "Tenants/Coke, Tenants/Pepsi" -SpaceName "Default"
+    #$tenants = @("Tenants/Sprite", "Tenants/Barqs")
+    #Modify-Variable -VariableSet $octopusProjectVariables -VariableName "Test" -VariableValue "NewEnvRoleTenantScope" -VariableEnvScope "Development" -VariableRoleScope "SecondBestServers" -VariableTenantTagScope $tenants -SpaceName "Default"
 
     #--------------------------
     #Add-Variable Information
