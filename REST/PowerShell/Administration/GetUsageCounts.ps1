@@ -91,7 +91,41 @@ function Invoke-OctopusApi
 
         Write-Host "Stopping the script from proceeding" -ForegroundColor Red
         exit 1
-    }    
+    }
+}
+
+# Works out whether there is another page to fetch, regardless of whether the instance's
+# API response includes "NumberOfPages" (older/newer versions vary on this).
+# Falls back to the "Page.Next" link, and finally to a page count derived from
+# TotalResults/ItemsPerPage, so this works across API versions.
+function Test-OctopusHasMorePages
+{
+    param
+    (
+        $itemList,
+        $currentPage
+    )
+
+    if ($null -ne (Get-Member -InputObject $itemList -Name "NumberOfPages" -MemberType Properties))
+    {
+        return $currentPage -lt $itemList.NumberOfPages
+    }
+
+    if ($null -ne (Get-Member -InputObject $itemList -Name "Links" -MemberType Properties) -and
+        $null -ne (Get-Member -InputObject $itemList.Links -Name "Page.Next" -MemberType Properties))
+    {
+        return $true
+    }
+
+    if (($null -ne (Get-Member -InputObject $itemList -Name "TotalResults" -MemberType Properties)) -and
+        ($null -ne (Get-Member -InputObject $itemList -Name "ItemsPerPage" -MemberType Properties)) -and
+        ($itemList.ItemsPerPage -gt 0))
+    {
+        $calculatedPages = [Math]::Ceiling($itemList.TotalResults / $itemList.ItemsPerPage)
+        return $currentPage -lt $calculatedPages
+    }
+
+    return $false
 }
 
 function Get-OctopusObjectCount
@@ -136,19 +170,19 @@ function Get-OctopusObjectCount
             }
         }
 
-        if ($currentPage -lt $itemList.NumberOfPages)
+        if (Test-OctopusHasMorePages -itemList $itemList -currentPage $currentPage)
         {
             $skipValue = $currentPage * $pageSize
             $currentPage += 1
 
-            Write-Host "The endpoint $endpoint has reported there are $($itemList.NumberOfPages) pages.  Setting the skip value to $skipValue and re-querying"
+            Write-Host "The endpoint $endpoint reported more pages are available.  Setting the skip value to $skipValue and re-querying"
         }
         else
         {
-            $haveReachedEndOfList = $true    
+            $haveReachedEndOfList = $true
         }
     }
-    
+
     return @{
         ActiveItemCount = $activeItemCount
         DisabledItemCount = $disabledItemCount
@@ -339,19 +373,19 @@ function Get-OctopusDeploymentTargetsCount
             }                                
         }
 
-        if ($currentPage -lt $itemList.NumberOfPages)
+        if (Test-OctopusHasMorePages -itemList $itemList -currentPage $currentPage)
         {
             $skipValue = $currentPage * $pageSize
             $currentPage += 1
 
-            Write-Host "The endpoint $endpoint has reported there are $($itemList.NumberOfPages) pages.  Setting the skip value to $skipValue and re-querying"
+            Write-Host "The endpoint $endpoint reported more pages are available.  Setting the skip value to $skipValue and re-querying"
         }
         else
         {
-            $haveReachedEndOfList = $true    
+            $haveReachedEndOfList = $true
         }
     }
-    
+
     return $targetCount
 }
 
