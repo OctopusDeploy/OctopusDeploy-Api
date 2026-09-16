@@ -114,7 +114,7 @@ function Test-OctopusHasMorePages
     if ($null -ne (Get-Member -InputObject $itemList -Name "Links" -MemberType Properties) -and
         $null -ne (Get-Member -InputObject $itemList.Links -Name "Page.Next" -MemberType Properties))
     {
-        return $true
+        return [bool]$itemList.Links.'Page.Next'
     }
 
     if (($null -ne (Get-Member -InputObject $itemList -Name "TotalResults" -MemberType Properties)) -and
