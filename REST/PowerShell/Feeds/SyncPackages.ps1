@@ -40,11 +40,11 @@ param (
 function Push-Package([string] $fileName, $package) {
     Write-Information "Package $fileName does not exist in destination"
 
-    if ($null -eq $SourceDownloadUrl) {
+    if ([string]::IsNullOrEmpty($SourceDownloadUrl)) {
         $sourceUrl = $sourceOctopusURL + $package.Links.Raw
     }else {
         $sourceUrl = $SourceDownloadUrl + $package.Links.Raw
-    }
+	}
 
     Write-Verbose "Downloading $fileName from $sourceUrl..."
     $download = $sourceHttpClient.GetStreamAsync($sourceUrl).GetAwaiter().GetResult()
@@ -93,7 +93,9 @@ function Get-Packages([string] $packageId, [int] $batch, [int] $skip) {
 
 function Get-PackageExists([string] $filename, $package) {
     Write-Host "Checking if $fileName exists in destination..."
-    $checkForExistingPackageURL = "$destinationOctopusURL/api/$destinationSpaceId/packages/packages-$($package.Id).$($pkg.Version)" 
+#    $checkForExistingPackageURL = "$destinationOctopusURL/api/$destinationSpaceId/packages/packages-$($package.Id).$($pkg.Version)" 
+	$checkForExistingPackageURL = "$destinationOctopusURL/api/$destinationSpaceId/packages/$($package.Id).$($package.Version)"
+
     $statusCode = 500
 
     try {
@@ -188,7 +190,7 @@ foreach ($package in $packages) {
                 $fileName = "$($pkg.PackageId).$($pkg.Version)$($pkg.FileExtension)"
                 
                 if (-not (Skip-Package $fileName $pkg $CutoffDate)) {
-                    if (Get-PackageExists $fileName $package) {
+                    if (Get-PackageExists $fileName $pkg) {
                         $processedPackageCount++
                         continue;
                     }
