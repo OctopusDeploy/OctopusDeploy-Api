@@ -126,9 +126,9 @@ function Invoke-Octopus([string] $Path) {
         $status = $null
         if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode }
         $hint = switch ($status) {
-            401     { " Check the API key." }
-            403     { " The API key's user lacks permission for this resource." }
-            404     { " Check that the server URL (currently '$OctopusUrl') is the root of your Octopus instance, with no extra path." }
+            401 { " Check the API key." }
+            403 { " The API key's user lacks permission for this resource." }
+            404 { " Check that the server URL (currently '$OctopusUrl') is the root of your Octopus instance, with no extra path." }
             default { "" }
         }
         throw "GET $uri failed ($(if ($status) { "HTTP $status" } else { $_.Exception.Message })).$hint"
@@ -140,7 +140,7 @@ function Get-OctopusCollection([string] $Path, [int] $Take = 1000) {
     $separator = if ($Path.Contains('?')) { '&' } else { '?' }
     $skip = 0
     do {
-        $page  = Invoke-Octopus "$Path$($separator)skip=$skip&take=$Take"
+        $page = Invoke-Octopus "$Path$($separator)skip=$skip&take=$Take"
         $items = @($page.Items)
         $items
         $skip += $items.Count
@@ -171,9 +171,9 @@ foreach ($e in (Get-OctopusCollection "/api/$spaceId/environments")) { $environm
 $projectFilterIds = @($null)   # $null = no project filter
 if ($ProjectName) {
     $projectFilterIds = @(foreach ($name in $ProjectName) {
-        $id = $projectNames.Keys | Where-Object { $projectNames[$_] -eq $name } | Select-Object -First 1
-        if ($id) { $id } else { Write-Warning "Project '$name' not found in space '$SpaceName'; skipping." }
-    })
+            $id = $projectNames.Keys | Where-Object { $projectNames[$_] -eq $name } | Select-Object -First 1
+            if ($id) { $id } else { Write-Warning "Project '$name' not found in space '$SpaceName'; skipping." }
+        })
     if ($projectFilterIds.Count -eq 0) { throw "None of the requested projects were found." }
 }
 
@@ -185,7 +185,7 @@ $baseQuery = @(
 )
 if ($States) { $baseQuery += "states=$($States -join ',')" }
 if ($From) { $baseQuery += "fromCompletedDate=$([uri]::EscapeDataString(([datetime]$From).ToUniversalTime().ToString('o')))" }
-if ($To)   { $baseQuery += "toCompletedDate=$([uri]::EscapeDataString(([datetime]$To).ToUniversalTime().ToString('o')))" }
+if ($To) { $baseQuery += "toCompletedDate=$([uri]::EscapeDataString(([datetime]$To).ToUniversalTime().ToString('o')))" }
 
 $tasks = [System.Collections.Generic.List[object]]::new()
 foreach ($projectId in $projectFilterIds) {
@@ -313,11 +313,11 @@ else {
 }
 
 $rows = @($rawRows | Where-Object { $_ } | ForEach-Object {
-    $resolvedProject = if (-not $_.ProjectId) { "(none)" } elseif ($projectNames.ContainsKey($_.ProjectId)) { $projectNames[$_.ProjectId] } else { "$($_.ProjectId) (deleted?)" }
-    $resolvedEnv     = if (-not $_.EnvironmentId) { "" } elseif ($environmentNames.ContainsKey($_.EnvironmentId)) { $environmentNames[$_.EnvironmentId] } else { $_.EnvironmentId }
-    $_ | Add-Member -NotePropertyName ProjectName -NotePropertyValue $resolvedProject -PassThru |
-         Add-Member -NotePropertyName EnvironmentName -NotePropertyValue $resolvedEnv -PassThru
-})
+        $resolvedProject = if (-not $_.ProjectId) { "(none)" } elseif ($projectNames.ContainsKey($_.ProjectId)) { $projectNames[$_.ProjectId] } else { "$($_.ProjectId) (deleted?)" }
+        $resolvedEnv = if (-not $_.EnvironmentId) { "" } elseif ($environmentNames.ContainsKey($_.EnvironmentId)) { $environmentNames[$_.EnvironmentId] } else { $_.EnvironmentId }
+        $_ | Add-Member -NotePropertyName ProjectName -NotePropertyValue $resolvedProject -PassThru |
+        Add-Member -NotePropertyName EnvironmentName -NotePropertyValue $resolvedEnv -PassThru
+    })
 
 if ($rows.Count -eq 0) {
     Write-Warning "Checked $($tasks.Count) task(s) but found no worker leases."
@@ -329,13 +329,13 @@ if (-not (Test-Path $OutputPath)) { New-Item -ItemType Directory -Path $OutputPa
 
 $detailPath = Join-Path $OutputPath "WorkerUsage-Detail.csv"
 $rows |
-    Sort-Object { [datetime]$_.UsedAt } -Descending |
-    Select-Object TaskId, TaskType, ProjectName, EnvironmentName, State, WorkerName, WorkerPool, LeaseCount,
-        @{ n = 'QueueTime';     e = { Format-Date $_.QueueTime } },
-        @{ n = 'StartTime';     e = { Format-Date $_.StartTime } },
-        @{ n = 'CompletedTime'; e = { Format-Date $_.CompletedTime } },
-        TaskDescription |
-    Export-Csv -Path $detailPath -NoTypeInformation -Encoding UTF8
+Sort-Object { [datetime]$_.UsedAt } -Descending |
+Select-Object TaskId, TaskType, ProjectName, EnvironmentName, State, WorkerName, WorkerPool, LeaseCount,
+@{ n = 'QueueTime'; e = { Format-Date $_.QueueTime } },
+@{ n = 'StartTime'; e = { Format-Date $_.StartTime } },
+@{ n = 'CompletedTime'; e = { Format-Date $_.CompletedTime } },
+TaskDescription |
+Export-Csv -Path $detailPath -NoTypeInformation -Encoding UTF8
 
 function New-Summary($Rows, [string[]] $Keys) {
     $Rows | Group-Object -Property $Keys | ForEach-Object {
@@ -346,18 +346,18 @@ function New-Summary($Rows, [string[]] $Keys) {
         $o.TaskCount = @($group.TaskId | Sort-Object -Unique).Count
         if ($Keys -notcontains 'ProjectName') {
             $o.ProjectCount = @($group.ProjectName | Sort-Object -Unique).Count
-            $o.Projects     = Join-Distinct $group.ProjectName
+            $o.Projects = Join-Distinct $group.ProjectName
         }
         if ($Keys -notcontains 'WorkerName') {
             $o.WorkerCount = @($group.WorkerName | Sort-Object -Unique).Count
-            $o.Workers     = Join-Distinct $group.WorkerName
+            $o.Workers = Join-Distinct $group.WorkerName
         }
         if ($Keys -notcontains 'WorkerPool') { $o.WorkerPools = Join-Distinct $group.WorkerPool }
         $o.Environments = Join-Distinct $group.EnvironmentName
 
         $dates = @($group.UsedAt | Where-Object { $_ } | ForEach-Object { [datetime]$_ } | Sort-Object)
         $o.FirstUsed = if ($dates.Count) { Format-Date $dates[0] }  else { $null }
-        $o.LastUsed  = if ($dates.Count) { Format-Date $dates[-1] } else { $null }
+        $o.LastUsed = if ($dates.Count) { Format-Date $dates[-1] } else { $null }
 
         [pscustomobject]$o
     } | Sort-Object TaskCount -Descending
